@@ -1,0 +1,62 @@
+#! /bin/sh
+
+# Take executable from commandline if given, else default to $bindir/muq:
+if [ "$#" -eq 3 ]
+then
+    our_muq_executable=$3
+    our_db_name=$2
+else
+    if [ "$#" -eq 2 ]
+    then
+	our_db_name=$2
+    else
+	our_db_name=muq
+	if [ "$#" -ne 1 ]
+	then
+	    echo "Usage: muq-lib a-muq-file [muq-executable]"
+	    echo "(where 'a-muq-file' is a muq library to install in cwd,"
+	    echo "and 'muq-executable' defaults to $bindir/muq.)"
+	    exit 1
+	fi
+    fi
+fi
+our_muq_lib=$1
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+
+# Install specified file in db in current directory:
+new_lib_name=`echo ${our_muq_lib} | sed -e 's/\.t$//'`
+echo "${bindir}/Muq-detexify <${our_muq_lib} >${new_lib_name}"
+${bindir}/Muq-detexify <${our_muq_lib} >${new_lib_name}
+
+# Use the correct in-db compiler:
+if { echo ${new_lib_name} | egrep '\.muf$' ;}
+then
+    compiler="muf:compileMufFile"
+else
+
+    if { echo ${new_lib_name} | egrep '\.muc$' ;}
+    then
+	compiler="muc:compileMucFile"
+    else
+
+	echo "+++++++++++++++++++++++++++++++++"
+	echo "+ Unsupported library filetype! +"
+	echo "+++++++++++++++++++++++++++++++++"
+	exit 1
+    fi
+fi
+
+echo "Doing: $our_muq_executable $our_db_name -x ${compiler} -f ${new_lib_name} -f $pkgdir/Shutdown"
+# --log-bytecodes
+$our_muq_executable $our_db_name --logfile=muq.log -x ${compiler} -f ${new_lib_name} -f $pkgdir/Shutdown
+result=$?
+if [ $result -ne 0 ] ; then
+echo "muq-lib: result = $result"
+fi
+#rm ${our_muq_lib}.muf
+
+exit $result

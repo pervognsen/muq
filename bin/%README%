@@ -1,0 +1,32 @@
+                   muq/bin/#README#       last update: 94Jul09
+
+This directory contains all our production executables and
+scripts.  It needs to be on your PATH -- see muq/INSTALLATION
+for the recommended procedure.
+
+Many of these scripts are used internally by c/Makefile, and not
+expected to be invoked directly by the user.  (Which is to say: Do not
+feel obligated to know what they all do.)
+
+
+
+We prefix the executables in this directory with 'muq' to
+avoid conflicts with local and system files.
+
+
+
+With odd combinations of NFS mounting and LAN filesystems
+and symbolic links and read-only filesystems on CDROM and
+such becoming more and more common, I've tried to minimize
+assumptions as to which muq directories are where:
+
+I've tried to make Muq-config.sh the only file which knows
+where the various directories are; in principle, you should
+be able to move any of the directories anywhere you want,
+update Muq-config.sh to know where they are, recompile the
+server, and everything should continue to work fine.
+
+This is untested, so expect teething problems if you try
+this!
+
+				94Jan22 

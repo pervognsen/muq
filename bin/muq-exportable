@@ -1,0 +1,180 @@
+#! /bin/sh
+
+################################################################ 
+# This script makes muq source legal to export from the USA,   #
+# by removing every hint of strong encryption from it, first   #
+# saving the deleted files in ~/muq-crypto-src.tar.gz          #
+#                                                              #
+# The deleted files are:				       #	
+#   muq/bin/muq-exportable    This file.                       #
+#                                                              #
+# To undo the damage after exporting the source, (assuming the #
+# muq filetree is installed as $HOME/muq as usual) just        #
+# download a copy of muq-crypto-src.tar.gz from a Free World   #
+# site such as ftp://ftp.cistron.nl/pub/people/cynbe and then  #
+# unpack it in $HOME.                                          #
+################################################################ 
+
+if [ "$#" -ne 0 ]
+then
+    echo "Usage: muq-exportable"
+    exit 1
+fi
+
+echo "muq-exportable:  Removing all crypto files from muq to"
+echo "                 make it legally exportable from the USA."
+
+
+
+###################################################
+# Source config file specifying directory layout: #
+###################################################
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+
+##############################################
+# List Muq files arguably containing crypto: #
+##############################################
+
+
+
+
+#########################################
+# Verify that all expected files exist: #
+#########################################
+
+cd ${MUQDIR-${HOME}/muq/bin}/../..
+
+
+if [ ! -d muq/c/Crypto ]
+then
+    echo "directory muq/c/Crypto does not exist, aborting muq-exportable."
+    exit 1
+fi
+
+if [ ! -f muq/c/Crypto/jobd.t ]
+then
+    echo "file muq/c/Crypto/jobd.t does not exist, aborting muq-exportable."
+    exit 1
+fi
+
+if [ ! -f muq/bin/muq-exportable ]
+then
+    echo "muq/bin/muq-exportable does not exist, aborting muq-exportable."
+    exit 1
+fi
+
+
+
+#############################################
+# Delete any existing muq-crypto-src.tar.gz #
+#############################################
+
+if [     -e muq-crypto-src.tar.gz ]
+then
+    rm  -rf muq-crypto-src.tar.gz
+    if [ -e muq-crypto-src.tar.gz ]
+    then
+	echo "Couldn't delete muq-crypto-src.tar.gz, aborting muq-exportable."
+	exit 1
+    else
+	echo "muq-exportable: Deleted old muq-crypto-src.tar.gz"
+    fi
+fi
+
+if [     -e muq-crypto-src.tar ]
+then
+    rm  -rf muq-crypto-src.tar
+    if [ -e muq-crypto-src.tar ]
+    then
+	echo "Couldn't delete muq-crypto-src.tar, aborting muq-exportable."
+	exit 1
+    else
+	echo "muq-exportable: Deleted old muq-crypto-src.tar"
+    fi
+fi
+
+
+
+#############################################
+# Build an up-to-date muq-crypto-src.tar.gz #
+#############################################
+
+tar -cf muq-crypto-src.tar	\
+    muq/c/jobd.t		\
+    muq/bin/muq-exportable	\
+    muq/c/Crypto
+
+gzip -9 muq-crypto-src.tar
+echo "muq-exportable: Created tarfile containing all deleted crypto:"
+ls -l $HOME/muq-crypto-src.tar.gz
+
+
+
+#######################################
+# Delete all files containing crypto: #
+#######################################
+
+rm    -rf muq/c/jobd.t
+if   [ -f muq/c/jobd.t ]
+then
+    echo "muq/c/jobd.t could not be deleted, aborting muq-exportable."
+    exit 1
+else
+    echo "muq-exportable: Removed muq/c/jobd.t"
+fi
+
+# Replace deleted jobd.t with exportable version: #
+cp          muq/c/Crypto/jobd.t muq/c/jobd.t
+if   [ ! -f muq/c/jobd.t ]
+then
+    echo "muq/c/jobd.t could not be recreated, aborting muq-exportable."
+    exit 1
+else
+    echo "muq-exportable: Replaced muq/c/jobd.t with exportable version"
+fi
+
+rm    -rf muq/c/Crypto
+if   [ -d muq/c/Crypto ]
+then
+    echo "muq/c/Crypto could not be deleted, aborting muq-exportable."
+    exit 1
+else
+    echo "muq-exportable: Removed muq/c/Crypto"
+fi
+
+rm    -rf muq/bin/muq-exportable
+if   [ -f muq/bin/muq-exportable ]
+then
+    echo "muq/bin/muq-exportable could not be deleted, aborting muq-exportable."
+    exit 1
+else
+    echo "muq-exportable: Removed muq/bin/muq-exportable"
+fi
+
+
+
+#########
+# Done: #
+#########
+
+echo
+echo "To build a legally exportable distribution, do"
+echo "    cd ${HOME}/muq/c"
+echo "    muq-distclean"
+echo "    muq-src-tar"
+echo
+echo "To reverse the muq-exportable operation, do:"
+echo "    cd $HOME"
+echo "    tar -xzf muq-crypto-src.tar.gz"
+echo
+echo "To restore security to the distribution after exporting it,"
+echo "download a copy of muq-crypto-src.tar.gz from a Free World"
+echo "site such as ftp://ftp.cistron.nl/pub/people/cynbe, then"
+echo "unpack it as above."
+echo
+echo "muq-exportable: Finished."
+echo
+
+exit 0

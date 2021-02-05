@@ -1,0 +1,43 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+for m in $docdir/*.t ;
+{
+    echo "$docdir: $m"
+    /usr/bin/perl -pi.bakk $bindir/hak0 $m
+    /usr/bin/perl -pi.bak1 $bindir/hak0 $m
+}
+for m in $pkgdir/*.t $pkgdir/Shutdown ;
+{
+    echo "$pkgdir: $m"
+    /usr/bin/perl -pi.bakk $bindir/hak0 $m
+    /usr/bin/perl -pi.bak1 $bindir/hak0 $m
+}
+for m in $pkgdir/Check/*.muf ;
+{
+    echo "$pkgdir/Check: $m"
+    /usr/bin/perl -pi.bakk $bindir/hak0 $m
+    /usr/bin/perl -pi.bak1 $bindir/hak0 $m
+}
+for m in $hdir/*.h ;
+{
+    echo "$hdir: $m"
+    /usr/bin/perl -pi.bakk $bindir/hak0 $m
+    /usr/bin/perl -pi.bak1 $bindir/hak0 $m
+}
+for m in $cdir/*.t ;
+{
+    echo "$cdir: $m"
+    /usr/bin/perl -pi.bakk $bindir/hak0 $m
+    /usr/bin/perl -pi.bak1 $bindir/hak0 $m
+}
+for m in $cdir/Check/*.t ;
+{
+    echo "cdir/Check: $m"
+    /usr/bin/perl -pi.bakk $bindir/hak0 $m
+    /usr/bin/perl -pi.bak1 $bindir/hak0 $m
+}
+
+exit 0

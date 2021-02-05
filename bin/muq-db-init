@@ -1,0 +1,56 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+# Take executable from commandline if given, else default to $bindir/muq:
+if [ "$#" -eq 2 ]
+then
+    our_muq_executable=$2
+    our_db_name=$1
+else
+
+    if [ "$#" -eq 1 ]
+    then
+	our_db_name=$1
+    else
+	our_db_name=muq
+
+	if [ "$#" -eq 0 ]
+	then
+	    our_muq_executable=$bindir/muq
+	else
+	    echo "Usage: muq-db-init [db-name] [muq-executable]"
+	    echo "(where 'db-name' defaults to 'muq' and"
+	    echo "'muq-executable' defaults to $bindir/muq.)"
+	    exit 1
+	fi
+    fi
+fi
+
+
+
+# Install standard libraries:
+$bindir/muq-libs $pkgdir $our_db_name $our_muq_executable
+if [ $? -ne 0 ]
+then
+    exit 1
+fi
+# gprof support:
+if [ -f $cdir/gmon.out ] ; then
+    mv  $cdir/gmon.out $cdir/gmon.out.stdlibs
+fi
+
+# # Install optional-module muq libraries:
+# for m in `$our_muq_executable -m` ;
+# {
+#     $bindir/muq-libs $moddir/$m $our_db_name $our_muq_executable
+#     if [ $? -ne 0 ]
+#     then
+# 	exit 1
+#     fi
+# }
+
+echo "Done initializing `pwd`/${our_db_name}"
+
+exit 0

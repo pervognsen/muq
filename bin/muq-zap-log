@@ -1,0 +1,15 @@
+#! /bin/sh
+
+if [ "$#" -ne 1 ]
+then
+    echo "Usage: muq-zap-log filename"
+    exit 1
+fi
+
+if [ -f $1 ]
+then
+    echo "Removing $1"
+    rm $1
+fi
+
+exit 0

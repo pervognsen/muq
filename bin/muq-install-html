@@ -1,0 +1,133 @@
+#! /usr/bin/perl
+# A little hack to install a given Muq html document release
+# in my local web pages.  
+
+# Make sure we were invoked with one arg:
+if ($#ARGV != 0) {
+    die "Invoke as '$0 -1.32.0' to install -1.32.0 docs.\n";
+}
+
+# Set/derive names of relevant files and directories
+$mydir   = $ENV{'HOME'};
+$tardir  = "$mydir/muq";
+$wwwdir  = "$mydir/www";
+if (-d "$mydir/public_html") { $wwwdir = "$mydir/public_html"; }
+$muqdir  = "$wwwdir/muq";
+$bakdir  = "$wwwdir/oldmuq";
+$tmpdir  = "$mydir/tmp";
+$tarfile = "$tardir/muq.html.$ARGV[0].tar.gz";
+$tardir  = "$tmpdir/muq-html.$ARGV[0]";
+$tar     = "/bin/tar";
+if (-x "/bin/gtar")             { $tar = "/bin/gtar";             }
+if (-x "/usr/bin/gtar")         { $tar = "/usr/bin/gtar";         }
+if (-x "/usr/local/bin/gtar")   { $tar = "/usr/local/bin/gtar";   }
+if (-x "/bin/gnutar")           { $tar = "/bin/gnutar";           }
+if (-x "/usr/bin/gnutar")       { $tar = "/usr/bin/gnutar";       }
+if (-x "/usr/local/bin/gnutar") { $tar = "/usr/local/bin/gnutar"; }
+if (! `$tar --version` =~ /GNU/) {
+    die "Couldn't find gnutar!";
+}
+
+# Basic existence checks:
+if (! -f $tarfile) {  die "No such file as $tarfile\n";   }
+if (! -r $tarfile) {  die "Can't read file $tarfile\n"; }
+if (! -d $mydir)   {  die "Can't find $HOME ?!"; }
+
+# Create wwwebdir if missin:
+if (! -d $wwwdir) {
+    print "Creating $wwwdir...\n";
+    system("mkdir $wwwdir");
+    if (! -d $wwwdir) { die "Couldn't create $wwwdir!"; }
+}
+
+# Nuke any old backup muq doc dir:
+if ( -d $bakdir) {
+    print "Removing $bakdir...\n";
+    system("rm -rf $bakdir");
+    if ( -d $bakdir) { die "Couldn't remove $bakdir!"; }
+}
+
+# Create tmp dir for intermediate stuff, if missing:
+if (! -d $tmpdir) {
+    print "Creating $tmpdir ...\n";
+    system("mkdir $tmpdir");
+    if (! -d $tmpdir) { die "Couldn't create $tmpdir!"; }
+}
+
+# Remove any intermediate stuff from prior crash or such:
+if ( -d $tardir) {
+    print "Removing pre-existing $tardir...\n";
+    system("rm -rf $tardir");
+    if ( -d $tardir) { die "Couldn't remove $tardir!"; }
+}
+
+# Unpack the archive into tmp dir:
+print "Extracting $tarfile\nto produce $tardir...\n";
+chdir $tmpdir;
+system("$tar -xzf $tarfile");
+if (! -d $tardir) {
+    die "Tar unpack didn't produce a $tardir directory?!";
+}
+
+# Make backup of current muq doc dir, if any:
+if ( -d $muqdir) {
+    print "Saving $muqdir as $bakdir ...\n";
+    system("mv $muqdir $bakdir");
+    if ( -d $muqdir) { die "Couldn't rename $muqdir!"; }
+}
+
+# Move unpacked doc dir to wwweb dir:
+print "Renaming $tardir to $muqdir...\n";
+system("mv $tardir $muqdir");
+if (! -d $muqdir) {
+    die "Couldn't rename $tardir!";
+}
+
+# Make sure wwebdir/file permissions come out sane
+# It would be more concise to just do
+#   system("find $wwwdir -type f -exec chmod 644 {} \\;");
+#   system("find $wwwdir -type d -exec chmod 755 {} \\;");
+# but that thrashes -forever- on poor overloaded eskimo...
+# You'd think system("chmod -R $muqdir"); could be used,
+# but there seems no sane, portable way to do so :(
+sub dodir {
+    local($dir) = @_;
+    opendir(DIR,'.');
+    local(@filenames) = readdir(DIR);
+    closedir(DIR);
+    for (@filenames) {
+        if (-f $_) {
+	    chmod 0644, $_;
+        } elsif ($_ ne '.'   &&   $_ ne '..'   &&   -d $_) {
+	    chmod 0755, $_;
+	    chdir $_ || die "Can't cd to $dir/$_ ?!";
+	    &dodir("$dir/$_");
+	    chdir '..';
+	}
+    }
+}
+print "Setting all files 644 and all dirs 755 under $muqdir ...\n";
+chmod 0755, $muqdir;
+chdir $muqdir;
+&dodir($muqdir);
+
+# Add a softlink "index.html":
+print "Adding a link $muqdir/index.html -> $muqdir/muq.html...\n";
+system("ln -s $muqdir/muq.html $muqdir/index.html");
+if (! -r "$muqdir/index.html") {
+    die "Couldn't create $muqdir/index.html ?!";
+}
+
+# Maybe remove old webstuff:
+if (-d $bakdir) {
+    print "Remove $bakdir?\n";
+    if (<STDIN> =~ /[Yy]/) {
+        print "Removing $bakdir...\n";
+	system("rm -rf $bakdir");
+	if (-d $bakdir) { die "Couldn't nuke $bakdir?!"; }
+    }
+}
+
+# Done!
+print "Done!\n";
+exit(0); # Done! :)

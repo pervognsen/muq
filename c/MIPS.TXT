@@ -1,0 +1,107 @@
+93May22 Timing study on tinyMuq MUF vs native C:
+
+First, native C performance on betz (RS6000/730):
+
+With the optimizer on,
+
+    for (j = 0;   j < i;) { ++j; --j; ++j; --j; ++j; }
+
+compiles to a single
+
+                                   CL.9:
+    8| 000014 bcr    4C84 0020    0    BF       CL.3,cr1,0x1/lt
+    8| 000018 ai     3000 0001    1    AI       r0=r0,1
+    8| 00001C cmp    7C80 1800    1    C        cr1=r0,r3
+    0| 000020 b      4BFF FFF4    0    B        CL.9
+
+4 instruction loop.  Running ten million times through it gives:
+
+Native C instr == 400000000   secs == 15   =>   MIPS == 27
+
+The muf word
+
+    muf> : x begin 1 - dup 0 = until pop ;
+
+run a million times through its loop;
+
+    muf> 1000000 x
+
+yields
+
+    ops == 6093755   secs == 11   =>   MIPS == 0.55
+
+leaving tinyMuq MUF 60x slower than C.  Kinda disappointing, I was
+really hoping to break 1 MIPS interpreted, and also expected more like
+30 risc instructions/bytecode.  AIX cc having no CLUE about tail
+recursion doesn't help any, of course.
+
+Shorting out fuzzball's instruction limits temporarily, 
+
+    @edit #3732
+    1 11 d
+    i
+    : x begin 1 - dup 0 = until pop ;
+    : y 1000000 x ;
+    .
+    c
+    q
+    .x
+
+yields
+
+    Sun May 23 09:41: PRG-RAN: secs  38 player 144 prog 3732
+
+in my status log, so tinyMuq is less than four times faster than
+fuzzball on this integer stuff, which is also a bit of a
+disappointment, I'd hoped to break ten at least.  tinyMuck2.3 is
+presumably 2-3 times faster than fuzzball here, at a guess...
+
+And, yes, as OJ points out, the difference is currently quite
+irrelevant since muf programs aren't spending their time doing
+arithmetic.  Some people just have no ambition to climb Everest?
+*grin*
+
+ Cynbe
+
+
+
+
+Curious.  Here's the output from my little timing test to
+see whether to pass stuff in globals or registers in Muq,
+for fastest interpretation.
+
+The numbers are execution time in clock ticks; '22' '23'
+'24' represent different test run lengths;
+
+The left time in each pair is intended to reflect muq
+interpreter innerloop speed when four commonly used values
+are passed as parameters (hence presumably in registers),
+the right time is when they are passed in globals (hence
+presumably in ram).
+
+
+94May15 results on job.c, comparing gcc 2.5.8 vs MIPS 3.10.1 cc:
+
+The striking results are that the gcc parameter case is more
+than six times faster with -O than with -g... and much more
+than twice as fast as the corresponding MIPS case. Wow!
+
+gcc -g:                     cc -g:              
+22: : 245:218 ticks.	    22: : 215:176 ticks.
+23: : 476:424 ticks.	    23: : 423:350 ticks.
+24: : 953:917 ticks.	    24: : 844:703 ticks.
+			                        
+gcc -O:			    cc -O:              
+22: :  38:121 ticks.	    22: :  92:128 ticks.
+23: :  77:239 ticks.	    23: : 184:246 ticks.
+24: : 153:479 ticks.	    24: : 369:508 ticks.
+			                        
+gcc -O2:		    cc -O2:             
+22: :  38:108 ticks.	    22: :  94:127 ticks.
+23: :  76:214 ticks.	    23: : 182:257 ticks.
+24: : 155:427 ticks.	    24: : 376:508 ticks.
+			                        
+			    cc -O3:             
+			    22: :  90:122 ticks.
+			    23: : 182:248 ticks.
+			    24: : 363:497 ticks.

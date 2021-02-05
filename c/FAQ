@@ -1,0 +1,99 @@
+         -- Muq "Frequently Asked Questions" list --
+
+Created 94Mar26:00:40:00.
+Updated 94Oct21:23:32:54.
+
+
+
+Q: How do I pronounce 'Muq'?
+
+A: Rhymes with "Hook".
+   Try saying "I took a look in the Muq-book"
+   ten times rapidly. :)
+
+
+
+Q: What does 'Muq' mean?
+
+A: <mysterious smile>
+
+
+
+Q: Is is true Muq has everything but the kitchen sinks in-server?
+
+A: No, this is a base canard spread by unspeakably slimy competitors.
+   Muq has had a fully functional, POSIX-compliant kitchen-sinks
+   operator since version -2.4, 94Mar26.
+
+
+
+Q: Be serious.
+
+A: Muq is a micro-kernel design.  Everything sensible has been moved
+   from the server into the db, including the user shells and the
+   compilers.  That just happens to leave hundreds of operators in
+   the kernel still:
+     327 prims built implementing 57 primary opcodes (7 free)
+     and 223 secondary opcodes (33 free).
+   (94Mar26 figures.)
+     380 prims built implementing 63 primary opcodes (1 free)
+     and 278 secondary opcodes (746 free).
+   (94Oct29 figures.)
+     674 prims built implementing 65 primary opcodes (63 free)
+     and 568 secondary opcodes (456 free).
+   (97Jan02 figures.)
+
+
+Q: Do I need all of vm1 - vm4 that make-db-c creates?  Which one
+   does it actually use?
+
+A: vm0 contains the currently running db, which will be invalid
+   after a crash, hence can't be counted on.
+
+   vm1 contains the db as it existed before the current run started.
+   vm2 contains the db as it existed before the last    run started
+   (And so forth.)
+
+   The number of versions kept is controlled by VM_MAX_DB_COPIES_TO_KEEP,
+   and may be changed by defining VM_MAX_DB_COPIES_TO_KEEP in your
+   h/Site-config.h and recompiling (you might have to "touch vm.c" also).
+
+   You may also control this parameter via /muq/#/max-db-copies-to-keep.
+
+
+
+Q: Why can't I do "nanomud:*world*, " from a nanomud login?
+
+A: Each user has a private library of "known" packages, called
+   ~%s/lib.  The nanomud package is initially known to root,
+   but not to other users.  (This might or might not be a bug.)
+   You can do
+     , /u<"root">%s/lib<"nanomud"> --> ~%s/lib<"nanomud">
+   to add nanomud to your library, after which nanomud:*world*
+   will evaluate as expected.
+
+
+
+Q: Why does the Muq mufshell hang after I type ^D at the console?
+
+A: ^D is usually the "eof" (end of file) character under Unix.
+   Its behavior is controlled by the Unix terminal driver, and
+   I'm not sure Muq should be altering its behavior behind the
+   user's back.  You can change the eof char using stty at the
+   unix shell prompt:
+       stty eof ^-       # One way to disable the 'eof' feature. ^- is 2 chars.
+       stty eof undef    # Another way to disable the 'eof' feature.
+       stty eof 256      # Another way to disable the 'eof' feature.
+       stty eof 0        # The way to disable eof on some older unix systems.
+       stty eof 255      # Sets eof to a char hard to type by accident.
+       stty eof ^D       # This will restore it. '^D' is two chars here.
+       stty eof 4        # Same as above.
+       stty -a           # Display all terminal mode settings.
+       stty sane         # Set terminal driver to a sane mode.
+
+
+
+Q: Does Muq have a Year 2,000 problem?
+A: No.  Muq -does- have a Year 29,653,302 problem, but don't
+   worry:  We're on track to have a solution shipped in time.
+

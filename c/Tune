@@ -1,0 +1,20 @@
+97Dec24:
+Vanilla muq-db-c:
+218.360u 134.620s 37:55.29 15.5% 0+0k 0+0io 497723pf+90w
+Combining all input files into one:
+224.330u 23.450s 13:06.65 31.4% 0+0k 0+0io 22325pf+0w
+Using two passes (boot-strap then in-db compiler):
+153.840u 11.660s 7:41.83 35.8% 0+0k 0+0io 17075pf+0w
+Expanding buffer from 2 to 4 meg:
+154.690u 8.990s 5:59.59 45.5% 0+0k 0+0io 14424pf+0w
+Expanding buffer from 4 to 8 meg:
+153.250u 9.500s 5:43.79 47.3% 0+0k 0+0io 14343pf+0w
+
+Time to build from scratch:
+261.460u 47.130s 6:34.47 78.2% 0+0k 0+0io 218219pf+0w
+
+Time to do full "make check":
+314.620u 69.590s 25:32.92 25.0% 0+0k 0+0io 168135pf+650w
+
+Time to do full "make check" after rolling std-muf into one file (97Dec25):
+274.260u 29.090s 13:46.53 36.7% 0+0k 0+0io 53551pf+188w

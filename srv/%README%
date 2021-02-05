@@ -1,0 +1,73 @@
+This directory contains programs which may
+be invoked as co-processes by in-db Muq
+code.
+
+Since in general the Muq server may be hosting
+guests not trusted at the unix host level, the
+following restrictions are enforced:
+
+Server names must contain only letters and
+dashes.  This is to avoid tricks involving
+leading '.' or '../' or nonprinting chars
+or whatever.
+
+Server names starting with "root-" may only
+be executed by in-db Muq jobs executing
+with in-db root as the effective user.
+
+           ############
+           # WARNING! #
+           ############
+
+Putting ill-considered programs in this
+directory may completely breach the
+security wall between the Muq server
+process and the host account.
+
+For example:
+
+Obviously, putting a shell like sh
+csh ksh tcsh or such in here will allow
+any job in the Muq server full run of
+the host account.
+
+Perhaps less obviously, many Unix
+utilities contain '!' escapes to
+run a subshell:  vi, mail ...
+Placing any of these in this
+directory will likewise allow
+any job in the Muq server full run of
+the host account.
+
+Also, interpreters like Perl or xlisp usually
+contain system() style calls which allow complete
+access to the host account.
+
+In general, I recommend that you place
+in this directory only programs specifically
+written to be run as Muq coprocesses, with
+careful attention to security (do you have
+any fixed-size buffers which can be over-run
+to overwrite code?  Do you use 'gets()'
+anywhere?  Can stack over-runs breach
+security? ... ) or else allow only trusted
+users onto your Muq server.
+
+
+
+Note also that coprocess programs need to
+disable output buffering to avoid deadlock.
+This means doing something like
+
+   select( (select(STDOUT), $| = 1)[0]);
+
+in Perl script coprocesses, or in C doing
+
+   setvbuf( stdout, NULL, _IOLBF, 0 );
+
+if you always write complete lines, else
+
+   setvbuf( stdout, NULL, _IONBF, 0 );
+
+to completely disable output buffering.
+For other languages, check your manual. :)

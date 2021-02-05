@@ -1,0 +1,11 @@
+{ alpha beta }
+} alpha beta {
+@ alpha beta @
+@example  @c
+{ gamma delta }
+} gamma delta {
+@ gamma delta @
+@end example
+{ epsilon zeta }
+} epsilon zeta {
+@ epsilon zeta @

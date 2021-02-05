@@ -1,0 +1,77 @@
+\input texinfo   @c -*-texinfo-*-
+@comment %**start of header (This is for running Texinfo on a region.)
+@setfilename ../doc/mufhack1.info
+@settitle Muqnet
+@setchapternewpage odd
+@comment %**end of header (This is for running Texinfo on a region.)
+@c
+@ifinfo
+Copyright @copyright{} 2000 Jeff Prothero.
+@end ifinfo
+@c --------------------------------------------------------
+@titlepage
+@sp 10
+@center @titlefont{Muqnet}
+@sp 2
+@include versionc.t
+@sp 2
+@center Jeff Prothero
+@center (cynbe@@muq.org)
+@c     ---------------------------------------------
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2000 Jeff Prothero.
+@end titlepage
+@c --------------------------------------------------------
+@c Uncomment these to generate a single index:
+@c @synindex cp fn
+@c @syncodeindex vr fn
+@c @syncodeindex ky fn
+@c @syncodeindex pg fn
+@c @syncodeindex tp fn
+@c
+@node Top, Muqnet Architecture, , (dir)
+
+Muqnet provides distributed programming support for Micronesia.  It
+started as a dedicated part of the Micronesia softcode, but has
+gradually evolved into an independent facility in its own right,
+eminently usable by other applications.
+
+@include versiont.t
+This version of the manual is a first draft, and still very rough.
+
+@menu
+* Muqnet Architecture::
+* Function Index::
+* Variable Index::
+* Data Type Index::
+* Concept Index::
+@end menu
+
+@include muqnet1.t
+
+@node Function Index, Variable Index, Muqnet Architecture Wrapup, (dir)
+@unnumbered Function Index
+
+@printindex fn
+
+@node Variable Index, Data Type Index, Function Index, (dir)
+@unnumbered Variable Index
+
+@printindex vr
+
+@node Data Type Index, Concept Index, Variable Index, (dir)
+@unnumbered Data Type Index
+
+@printindex tp
+
+@node Concept Index,  , Data Type Index, (dir)
+@unnumbered Concept Index
+
+@printindex cp
+
+@c Tables of contents
+@summarycontents
+@contents
+
+@bye

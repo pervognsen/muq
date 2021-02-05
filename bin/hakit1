@@ -1,0 +1,12 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+for m in $pkgdir/Check/*.muf ;
+{
+    echo "$pkgdir/Check: $m"
+    /usr/bin/perl -pi.bak $bindir/hak1 $m
+}
+
+exit 0

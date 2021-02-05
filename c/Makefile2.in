@@ -1,0 +1,432 @@
+#!/bin/make -f
+#- Muq makefile
+# @configure_input@
+
+##########################################################################
+#- GNU suggested stuff I'll comprehend someday :)
+srcdir = @srcdir@
+VPATH = @srcdir@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+
+# (Cynbe:) Following comment and assignments borrowed from xdvik:
+# If your X include files or libraries won't be found automatically by
+# the compiler or linker, define these appropriately.  If you are
+# compiling with -DNOTOOL, set tool_libs="".
+#
+# Following commented out 'cause nobody is working on the
+# X stuff, and it causes too many install problems
+# x_cppflags = @X_CFLAGS@
+# x_ldflags = @X_LIBS@
+# x_pre_libs = @X_PRE_LIBS@
+# x_extra_libs = @X_EXTRA_LIBS@
+# x11 = @X11@
+# x_tool_libs = -lXaw -lXmu -lXt -lXext
+# x_libs = $(x_ldflags) $(x_tool_libs) $(x_pre_libs) $(x11) $(x_extra_libs)
+
+LIBS = @LIBS@
+
+# }}}
+
+##########################################################################
+#- Compile etc switches
+
+########################
+# NB: Muq needs Ansi C #
+########################
+
+##########################################################################
+#-- Compiler/system dependent flags:
+# C compiler to use
+CC= @CC@
+# CC= egcc -Wall -Wno-parentheses -Wno-comment
+NICE= @NICE@
+# CC= /Users/cynbe/gcc-2.8.1/xgcc -B/Users/cynbe/gcc-2.8.1/ -Wall -Wno-parentheses -Wno-comment
+# CC= /tmp_mnt/Net/jsp/gcc-2.8.1/xgcc -B/tmp_mnt/Net/jsp/gcc-2.8.1/ -Wall -Wno-parentheses -Wno-comment
+# Compile flags to use when debugging:
+# -Wf,-XNc1000 keeps MIPS C from overflowing internal string table.
+# -kn gives NMAGIC instead of ZMAGIC executable: pages from swap, not the
+# executable itself. Nice if executing off an NFS drive, but prevents
+# sharing text.
+# CDEBUGFLAGS= -I${HDIR} -I${MODDIR} -g -Wf,-XNc1000 # pre-autoconfig SGI
+CDEBUGFLAGS= @CFLAGS@ -I${HDIR} # @X_CFLAGS@ -I${MODDIR}
+# Compile flags to use in production use:
+# COPTFLAGS= -I${HDIR} -I${MODDIR} -O -Wf,-XNc1000 # pre-autoconfig SGI
+COPTFLAGS= @CFLAGS@ -I${HDIR} -O # @X_CFLAGS@ -I${MODDIR}
+# Flags to hand the linker:
+LINKFLAGS= @LDFLAGS@ ${LIBS} # $(x_libs)
+
+##########################################################################
+#-- Mode flags
+#CFLAGS=${COPTFLAGS}
+CFLAGS=${CDEBUGFLAGS}
+
+#-- Some more stuff copied from GNU example to think about:
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+binprefix =
+manprefix =
+bindir = $(exec_prefix)/bin
+libdir = $(exec_prefix)/lib
+mandir = $(prefix)/man/man1
+manext = 1
+
+##########################################################################
+#-- Relatively portable stuff:
+GREP= @GREP@
+CHECKLOG= check.lst
+LN= @LN@ -f
+MV= @MV@ -f
+RM= @RM@ -f
+ROOT= ..
+MAKE= @MAKE@
+SHELL= @SH@
+
+#
+#- ########################################################################
+#- You should not have to change anything below here
+#- ########################################################################
+
+##########################################################################
+#- TARGETS CHECKTARGETS
+
+# Executables:
+SLOWCHECKS= x-dil x-sil
+FASTCHECKS= x-obj x-sha x-bnm zap_db clean_db std_muf opt_muf zap_db
+SLOWCHECKTARGETS= zap_log x-vm ${SLOWCHECKS} ${FASTCHECKS} 
+FASTCHECKTARGETS= zap_log                    ${FASTCHECKS} 
+CHECKTARGETS2= zap_log zap_db clean_db std_muf2 opt_muf2 zap_db
+
+TARGETS= ${CHECKTARGETS} muq
+
+# We don't make any effort to load each exerciser with just
+# minimal set of objectfiles, just search all of them for each.
+# Mustn't build job.o until jobprims.o is built:
+OBJ= jobprims.o Hax.o err.o ary.o asm.o blk.o bnm.o bot.o cdf.o cfg.o cfn.o chr.o clo.o dbf.o d3l.o dil.o ecn.o est.o evc.o evt.o f32.o f64.o flt.o fun.o hsh.o i01.o i16.o i32.o int.o job.o joba.o jobb.o jobc.o jobd.o jobe.o joq.o jbs.o key.o lbd.o lib.o lok.o lst.o mil.o mod.o mss.o mtd.o muf.o muq.o n3d.o ndx.o obj.o ogl.o pil.o pkg.o prx.o rdt.o rex.o sel.o set.o sha.o sil.o skt.o spc.o ssn.o stc.o stg.o stk.o stm.o sym.o sys.o tbl.o til.o usr.o usq.o vec.o vm.o wdw.o
+SRC= jobbuild.t Hax.t err.t ary.t asm.t blk.t bnm.t bot.t cdf.t cfg.t cfn.t chr.t clo.t dbf.t d3l.t dil.t ecn.t est.t evc.t evt.t f32.t f64.t flt.t fun.t hsh.t i01.t i16.t i32.t int.t job.t joba.t jobb.t jobc.t jobd.t jobe.t joq.t jbs.t key.t lbd.t lib.t lok.t lst.t mil.t mod.t mss.t mtd.t muf.t muq.t n3d.t ndx.t obj.t ogl.t pil.t pkg.t prx.t rdt.t rex.t sel.t set.t sha.t sil.t skt.t spc.t ssn.t stc.t stg.t stk.t stm.t sym.t sys.t tbl.t til.t usr.t usq.t vec.t vm.t wdw.t
+
+##########################################################################
+#- .c.o all muq check x-vm x-dil x-obj
+
+# .c.o:
+# 	${CC} ${CFLAGS} -c $*.c		# pre-autoconfig
+
+.SUFFIXES: .t
+
+# This rule is just so we can clean up
+# by doing "rm *.c":
+Muq-detexify.c: Muq-detexify.cx
+	cp Muq-detexify.cx Muq-detexify.c
+
+.t.c:
+	${NICE} ${BINDIR}/Muq-detexify <$< >$@
+
+.t.o:
+	${NICE} ${BINDIR}/Muq-detexify <$< >$*.c
+	$(NICE) $(CC) -c $(CPPFLAGS) $(CFLAGS) $*.c
+	@if test "${MUQ_KEEP_C_FILES}" != "true"  ;	\
+	then						\
+	    ${RM} $*.c;				\
+	fi
+
+.c.o:
+	$(NICE) $(CC) -c $(CPPFLAGS) $(CFLAGS) $<
+
+all: ${BINDIR}/Muq-detexify @PROGS@ done
+
+done:
+	@if [ -x $(HOME)/bin/bells ] ;	then $(HOME)/bin/bells ; fi
+
+
+${BINDIR}/Muq-detexify: Muq-detexify.c
+	$(NICE) $(CC) $(CPPFLAGS) $(CFLAGS) Muq-detexify.c -o ${BINDIR}/Muq-detexify
+
+${HDIR}/Version.h: ${HDIR}/VERSION
+	echo "#define VERSION \"`cat ${HDIR}/VERSION`\"" >${HDIR}/Version.h
+
+muq.o: ${HDIR}/Version.h
+
+muq: ${BINDIR}/Muq-detexify ${SRC} ${OBJ} ${HDIR}/Version.h z-muq.t z-muq.o ../h/jobpass.h
+	${NICE} ${CC} ${CFLAGS} -o muq z-muq.o ${OBJ} ${LINKFLAGS}
+	-${RM} -rf vm[1-4]
+	@echo "'make check' will run selfcheck code."
+	@echo "'muq-db-c' will create+init ./vm1 directory."
+	@echo "('./muq' runs test server on ./vm1.)"
+
+muq-export: ${BINDIR}/Muq-detexify ${SRC} ${OBJ}  z-export.t z-export.o ../h/jobpass.h
+	${NICE} ${CC} ${CFLAGS} -o muq-export z-export.o ${OBJ} ${LINKFLAGS}
+
+muq-import: ${BINDIR}/Muq-detexify ${SRC} ${OBJ} z-import.t z-import.o ../h/jobpass.h
+	${NICE} ${CC} ${CFLAGS} -o muq-import z-import.o ${OBJ} ${LINKFLAGS}
+
+zap_log:
+	${BINDIR}/muq-zap-log `pwd`/${CHECKLOG}
+
+zap_db:
+	${BINDIR}/muq-zap-db
+
+zap_db2:
+	${BINDIR}/muq-zap-db
+
+clean_db:	muq
+	@echo "Makefile2 making #check.tmp#/Clean db..."
+	${BINDIR}/muq-db `pwd`/#check.tmp# Clean `pwd`/muq | tee -a `pwd`/${CHECKLOG}
+	rm `pwd`/#check.tmp#/Clean-0*muq*
+
+x-dil.o: Check/x-dil.t ${BINDIR}/Muq-detexify 
+	${BINDIR}/Muq-detexify <Check/x-dil.t >Check/x-dil.c
+	${NICE} ${CC} ${CFLAGS} -c Check/x-dil.c
+	-${RM} Check/x-dil.c
+
+x-dil: ${OBJ} x-dil.o
+	@echo
+	@echo "Testing newfangled hashed btree propdir support..."
+	-${RM} -rf vm[0-4]
+	${NICE} ${CC} ${CFLAGS} -o x-dil x-dil.o ${OBJ} ${LINKFLAGS}
+	./x-dil | tee -a `pwd`/${CHECKLOG}
+	-${RM} -rf vm[0-4]
+	-${RM} x-dil x-dil.o
+
+x-sil.o: Check/x-sil.t ${BINDIR}/Muq-detexify 
+	${BINDIR}/Muq-detexify <Check/x-sil.t >Check/x-sil.c
+	${NICE} ${CC} ${CFLAGS} -c Check/x-sil.c
+	-${RM} Check/x-sil.c
+
+x-sil: ${OBJ} x-sil.o
+	@echo
+	@echo "Testing newfangled sorted btree propdir support..."
+	-${RM} -rf vm[0-4]
+	${NICE} ${CC} ${CFLAGS} -o x-sil x-sil.o ${OBJ} ${LINKFLAGS}
+	./x-sil | tee -a `pwd`/${CHECKLOG}
+	-${RM} -rf vm[0-4]
+	-${RM} x-sil x-sil.o
+
+x-til.o: Check/x-til.t ${BINDIR}/Muq-detexify 
+	${BINDIR}/Muq-detexify <Check/x-til.t >Check/x-til.c
+	${NICE} ${CC} ${CFLAGS} -c Check/x-til.c
+	-${RM} Check/x-til.c
+
+x-til: ${OBJ} x-til.o
+	@echo
+	@echo "Testing tri-val btree propdir support..."
+	-${RM} -rf vm[0-4]
+	${NICE} ${CC} ${CFLAGS} -o x-til x-til.o ${OBJ} ${LINKFLAGS}
+	./x-til | tee -a `pwd`/${CHECKLOG}
+	-${RM} -rf vm[0-4]
+	-${RM} x-til x-til.o
+
+# x-job: ${OBJ} x-job.o
+# 	${NICE} ${CC} ${CFLAGS} -o x-job x-job.o ${OBJ} ${LINKFLAGS}
+# 	./x-job  | tee -a `pwd`/${CHECKLOG}
+# 	-${RM} -rf vm[-4]0
+# 	-${RM} x-job x-job.o
+
+x-obj.o: Check/x-obj.t ${BINDIR}/Muq-detexify 
+	${BINDIR}/Muq-detexify <Check/x-obj.t >Check/x-obj.c
+	${NICE} ${CC} ${CFLAGS} -c Check/x-obj.c
+	-${RM} Check/x-obj.c
+
+x-obj: ${OBJ} x-obj.o
+	@echo
+	@echo "Testing basic object support..."
+	-${RM} -rf vm[0-4]
+	${NICE} ${CC} ${CFLAGS} -o x-obj x-obj.o ${OBJ} ${LINKFLAGS}
+	./x-obj|tee -a `pwd`/${CHECKLOG}
+	-${RM} -rf vm[0-4]0
+	-${RM} x-obj x-obj.o
+
+x-bnm.o: Check/x-bnm.t ${BINDIR}/Muq-detexify 
+	${BINDIR}/Muq-detexify <Check/x-bnm.t >Check/x-bnm.c
+	${NICE} ${CC} ${CFLAGS} -c Check/x-bnm.c
+	-${RM} Check/x-bnm.c
+
+x-bnm: ${OBJ} x-bnm.o
+	@echo
+	@echo "Testing bignum support..."
+	-${RM} -rf vm[0-4]
+	${NICE} ${CC} ${CFLAGS} -o x-bnm x-bnm.o ${OBJ} ${LINKFLAGS}
+	./x-bnm  | tee -a `pwd`/${CHECKLOG}
+	-${RM} x-bnm x-bnm.o
+
+x-sha.o: Check/x-sha.t ${BINDIR}/Muq-detexify 
+	${BINDIR}/Muq-detexify <Check/x-sha.t >Check/x-sha.c
+	${NICE} ${CC} ${CFLAGS} -c Check/x-sha.c
+	-${RM} Check/x-sha.c
+
+x-sha: ${OBJ} x-sha.o
+	@echo
+	@echo "Testing secure hash function support..."
+	-${RM} -rf vm[0-4]
+	${NICE} ${CC} ${CFLAGS} -o x-sha x-sha.o ${OBJ} ${LINKFLAGS}
+	./x-sha  | tee -a `pwd`/${CHECKLOG}
+	-${RM} x-sha x-sha.o
+
+x-vm.o: Check/x-vm.t ${BINDIR}/Muq-detexify 
+	${BINDIR}/Muq-detexify <Check/x-vm.t >Check/x-vm.c
+	${NICE} ${CC} ${CFLAGS} -c Check/x-vm.c
+	-${RM} Check/x-vm.c
+
+# Pakrat wanted to be able to just build x-vm:
+just-x-vm:	${OBJ} x-vm.o vm.c
+	${NICE} ${CC} ${CFLAGS} -c -DVM_INITIAL_BIGBUF_SIZE=256 vm.c
+	-${RM} -rf vm[0-4]
+	${NICE} ${CC} ${CFLAGS} -o x-vm x-vm.o ${OBJ} ${LINKFLAGS}
+	-${RM} x-vm x-vm.o vm.c
+
+x-vm:   ${OBJ} x-vm.o vm.c
+	@echo
+	@echo "Testing virtual memory module..."
+	${NICE} ${CC} ${CFLAGS} -c -DVM_INITIAL_BIGBUF_SIZE=256 vm.c
+	-${RM} -rf vm[0-4]
+	${NICE} ${CC} ${CFLAGS} -o x-vm x-vm.o ${OBJ} ${LINKFLAGS}
+	./x-vm  | tee -a `pwd`/${CHECKLOG}
+	-${RM} x-vm x-vm.o vm.c
+	-${RM} -rf vm[0-4]
+
+# We recompile vm.t -> vm.o at the end of this in the hope
+# of preventing anyone from building and using a server with
+# the deliberately stunted buffer established in x-vm.
+# One would think that simply
+# removing vm.o would be sufficient, but some 'make's seem
+# to fail to rebuild it... perhaps they check all preconditions
+# once for efficiency and assume no rule breaks a precondition?
+check:	${FASTCHECKTARGETS}
+	${NICE} ${BINDIR}/Muq-detexify <vm.t >vm.c
+	${NICE} ${CC} ${CFLAGS} -c vm.c
+	-${RM} vm.c
+	-${RM} ./muq # Kill off server with stunted buffer.
+	${MAKE} muq
+	${BINDIR}/muq-summarize-errors `pwd`/${CHECKLOG}
+	if [ -x $(HOME)/bin/thatsall ] ; then $(HOME)/bin/thatsall ; fi
+
+# Following two lines used to be appended to above test, but
+# I've dropped them for now, haven't exposed any interesting bugs
+# in vm.t for several years now:
+# @echo "'make torturetest' will run more extensive selfcheck code."
+# @echo "'make torturetest' TAKES SEVERAL HOURS ON SOME 25MHZ LINUX BOXES."
+
+torturetest:	${SLOWCHECKTARGETS}
+	${NICE} ${BINDIR}/Muq-detexify <vm.t >vm.c
+	${NICE} ${CC} ${CFLAGS} -c vm.c
+	-${RM} vm.c
+	-${RM} ./muq # Kill off server with stunted buffer.
+	${MAKE} muq
+	${BINDIR}/muq-summarize-errors `pwd`/${CHECKLOG}
+
+# Check2 is a temporary (?) check clone which uses the in-db
+# muf compiler instead of the in-server muf compiler
+check2:	${CHECKTARGETS2}
+	@if ${GREP} '\*\*\*\*' ${CHECKLOG} >/dev/null ;			\
+	then 								\
+	    echo ;							\
+	    echo "---         ERROR  RECAP ---" ;			\
+	    ${GREP} '\*\*\*\*' ${CHECKLOG} ;				\
+	    echo "--- `${GREP} '\*\*\*\*' ${CHECKLOG}			\
+	        | wc -l` ERRORS FOUND ---" ;				\
+	else 								\
+	    echo ;							\
+	    echo "--- `${GREP} '\+\+\+\+' ${CHECKLOG}			\
+	        | wc -l` tests passed ---" ;				\
+	    echo "--- ALL MUQ SELFTESTS COMPLETE, NO ERRORS FOUND ---" ;\
+	    rm ${CHECKLOG} ;						\
+	    echo "('make install' will install ./muq as bin/muq)" ;	\
+	fi
+	@echo "'muq-db-c' will create+init ./vm1 directory."
+	@echo "('./muq' runs test server on ./vm1.)"
+
+
+
+std_muf:	muq
+	${BINDIR}/muq-std-checkmuf `pwd`/${CHECKLOG}
+
+opt_muf:	muq
+	${BINDIR}/muq-opt-checkmuf `pwd`/${CHECKLOG}
+
+std_muf2:	muq
+	${BINDIR}/muq-std-checkmuf2 `pwd`/${CHECKLOG}
+
+opt_muf2:	muq
+	${BINDIR}/muq-opt-checkmuf2 `pwd`/${CHECKLOG}
+
+jobprims.o: jobbuild.t ../h/jobpass.h ${BINDIR}/Muq-detexify 
+	${NICE} ${BINDIR}/Muq-detexify <jobbuild.t >jobbuild.c
+	${NICE} ${CC} ${CFLAGS} jobbuild.c -o jobbuild ${LINKFLAGS}
+	${NICE} ./jobbuild
+	${NICE} ${CC} ${CFLAGS} -c jobprims.c
+	-${RM} jobbuild jobbuild.c jobbuild.o
+
+
+../h/jobpass.h: jobpass.t ${BINDIR}/Muq-detexify 
+	${NICE} ${BINDIR}/Muq-detexify <jobpass.t >jobpass.c
+	${NICE} ${CC} ${COPTFLAGS} jobpass.c -o jobpass ${LINKFLAGS}
+	./jobpass
+	-${RM} jobpass jobpass.c jobpass.o
+
+##########################################################################
+#- pipetest1 pipetest2
+
+pipetest1:
+	${NICE} ${BINDIR}/Muq-detexify <Pipetest.t >pipetest.c
+	${NICE} ${CC} ${COPTFLAGS} pipetest.c -o pipetest ${LINKFLAGS}
+	./pipetest 0
+	-${RM} pipetest.c pipetest
+
+pipetest2:
+	${BINDIR}/Muq-detexify <Pipetest.t >pipetest.c
+	${NICE} ${CC} ${COPTFLAGS} pipetest.c -o pipetest ${LINKFLAGS}
+	./pipetest 10000000
+	-${RM} pipetest.c pipetest
+
+
+##########################################################################
+#- socktest1 socktest2
+
+socktest1:
+	${NICE} ${BINDIR}/Muq-detexify <Socktest.t >socktest.c
+	${NICE} ${CC} ${COPTFLAGS} socktest.c -o socktest ${LINKFLAGS}
+	./socktest 0
+	-${RM} socktest.c socktest
+
+socktest2:
+	${NICE} ${BINDIR}/Muq-detexify <Socktest.t >socktest.c
+	${NICE} ${CC} ${COPTFLAGS} socktest.c -o socktest ${LINKFLAGS}
+	./socktest 10000000
+	-${RM} socktest.c socktest
+
+
+##########################################################################
+#- dis
+
+dis:
+	${NICE} ${BINDIR}/Muq-detexify <dis.t >dis.c
+	${NICE} ${CC} ${COPTFLAGS} dis.c -o dis sha.o ${LINKFLAGS}
+	-./dis
+	-${RM} dis.c dis
+
+##########################################################################
+#- clean distclean
+
+kill_targets:
+	@for m in `muq-config apps`	; {	\
+	    if [ -f $${m} ]		;	\
+	    then				\
+	      echo "Removing $${m}"	;	\
+	      ${RM} $${m}		;	\
+	    fi				;	\
+	}
+
+clean:	kill_targets
+	${BINDIR}/muq-clean
+
+distclean: kill_targets
+	${BINDIR}/muq-distclean	# Calls muq-clean internally
+
+##########################################################################
+#- Local variables
+# Local Variables:
+# shellscript-mode: t
+# mode: outline-minor
+# outline-regexp: "#-+"
+# End:

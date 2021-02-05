@@ -1,0 +1,32 @@
+#! /usr/bin/perl -pi.bak
+# A quick hack to convert Muq -1.10.2 muf -> Muq -1.11.0
+# It doesn't try to protect strings, so if you have /#/ in
+# a string and don't want it modified, you lose.
+
+# o/#/k -> o%S/k &tc:
+s|/\#/|\%S/|g;
+s|//|\%H/|g;
+s|/\:/|\%M/|g;
+s|/\@/|\%A/|g;
+
+# o/#<k> -> o%S<k> &tc:
+s|/\#\<|\%S\<|g;
+s|//\<|\%H\<|g;
+s|/\:/|\%M\<|g;
+s|/\@/|\%A\<|g;
+
+
+
+# Function renamings:
+
+s|char\-\>int|char\-int|g;
+s|char\-\>string|char\-string|g;
+s|int\-\>char|int\-char|g;
+s|string\-\>ints\[|string\-ints\[|g;
+s|string\-\>keyword|string\-keyword|g;
+s|string\-\>words\[|string\-words\[|g;
+s:\|keys\-\>keysvals:\|keys\-keysvals:g;
+
+s|to\-upper|string\-upcase|g;
+s|to\-lower|string\-downcase|g;
+s|to\-mixed|string\-mixedcase|g;

@@ -1,0 +1,16 @@
+Thu Oct 29 19:51:17 1998    <cynbe@chee.muq.org>
+
+	* Added xx[xyz]-oldmud3 triple-server test scripts.
+
+Sun Oct 20 00:58:12 1996    <cynbe@muq.com>
+
+	* x-nanomud.muf: Created.  Well, yesterday... :)
+
+Mon May  1 19:53:16 1995  Jeff Prothero  <cynbe@muq.com>
+
+	* x-bind.muf: Created.  Well, yesterday... :)
+
+Wed Apr 12 20:56:58 1995  Jeff Prothero  <cynbe@muq.com>
+
+	* x-cond.muf: Created, from condition stuff in x-jump.muf.
+

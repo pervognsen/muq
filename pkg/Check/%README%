@@ -1,0 +1,10 @@
+This directory contains muf selfcheck code which is appropriate to
+test all configurations of the Muq server.
+
+begin.muf and end.muf are convenience functions used by all the other
+files; x-*muf are the actual selfcheck files.
+
+To add more selfcheck code, just create another x-*muf file;
+bin/muq-opt-checkmuf will find and run it.
+
+                                                CrT 95Jul16

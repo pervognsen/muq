@@ -1,0 +1,439 @@
+#!/bin/make -f
+#- Muq makefile
+
+##########################################################################
+#-- Relatively portable stuff:
+GREP= egrep
+MV= -mv -f
+RM= -rm -f
+MAKE= make
+SHELL= /bin/sh
+TEXI2HTML= muq-texi2html -menu -split_node -toc_trailer '<a href="muq.html">Back to Muq Manual page</a>.'
+
+
+##########################################################################
+#-- clean
+
+clean: 
+	${BINDIR}/muq-clean-doc
+
+##########################################################################
+#-- mufref, muf1, muf2 ... Lists of all texinfo files in each manual.
+
+ver = versionc.t versiont.t
+admin = admin.texi $(ver) mufutils.t muqdb.t muqrun.t
+mufref = mufref.texi $(ver) mufcore.t muqtypes.t muqclass.t
+lspref = lspref.texi $(ver) lspcore.t
+mufhack = mufhack.texi $(ver) mufhack1.t
+muffaq = muffaq.texi $(ver) muffaq1.t
+muf1 = muf1.texi $(ver) mufprog1.t
+muf2 = muf2.texi $(ver) mufprog2.t
+muf3 = muf3.texi $(ver) mufprog3.t
+src = src.texi $(ver) muqimp.t
+  
+##########################################################################
+#-- mufhack
+
+mufhack.html: $(mufhack) versionc.t versiont.t
+	$(TEXI2HTML) mufhack.texi
+
+mufhack.info: $(mufhack) versionc.t versiont.t
+	makeinfo mufhack.texi
+
+mufhack.ascii: $(mufhack) versionc.t versiont.t
+	makeinfo --no-split --no-headers mufhack.texi --output mufhack.ascii
+
+mufhack.dvi: $(mufhack) versionc.t versiont.t
+	tex mufhack.texi
+	texindex mufhack.??
+	tex mufhack.texi
+
+mufhack.ps: $(mufhack) mufhack.dvi versionc.t versiont.t
+	dvips mufhack.dvi -o mufhack.ps
+
+mufhack:   mufhack.ascii mufhack.html mufhack.info mufhack.ps	# Latter builds mufhack.dvi too.
+
+##########################################################################
+#-- muchack
+
+muchack.html: $(muchack) versionc.t versiont.t
+	$(TEXI2HTML) muchack.texi
+
+muchack.info: $(muchack) versionc.t versiont.t
+	makeinfo muchack.texi
+
+muchack.ascii: $(muchack) versionc.t versiont.t
+	makeinfo --no-split --no-headers muchack.texi --output muchack.ascii
+
+muchack.dvi: $(muchack) versionc.t versiont.t
+	tex muchack.texi
+	texindex muchack.??
+	tex muchack.texi
+
+muchack.ps: $(muchack) muchack.dvi versionc.t versiont.t
+	dvips muchack.dvi -o muchack.ps
+
+muchack:   muchack.ascii muchack.html muchack.info muchack.ps	# Latter builds muchack.dvi too.
+
+##########################################################################
+#-- muqfaq
+
+muqfaq.html: $(muqfaq) versionc.t versiont.t
+	$(TEXI2HTML) muqfaq.texi
+
+muqfaq.info: $(muqfaq) versionc.t versiont.t
+	makeinfo muqfaq.texi
+
+muqfaq.ascii: $(muqfaq) versionc.t versiont.t
+	makeinfo --no-split --no-headers muqfaq.texi --output muqfaq.ascii
+
+muqfaq.dvi: $(muqfaq) versionc.t versiont.t
+	tex muqfaq.texi
+	texindex muqfaq.??
+	tex muqfaq.texi
+
+muqfaq.ps: $(muqfaq) muqfaq.dvi versionc.t versiont.t
+	dvips muqfaq.dvi -o muqfaq.ps
+
+muqfaq:   muqfaq.ascii muqfaq.html muqfaq.info muqfaq.ps	# Latter builds muqfaq.dvi too.
+
+##########################################################################
+#-- muqsoon
+
+muqsoon.html: $(muqsoon) versionc.t versiont.t
+	$(TEXI2HTML) muqsoon.texi
+
+muqsoon.info: $(muqsoon) versionc.t versiont.t
+	makeinfo muqsoon.texi
+
+muqsoon.ascii: $(muqsoon) versionc.t versiont.t
+	makeinfo --no-split --no-headers muqsoon.texi --output muqsoon.ascii
+
+muqsoon.dvi: $(muqsoon) versionc.t versiont.t
+	tex muqsoon.texi
+	texindex muqsoon.??
+	tex muqsoon.texi
+
+muqsoon.ps: $(muqsoon) muqsoon.dvi versionc.t versiont.t
+	dvips muqsoon.dvi -o muqsoon.ps
+
+muqsoon:   muqsoon.ascii muqsoon.html muqsoon.info muqsoon.ps	# Latter builds muqsoon.dvi too.
+
+##########################################################################
+#-- muqnet
+
+muqnet.html: $(muqnet) versionc.t versiont.t
+	$(TEXI2HTML) muqnet.texi
+
+muqnet.info: $(muqnet) versionc.t versiont.t
+	makeinfo muqnet.texi
+
+muqnet.ascii: $(muqnet) versionc.t versiont.t
+	makeinfo --no-split --no-headers muqnet.texi --output muqnet.ascii
+
+muqnet.dvi: $(muqnet) versionc.t versiont.t
+	tex muqnet.texi
+	texindex muqnet.??
+	tex muqnet.texi
+
+muqnet.ps: $(muqnet) muqnet.dvi versionc.t versiont.t
+	dvips muqnet.dvi -o muqnet.ps
+
+muqnet:   muqnet.ascii muqnet.html muqnet.info muqnet.ps	# Latter builds muqnet.dvi too.
+
+##########################################################################
+#-- micronesia
+
+micronesia.html: $(micronesia) versionc.t versiont.t
+	$(TEXI2HTML) micronesia.texi
+
+micronesia.info: $(micronesia) versionc.t versiont.t
+	makeinfo micronesia.texi
+
+micronesia.ascii: $(micronesia) versionc.t versiont.t
+	makeinfo --no-split --no-headers micronesia.texi --output micronesia.ascii
+
+micronesia.dvi: $(micronesia) versionc.t versiont.t
+	tex micronesia.texi
+	texindex micronesia.??
+	tex micronesia.texi
+
+micronesia.ps: $(micronesia) micronesia.dvi versionc.t versiont.t
+	dvips micronesia.dvi -o micronesia.ps
+
+micronesia:   micronesia.ascii micronesia.html micronesia.info micronesia.ps	# Latter builds micronesia.dvi too.
+
+##########################################################################
+#-- muf1
+
+muf1.html: $(muf1) versionc.t versiont.t
+	$(TEXI2HTML) muf1.texi
+
+muf1.info: $(muf1) versionc.t versiont.t
+	makeinfo muf1.texi
+
+muf1.ascii: $(muf1) versionc.t versiont.t
+	makeinfo --no-split --no-headers muf1.texi --output muf1.ascii
+
+muf1.dvi: $(muf1) versionc.t versiont.t
+	tex muf1.texi
+	texindex muf1.??
+	tex muf1.texi
+
+muf1.ps: $(muf1) muf1.dvi versionc.t versiont.t
+	dvips muf1.dvi -o muf1.ps
+
+muf1:   muf1.ascii muf1.html muf1.info muf1.ps	# Latter builds muf1.dvi too.
+
+##########################################################################
+#-- muf2
+
+muf2.html: $(muf2) versionc.t versiont.t
+	$(TEXI2HTML) muf2.texi
+
+muf2.info: $(muf2) versionc.t versiont.t
+	makeinfo muf2.texi
+
+muf2.ascii: $(muf2) versionc.t versiont.t
+	makeinfo --no-split --no-headers muf2.texi --output muf2.ascii
+
+muf2.dvi: $(muf2) versionc.t versiont.t
+	tex muf2.texi
+	texindex muf2.??
+	tex muf2.texi
+
+muf2.ps: $(muf2) muf2.dvi versionc.t versiont.t
+	dvips muf2.dvi -o muf2.ps
+
+muf2:   muf2.ascii muf2.html muf2.info muf2.ps	# Latter builds muf2.dvi too.
+
+##########################################################################
+#-- muf3
+
+muf3.html: $(muf3) versionc.t versiont.t
+	$(TEXI2HTML) muf3.texi
+
+muf3.info: $(muf3) versionc.t versiont.t
+	makeinfo muf3.texi
+
+muf3.ascii: $(muf3) versionc.t versiont.t
+	makeinfo --no-split --no-headers muf3.texi --output muf3.ascii
+
+muf3.dvi: $(muf3) versionc.t versiont.t
+	tex muf3.texi
+	texindex muf3.??
+	tex muf3.texi
+
+muf3.ps: $(muf3) muf3.dvi versionc.t versiont.t
+	dvips muf3.dvi -o muf3.ps
+
+muf3:   muf3.ascii muf3.html muf3.info muf3.ps	# Latter builds muf3.dvi too.
+
+##########################################################################
+#-- mufref
+
+mufref.html: $(mufref) versionc.t versiont.t
+	$(TEXI2HTML) mufref.texi
+
+mufref.info: $(mufref) versionc.t versiont.t
+	makeinfo mufref.texi
+
+mufref.ascii: $(mufref) versionc.t versiont.t
+	makeinfo --no-split --no-headers mufref.texi --output mufref.ascii
+
+mufref.dvi: $(mufref) versionc.t versiont.t
+	# For some moronic reason tex is now unable to handle
+	# @xref{|anything} or @xref{<anything} or @xref{>anything} or ...
+	# so we drop those in TeX version:
+	perl -pi.sav -e 's/^\@xref\{([\|\<\>\[\]][^\}]*)\}/See also \1/;\
+	s/^\(\@pxref\{([\|\<\>\[\]][^\}]*)\}/(See also \1/;' mufcore.t
+	tex mufref.texi
+	texindex mufref.??
+	tex mufref.texi
+	mv mufcore.t.sav mufcore.t
+
+mufref.ps: $(mufref) mufref.dvi versionc.t versiont.t
+	dvips mufref.dvi -o mufref.ps
+
+mufref: mufref.ascii mufref.html mufref.info mufref.ps	# Latter builds mufref.dvi too.
+
+##########################################################################
+#-- lspref
+
+lspref.html: $(lspref) versionc.t versiont.t
+	$(TEXI2HTML) lspref.texi
+
+lspref.info: $(lspref) versionc.t versiont.t
+	makeinfo lspref.texi
+
+lspref.ascii: $(lspref) versionc.t versiont.t
+	makeinfo --no-split --no-headers lspref.texi --output lspref.ascii
+
+lspref.dvi: $(lspref) versionc.t versiont.t
+	tex lspref.texi
+	texindex lspref.??
+	tex lspref.texi
+
+lspref.ps: $(lspref) lspref.dvi versionc.t versiont.t
+	dvips lspref.dvi -o lspref.ps
+
+lspref: lspref.ascii lspref.html lspref.info lspref.ps	# Latter builds lspref.dvi too.
+
+##########################################################################
+#-- src
+
+src.html: $(src) versionc.t versiont.t
+	Muq-build-src-code-texi-files
+	$(TEXI2HTML) src.texi # -I $(PKGDIR) -I $(CDIR) 
+	echo "Removing *.tt..."
+	$(RM) *.tt
+
+src.info: $(src) versionc.t versiont.t
+	Muq-build-src-code-texi-files
+	makeinfo src.texi # -I $(PKGDIR) -I $(CDIR) 
+	echo "Removing *.tt..."
+	$(RM) *.tt
+
+src.ascii: $(src) versionc.t versiont.t
+	Muq-build-src-code-texi-files
+	makeinfo  --no-split --no-headers src.texi --output src.ascii # -I $(PKGDIR) -I $(CDIR) 
+	echo "Removing *.tt..."
+	$(RM) *.tt
+
+src.dvi: $(src) versionc.t versiont.t
+	Muq-build-src-code-texi-files
+	(TEXINPUTS=.:$(PKGDIR):$(CDIR):/usr/share/texmf/tex// tex src.texi   )
+	(TEXINPUTS=.:$(PKGDIR):$(CDIR):/usr/share/texmf/tex// texindex src.??)
+	(TEXINPUTS=.:$(PKGDIR):$(CDIR):/usr/share/texmf/tex// tex src.texi   )
+	echo "Removing *.tt..."
+	$(RM) *.tt
+
+src.ps: $(src) src.dvi versionc.t versiont.t
+	dvips src.dvi -o src.ps
+
+src: src.ascii src.html src.info src.ps	# Latter builds src.dvi too.
+
+##########################################################################
+#-- admin
+
+admin.html: $(admin) versionc.t versiont.t
+	$(TEXI2HTML) admin.texi
+
+admin.info: $(admin) versionc.t versiont.t
+	makeinfo admin.texi
+
+admin.ascii: $(admin) versionc.t versiont.t
+	makeinfo --no-split --no-headers admin.texi --output admin.ascii
+
+admin.dvi: $(admin) versionc.t versiont.t
+	tex admin.texi
+	texindex admin.??
+	tex admin.texi
+
+admin.ps: $(admin) admin.dvi versionc.t versiont.t
+	dvips admin.dvi -o admin.ps
+
+admin: admin.ascii admin.html admin.info admin.ps # Latter builds admin.dvi too.
+
+##########################################################################
+#-- ascii
+
+ascii:	admin.ascii mufhack.ascii muchack.ascii muqfaq.ascii muf1.ascii muf2.ascii muf3.ascii muqnet.ascii micronesia.ascii mufref.ascii lspref.ascii muqsoon.ascii src.ascii
+
+##########################################################################
+#-- html
+
+html:	admin.html mufhack.html muchack.html muqfaq.html muf1.html muf2.html muf3.html muqnet.html micronesia.html mufref.html lspref.html muqsoon.html src.html
+
+##########################################################################
+#-- info
+
+info:	admin.info mufhack.info muchack.info muqfaq.info muf1.info muf2.info muf3.info muqnet.info micronesia.info mufref.info lspref.info muqsoon.info src.info
+
+##########################################################################
+#-- dvi
+
+dvi:	admin.dvi mufhack.dvi muchack.dvi muqfaq.dvi muf1.dvi muf2.dvi muf3.dvi muqnet.dvi micronesia.dvi mufref.dvi lspref.dvi muqsoon.dvi src.dvi
+
+##########################################################################
+#-- ps
+
+ps:	admin.ps mufhack.ps muchack.ps muqfaq.ps muf1.ps muf2.ps muf3.ps muqnet.ps micronesia.ps mufref.ps lspref.ps muqsoon.ps src.ps
+
+##########################################################################
+#-- all
+
+all:	ascii html info dvi ps
+
+##########################################################################
+#-- tars
+
+tars:	mufhack muchack muqfaq muf1 muf2 muf3 mufref lspref muqsoon muqnet micronesia src admin
+	@echo
+	@echo "Making muq.ascii.${VERSION}.tar.gz ..."
+	mkdir muq.ascii.${VERSION}
+	cp *.ascii muq.ascii.${VERSION}
+	tar -cvf muq.ascii.${VERSION}.tar muq.ascii.${VERSION}
+	gzip -9 muq.ascii.${VERSION}.tar
+	rm -rf muq.ascii.${VERSION}
+	mv muq.ascii.${VERSION}.tar.gz ..
+	@echo
+	@echo "Making muq.html.${VERSION}.tar.gz ..."
+	mkdir muq-html.${VERSION}
+	mkdir muq-html.${VERSION}/whymuq
+	mkdir muq-html.${VERSION}/whymuq/pix.gif
+	cp *.html muq-html.${VERSION}
+	cp whymuq/*.html muq-html.${VERSION}/whymuq
+	cp whymuq/pix.gif/*.gif muq-html.${VERSION}/whymuq/pix.gif
+	cp html_muq muq-html.${VERSION}/muq.html
+	tar -cvf muq-html.${VERSION}.tar muq-html.${VERSION}
+	gzip -9 muq-html.${VERSION}.tar
+	rm -rf muq-html.${VERSION}
+	mv muq-html.${VERSION}.tar.gz ../muq.html.${VERSION}.tar.gz
+	@echo
+	@echo "Making muq.info.${VERSION}.tar.gz ..."
+	mkdir muq-info.${VERSION}
+	cp dir muq-info.${VERSION}
+	cp *.info* muq-info.${VERSION}
+	mv muq-info.${VERSION} muq.info.${VERSION}
+	tar -cvf muq.info.${VERSION}.tar muq.info.${VERSION}
+	gzip -9 muq.info.${VERSION}.tar
+	rm -rf muq.info.${VERSION}
+	mv muq.info.${VERSION}.tar.gz ..
+	@echo
+	@echo "Making muq.dvi.${VERSION}.tar.gz ..."
+	mkdir muq.dvi.${VERSION}
+	cp *.dvi muq.dvi.${VERSION}
+	tar -cvf muq.dvi.${VERSION}.tar muq.dvi.${VERSION}
+	gzip -9 muq.dvi.${VERSION}.tar
+	rm -rf muq.dvi.${VERSION}
+	mv muq.dvi.${VERSION}.tar.gz ..
+	@echo
+	@echo "Making muq.ps.${VERSION}.tar.gz ..."
+	mkdir muq.ps.${VERSION}
+	cp *.ps muq.ps.${VERSION}
+	tar -cvf muq.ps.${VERSION}.tar muq.ps.${VERSION}
+	gzip -9 muq.ps.${VERSION}.tar
+	rm -rf muq.ps.${VERSION}
+	mv muq.ps.${VERSION}.tar.gz ..
+
+
+##########################################################################
+#-- versionc.t, versiont.t
+
+versionc.t: ${HDIR}/VERSION
+	echo "@c Makefile2 makes this file." >${DOCDIR}/versionc.t
+	echo "@center Version `cat ${HDIR}/VERSION`" >>${DOCDIR}/versionc.t
+
+versiont.t: ${HDIR}/VERSION
+	echo "@c Makefile2 makes this file." >${DOCDIR}/versiont.t
+	echo "This manual covers Muq version `cat ${HDIR}/VERSION`." >>${DOCDIR}/versiont.t
+
+##########################################################################
+#-- Muq-detexify
+
+# This really should have been built already, but
+# just in case:
+${BINDIR}/Muq-detexify: ${CDIR}/Muq-detexify.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) ${CDIR}/Muq-detexify.c -o ${BINDIR}/Muq-detexify
+

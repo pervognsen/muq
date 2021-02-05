@@ -1,0 +1,29 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+if [ ! -d $cdir ] ; then
+    echo "($cdir no longer exists.)"
+    exit 0
+fi
+
+
+echo "Deconfiguring ${cdir}/Makefile..."
+
+
+# When we do the initial configure, we point
+# c/Makefile's "SHELL" and "MAKE" definitions to
+# the most reliable appearing local implementations.
+# But to have the Makefile work the first time
+# invoked, we should have these set to the most
+# portable available values.
+#
+# Here we reset c/Makefile to those portable values:
+sed <${cdir}/Makefile       \
+    >${cdir}/#Makefile.tmp# \
+    -e 's/^MAKE=.*$/MAKE= make/
+        s/^SHELL=.*$/SHELL= \/bin\/sh/'
+
+rm ${cdir}/Makefile
+mv ${cdir}/#Makefile.tmp# ${cdir}/Makefile

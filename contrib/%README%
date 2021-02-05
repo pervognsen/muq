@@ -1,0 +1,7 @@
+muq/contrib/#README#       Last update: 95Mar23CrT
+
+This directory is reserved to hold contributed Muq
+utilities and such.  To save space, these are not
+distributed as part of the standard Muq distribution,
+but you should be able to find them on the archive
+from which you downloaded Muq.

@@ -1,0 +1,1287 @@
+    This file is formatted for use with folding.el for emacs, sort
+    of an outline-mode for programmers, ftp-able from elisp archives
+    such as tut.cis.ohio-state.edu (128.146.8.52).  If you don't use
+    folding-mode and/or emacs, you may want to prepare a table of
+    contents for this file by doing "grep '{{{' thisfile".
+
+
+
+
+
+
+
+                  Muq: Design and Implementation
+                  ------------------------------
+
+           Jeff Prothero (jsp@biostr.washington.edu)
+           93Dec24 (Created.)
+           94Apr08 (Last update.)
+
+
+{{{ What is Muq?
+
+    ------------
+
+A short answer: Muq is a toolkit designed to facilitate the
+construction of sophisticated multiuser networked applications.
+
+A somewhat longer answer: Muq is a multi-user, multi-threaded,
+extensible, programmable virtual machine designed to be used as a
+network server supporting multiple users connecting to a single unix
+server process via multiple (up to several hundred) network
+connections to access a diskbased object database via a single shared
+virtual address space, with inserver support for accounting,
+ownership, and access control, and incremental backup and garbage
+collection.
+
+The rest of this document may be considered a yet longer answer.
+
+}}}
+{{{ Why Muq? -- Some Abstract Motivations
+
+    -------------------------------------
+
+Today's workstations provide sufficient machine resources that
+applications an order of magnitude more sophistication and complex
+than the traditional 60K unix filter are now becoming practical,
+desired, and even required.
+
+The traditional unix programming facilities consisting of a few
+libraries and a C compiler are an inefficient and insufficient basis
+for constructing these applications.  A core set of requirements is
+common to many of these applications, and building these applications
+on top of a generic toolkit that meets these requirements is much
+preferable to re-inventing the relevant tools in application-specific
+form in each application: a generic, thoroughly debugged and
+documented toolkit can:
+
+ o  Reduce the development time of individual applications;
+ o  Result in more reliable and flexible individual applications; and
+ o  Result in a more consistent and interoperable suite of applications.
+
+}}}
+{{{ Why Muq? -- Some Specific Motivations
+
+    -------------------------------------
+
+Following are some specific examples of generic facilities useful in
+many sophisticated networked applications:
+
+{{{ Storage Management
+
+    ------------------
+
+A typical problem with oversize C applications is the appearance
+of a cluster of problems related to storage management:
+
+ o  Pointer bugs taking an increasing amount of time to track down
+ o  Memory leaks resulting in uncontrolled process size growth
+ o  Increasing amounts of programmer time devoted to tracking which
+    blocks of ram are in use, and when it is safe to free() them.
+
+These problems result in applications which grow steadily more tricky
+to maintain and extend, and which must be restarted periodically to
+control memory leaks.  Today's X servers provide excellent examples of
+these problems: X clients may allocate memory in the server and forget
+to free it (or not know when it is safe to do so), resulting in
+uncontrolled growth in the size of the X server process, which must
+periodically be restarted to control this.
+
+Required periodic restarts of network servers is always a Bad Thing,
+and grows steadily less tolerable as the server becomes more critical
+and shared by more clients, as contemporary experience with file
+servers demonstrates.
+
+Computer scientists have been working for decades developing garbage
+collection systems which implement reliable, generic, off-the-shelf,
+automated solutions to these storage management issues: It is highly
+desirable that sophisticated network servers take advantage of
+prewritten, pretested garbage collectors rather than implementing
+rickety application-specific half-solutions to these problems.
+
+Interactive online applications with large databases have
+particularly specialized garbage collection needs: the
+garbage collector should be incremental to avoid
+user-visible pauses, and should avoid touching every object
+in a large database on every garbage collect.
+
+}}}
+{{{ Object Database
+
+    ---------------
+
+Network servers increasingly manage significant amounts of
+nontrivially structured data.  Current applications tend to deal with
+this information in very ad-hoc, unsophisticated, idiosyncratic ways.
+Consequent problems include:
+
+ o  Information is typically stored in idiosyncratically
+    structured textfiles.
+
+ o  The information in these textfiles is in general
+    incomprehensible to other applications.
+
+ o  The facilities provided to access the information in this
+    database are in general poorly thought out ahead of time and
+    subject to continual revision as the application
+    requirements continue to outstrip the capabilities of the
+    ad-hoc "database engine".
+
+ o  The application often winds up having a long start-up time
+    as a large database is read into memory and translated from
+    text to internal form.
+
+ o  A great deal of ram is wasted holding information that never
+    gets used, simply because reading it all in is simpler to code
+    than is coding up a serious demand-driven database engine.
+
+ o  A great deal of application coding effort must be devoted to
+    implementing bidirectional translation between the unix file
+    system (which has no concept of "pointer" other than
+    filename) and the internal data structures (which typically
+    depend very heavily on node-and-pointer data structures).
+
+Again, contemporary X Windows servers provide an excellent
+illustration of these problems, as their ad hoc textfile
+resource databases continue to evolve over time in the face
+of continuing problems and demands.
+
+Much of this can be avoided by building the server using a
+generic pre-implemented, pre-tested demand-paged
+"object-oriented" database engine.
+
+}}}
+{{{ Application Programming Language
+
+    --------------------------------
+
+Large applications almost without exception turn out in the
+end to need to be programmable: if they maintain a
+significant state on which useful operations may be
+performed, users quickly tire of specifying all operations
+one at a time by hand and wish to write programs to automate
+sets of such operations.
+
+Large applications almost without exception are initially
+designed without the above fact in mind, and wind up
+acquiring an application language one step at a time --
+"death by a thousand hacks," also known as YABL:
+Yet Another Braindead Language.
+
+As usual, contemporary X Windows Servers provides one
+example of the process, as the syntax used for specifying
+the semantics of widget and key bindings grows steadily more
+baroque.  X is still early enough in the process that many
+folks may still deny that a language is evolving; examining
+the "macro" language of almost any long-established word
+processor, spreadsheet, math package, or whatever will
+usually reveal a more mature example of the form.
+
+One result is an endless profusion of crippled programming
+paradigms (one per application) with trivial differences in
+syntax and semantics of only historical interest which
+cannot be cleaned up due to compatability with an existing
+user database of programs.
+
+Another result is a continuing waste of valuable programmer
+resources on steadily adding missing facilities to each of
+these ad hoc languages.
+
+Yet another result is a continuing waste of valuable user time on
+learning each of these ad hoc languages.
+
+A very significant economy may be achieved by simply
+conceding at the outset that an application programming
+language is desirable, and selecting a well-tested,
+well-understood, well-documented programming language, and
+starting out with a full, working, tested, off-the-shelf
+implementation of it, rather than inventing and implementing
+syntax and semantics one blind step at a time.
+
+}}}
+{{{ Multithread Support
+
+    -------------------
+
+Large network applications quite typically need intuitively
+to be "doing several things at once".  C and unix normally
+provide only a single thread of control per process.  The
+result is that each large application gradually begins to
+re-invent multi-thread support, and pending that becomes
+visibly steadily more clumsy in responding to multiple
+demands on its attention.
+
+Again, contemporary X Windows Servers provide an excellent
+example, as the current single-threaded servers find it
+increasingly difficult to maintain the illusion of multiple
+independently active windows, and the client programming
+underneath becomes more baroque in consequence.  The spread
+of X Windows Servers supporting more sophisticated graphics
+operations capable of tying up the single thread of control
+for longer periods in complex local updates will exacerbate
+this problem.
+
+Multi-thread support is a quite generic concept, and it is,
+again, much more efficient of programmer resources, and much
+more conducive of application reliability, to build
+sophisticated net applications on a generic, pre-written,
+pre-tested multithread facility rather than re-inventing
+this for each application.
+
+}}}
+{{{ Multiuser Support
+
+    -----------------
+
+Increasingly, networks are serving as ways by which humans
+interact with each other and other active agents, rather
+than merely accessing static data, and network servers are
+becoming the loci in which these interactions take place.
+
+In full-blown examples of the genre, such as multi-user
+virtual reality systems, a sophisticated shared state is
+needed in which individual users can maintain both private
+and public information, use applications and the application
+programming language to access public information, and
+communicate publicly and privately with other users.
+
+In order to both provide flexible, programmable access to
+information, and also protect private information and
+communications (essential in any production system of this
+sort) a protection system must be provided establishing
+ownership of (and controlling access to) information and
+constructs in the shared database.
+
+(Note that simply using the host unix system's multi-user
+support is in general not practical: This requires that each
+user have a separate unix task and communicate through pipes
+and the file system, which do not have the required
+communication bandwidth and which do not implement a
+convenient shared address space of the sort a modern
+object-oriented application requires.)
+
+The provision of such ownership and access control
+facilities is what really separates a multi-user server from
+a merely multi-threaded, multi-connect system.
+
+Again, this need is necessarily going to be common to many
+net servers, and there are substantial economies to be
+gained by re-using a generic implementation, and teaching
+users a single model instead of one per application.
+
+}}}
+
+}}}
+{{{ Why Muq? -- Some Personal Motivations
+
+    -------------------------------------
+
+I have been interested in programming language and
+environment design and implementation since the mid 70s; I
+implemented my first Lisplike interpreter around '77 and my
+first Smalltalk compiler/interpreter around '79.  The former
+convinced me of the value of garbage collection in
+significant applications, the latter of the power of
+object-oriented / messge-passing abstraction in such
+applications.
+
+In '81 I created the Citadel computer bulletin board system
+on CP/M; the design has proved moderately popular and is now
+available for virtually every computer architecture;
+store-and-forward networks of hundreds of hosts stretching
+coast-to-coast have been built, and large Citadels exist on
+the internet.  Implementing this system on single-line
+systems equipped with 300 baud modems convinced me of the
+need for ethernet style network access to such multiuser
+systems, and also of the value of diskbased databases.
+(Citadel 1.0 supported dozens of users (necessarily one at a
+time) on a system with 48K of physical ram and 270K of
+floppy disk, with crisp performance and a low-noise
+interface much appreciated by the users.)
+
+Over the last decade I have written a series of five 3D
+graphics edit/render/etc programs for the UW Biological
+Structure dept graphics lab, which have convinced me the
+hard way of the importance of automatic storage management,
+an object database, and an application language in the
+implementation of large C applications.  We are currently
+building a fleet of network servers, including a version of
+Skandha, based on a common lisp interpreter core which
+provides us with (among other things) a standard, common
+application language and automatic storage management.  Our
+experience to date is promising (e.g., one of our servers is
+used as a demo by the National Library of Medicine, running
+cross-continent to our lab) and re-inforces my faith in this
+design approach.  One of my eventual hopes for Muq is to use
+it as the core for a version of the lab's Skandha graphics
+server, and our growing fleet of other network servers.
+
+Over the last three years, I have been studying multi-user
+texted-based virtual reality systems: one experimental
+system I run currently supports an average of 30-60 online
+users at any given time (about 2500 users over any given
+90-day period) in a ten-megabyte database of over thirty
+thousand objects.  This experience has absolutely convinced
+me of the need for strong in-server protection of user
+privacy: In any set of a few thousand people, there tend to
+be a few who need to be forcibly restrained if the system is
+to achieve its desired goals, yet subject to this
+requirement, one often wishes to be able to empower most
+users to the maximum practical extent.  This experience has
+also absolutely convinced me of the need for efficient
+diskbased object database engines in such applications.  The
+sorry state of the application languages in most available
+servers also re-inforces my belief in the importance of a
+full, standard, generic application language implementation.
+
+(95Apr08: Now 50-100 online users and a 20MByte db.)
+
+Various other projects I have been involved in, such as
+writing an optimizing C compiler and matching "dos extender"
+(essentially a small operating system kernel) have also
+colored my design decisions, but not sufficiently to merit
+extended discussion here...
+
+}}}
+{{{ Specific Muq design decisions and implementation facilities
+
+    -----------------------------------------------------------
+
+{{{ Fine-grain software virtual memory:
+
+    -----------------------------------
+
+Muq stores essentially all data structures it uses in software-managed
+virtual memory (the major exceptions are a hashtable used to find
+in-ram objects, and some I/O buffers in the network interface).
+
+Blocks of store are transparently demand-paged in at need, at the
+finest reasonable granularity.  (Individual CONS cells, for example.)
+Objects on disk can be located in a single read(), without exception.
+Objects in ram must be located via a hashtable; this involves an added
+overhead of about 15-20 risc instructions per object reference.
+
+In-ram blocks are stored in a large (multimegabyte) ram arena which is
+periodically compacted; New blocks are successively allocated
+stack-style in the free space at one end of the arena.  The arena
+grows only when logically required (swapping in an object larger than
+the current arena size, say) or when privileged operations
+specifically instruct the server to expand it; in general Muq runs
+in a predictable, controllable amount of ram, in contrast to many
+current servers.
+
+Each store block in ram has about 12 bytes of overhead -- about the
+same as malloc().  This includes 4 bytes of hashtable pointer to it
+and 8 bytes of header.  Large objects need an additional 4 bytes of
+header.  Blocks of store on disk have one byte of locked-
+in-ram-overhead, most of which is devoted to garbage collection
+support; they also have either one or four bytes of length information
+stored on disk with them, and some disk space lost to internal
+fragmentation on disk due to disk records existing only in octave
+sizes (4 bytes, 8 bytes, 16 bytes... ).
+
+(The vm.c module implementing all this is designed to be independent
+of the rest of Muq, to facilitate using it in other programs.
+There have been a couple of nibbles and one tentative bite so far.)
+
+
+
+Rationale:
+
+We can't afford to depend on the host system's hardware virtual memory
+because typical object sizes for modern applications are in the range
+of (say) sixteen bytes, while typical page sizes on modern machines
+are on the order of 4K: with the large datasets used by sophisticated
+applications, it is unacceptable to be using only sixteen bytes out of
+every four thousand bytes of physical ram on average.  Ram prices
+haven't dropped _that_ much.  When dozens of megabytes of physical ram
+are involved, used for months on end, wasting even half our ram is
+still uneconomic, in my experience.  Hence, we need to implement our
+own virtual memory in software.  This isn't a new lesson, of course,
+systems such as Smalltalk have already experienced this.
+
+Attempting to swap in more than a few bytes per disk read is very
+attractive, since reading one one byte from disk has essentially the
+same cost as reading in a disk sector of a kilobyte or so...  or even
+an entire track of the disk.  Unfortunately, it is very difficult in
+general to ensure that extra objects read are actually more likely to
+be used soon than the objects already in ram (because recently
+referenced) that they would displace.
+
+Since the applications I have experience with don't tend to have
+rapidly changing working sets anyhow (meaning that efficient use of
+disk bandwidth is not a critical design parameter), I've chosen to
+stick with the simple strategy of paging in the minimal amount of data
+on each request, only when actually needed.  This provides reasonable,
+predictable and surprise-free performance.  Avoiding unexpected
+performance problems is at least as important in a complex interactive
+application as maximizing average performance -- human factors studies
+show that humans strongly prefer predictable performance.
+
+(Application disk I/O performance can be tuned somewhat in future, if
+needed, by using a separate task to do disk I/O, and having the main
+server task switch to another thread and continue processing while the
+blocked thread waits for the disk.  The same result can be achieved in
+one task if the host unix supports asynchronous I/O, of course.)
+
+The current ram:disk ratio is approximately 100:1 (e.g., I just paid
+$0.75/meg for a 1.75Gbyte disk, and $47/meg for 32Meg of ram),
+suggesting that we should like to keep in-ram overhead down to
+approximately 1% of disk db size.  With store chunk size in
+object-oriented systems averaging a dozen bytes or so, this means that
+we'd like ideally to be at a bit or so of in-ram overhead per chunk,
+and that Muq's full byte of in-ram overhead per chunk is pushing
+acceptable limits very hard.  (This is something of a worst-case
+analysis, of course -- servers dominated by running text or
+sound/image files or such may have much larger average store-chunk
+sizes.)
+
+}}}
+{{{ Garbage Collection:
+
+    -------------------
+
+Storage management policy almost always poses interesting design
+tradeoffs.  For Muq, I've elected to go with Dijkstra's 3-color
+incremental garbage collection algorithm, to avoid pauses irritating
+in interactive use, modified into a two-generation scheme, to avoid
+having to touch the entire db on each garbage collect (important in a
+disk-intensive system).  Dijkstra's algorithm doesn't seem to get much
+(any?) use -- possibly because it doesn't work well with compiled
+code?  -- but seems a very nice match to the interpreted mud
+environment, and a nice change of pace from the usual suspects.
+
+There is essentially no per-virtual-instruction runtime interpreter
+overhead added by this algorithm: the software virtual memory provides
+the required hooks 'free of charge'.  Or at least free of further
+charge!
+
+}}}
+{{{ Incremental backup:
+
+    -------------------
+
+Production network servers need to back up their databases
+periodically, to provide reasonable recovery in case of hardware or
+software failure.  In general, it is most undesirable to stop and
+restart the server process while doing this: many multi-user systems
+are never idle, and service outages are rarely appreciated.
+
+Note that it is not sufficient just to use a separate process to back
+up the directory tree used by the server to store its state: the
+active db files used by the running server will in general not be
+self-consistent at any given instant, and even if they are, the backup
+process cannot copy them all instantaneously, and hence is likely to
+record an inconsistent and unusable fileset due to the files changing
+beneath it as it runs.
+
+(I have examined the possibility of ensuring that the fileset looks
+self-consistent over any, say, 30-minute snapshot taken in any order.
+This is in fact perfectly possible, but the added server overhead
+appears to make it a poor design choice; e.g., I cannot find a way of
+doing this without approximately doubling overall disk I/O.)
+
+It is undesirable for the server process to cease responding to users
+long enough to copy the entire database disk-to-disk: servers with
+tens of megabytes of db are already common, and network servers
+managing databases orders of magnitude larger are likely to become
+common: we do not want to ask dozens of interactive users to twiddle
+thumbs aimlessly while a hundred megabytes are copied disk-to-disk.
+
+Muq's solution is to add one locked-in-ram bit per store block, which
+provides sufficient information for an incremental backup to proceed
+in the background while the server continues to run normally.  The
+largest pause required by the backup algorithm is that needed to write
+all dirty objects in ram out to disk so as to start with a consistent
+image on disk; I expect to be able to keep this down to a second or
+two.  If not, the pause can likely be eliminated by retreating to
+somewhat more complex coding.
+
+}}}
+{{{ Pointer Tags:
+
+    -------------
+
+Pointer tag design offers interesting design trade-offs with longterm
+implications for the system.  For Muq, I've selected an encoding
+distinquishing:
+
+ 31-bit ints
+ 28-bit floats
+ strings of 0-3 bytes stored in-pointer
+ 28-bit object identifiers encoding disk location and approx obj size,
+        subclassified into:
+   strings
+   objects
+   executables
+   (etc)
+ (etc)
+
+All type bits are always in the lower 8 bits, allowing type
+determination by table lookup.
+
+(I much prefer sticking with 32-bit operands on 32-bit machines...
+all pointers, variable, stack slots etc in Muq are 32 bits.  I
+played with making stack slots 64 bits to support doubles, but
+couldn't enjoy imposing the extra overhead on int/float/etc ops, and
+ripped it out again.  Doubles may have to be allocated on the heap
+like bignums, if they are to be supported, although applying some
+compiler optimization techniques to the Muq bytecode assembler may
+allow some of this to be finessed.)
+
+}}}
+{{{ Optimized bytecode interpreter:
+
+    -------------------------------
+
+Muq is driven by a fairly tightly optimized bytecode interpreter.
+The default configuration uses six opcode bits per bytecode (the other
+two are left zero).  For the fifty or so most time-critical
+primitives, such as integer addition, execution is done with a single
+break in flow of control per bytecode (except on compilers which
+bungle tail recursion, in which case a return-from-subroutine will
+also be executed for each bytecode): a single table lookup checks the
+types of the top two arguments on the stack (also checking for
+underflow at the same time) the opcode, and the
+bytecodes-executed-so-far-in-this-timeslice count, and branches
+directly to the appropriate routine.  (Stack overflow is checked for
+only every 32 instructions, in these cases.  Keeping 32 spare free
+entries on top of the stack suffices to prevent stack overflow in the
+meantime, since none of the fast instructions push more than one
+result on the stack.)
+
+For these instructions, interpreter overhead per bytecode executed is
+about fifty risc instructions, corresponding to peak interpreted
+speeds of one to four million bytecodes per second on contemporary
+risc machines, at which point performance would hit its minimum of
+~50x less than C.  (Programs that use slower prims will execute fewer
+bytecodes/second, of course, but will run closer to native C speed,
+since they spend more time executing useful C and less dispatching
+bytecodes.)  I'd been hoping for only ~10x slower than C, but this
+appears infeasable without doing type analysis in the compiler to
+avoid the need to check operand types, and I'm currently sick of
+optimizing compiler type technology, so I'm not about to do that.
+
+I'm trying to keep interpretation speed up partly because the speed of
+interpreters almost always becomes an issue sooner or later and I'd
+rather have it close to optimal from the outset than go back and
+re-implement later, and partly because I'd like to keep as much of the
+system in the db as possible, rather than having all sorts of code
+wandering into the server just for speed.  ...  Well, honestly, also
+partly just for the challenge and to be doing something new :).
+
+The virtual machine is designed to be a rather generic bytecode engine
+suited to executing code compiled from languages like forth, lisp and
+the algolic family; Supporting some application languages is likely to
+require an extension or two, such as the display mechanism needed to
+support Pascal's peculiar scoping semantics.
+
+The executable objects holding bytecodes are compiled one per
+function, and like almost everything else (job objects, stack objects
+etc) demand-page to/from disk as needed.
+
+}}}
+{{{ Separate 'assembler' and compiler:
+
+    ----------------------------------
+
+I'm focusing on a cleaned-up muf (forth) as the primary syntax
+initially, for the simple reason that the first application I envision
+for Muq is an emulation of fuzzball, which uses muf, but I would
+eventually like to support other popular syntaxes (particularly lisp),
+and I'd like to let unprivileged users write the compilers (because
+more will get written sooner that way).
+
+To allow this without too much duplication of effort, and without
+compromising system integrity, I've segregated correctness concerns in
+an 'assembler' module which has sole rights to construct executables
+and which guarantees not to emit code that will crash the interpreter.
+
+Compilers can then be written as unprivileged user-mode programs which
+simply feed commands to the interpreter to create executables.
+
+The initial programming language compiler is for an RPN syntax (below).
+
+The second programming language supported is likely to be Scheme,
+minus the side-effects on strings and (likely) the arithmetic tower of
+types (which are a great idea, but hard to implement both portably and
+efficiently in C).  Since this should be an easy introduction to
+implementing lisps on Muq.
+
+The third is likely to be an xlisp implementation targetted to evolve
+gradually into a fairly complete CommonLisp implementation.  Since I
+have thousands of lines of graphics code written in xlisp, which I
+would like to run on top of Muq at some point, preferably sooner
+rather than later.
+
+The fourth is likely to be a vaguely C-like infix language: As a
+longtime C hacker, I'd like an infix compiler for writing archival
+code; Muq being a value-typed virtual machine, the result might not
+look too much like C, much of C's type language and pointer syntax
+being totally out of place, but infix does seem to provide the most
+readable syntax for writing straightforward archival system code.
+
+As a fifth, I'd like to have a compiler for a simple pure-functional
+language, if only as a learning toy.
+
+Not being religious about syntax any more, I have no particular desire
+to implement any further general programming languages on top of Muq,
+but I anticipate that various users will have fun implementing their
+favorite syntaxes on Muq, particularly variants of BASIC and ForTran.
+I'm liable to page through the Perl and elisp manuals, lifting
+functions I like and adding them to the Muq virtual machine... I could
+envision perhaps doing a source-compatible implementation of elisp at
+some point, just to take advantage of all the copyleft code available
+in it, such as Calc.
+
+}}}
+{{{ RPN syntax, interactive, single-mode muf evaluation, Scheme semantics:
+
+    ----------------------------------------
+
+While I intend Muq to eventually offer compilers for most of the major
+syntactic religions, I've selected as the initial programming language
+offering a Reverse Polish Notation language: MUF (Multi User Forth).
+
+Reasons include:
+
+*  Muq's first targetted application is replacing fuzzball as Qwest's
+   server... Qwest has thousands of users accustomed to Fuzzball's
+   RPN MUF programming language.
+
+*  RPN, revulsion in some quarters notwithstanding, actually has
+   much to recommend it as a language for learning programming.
+   E.g., RPN code can be executed word-by-word, interactively, with
+   display of stack and variables after each step, providing
+   the immediate feedback and exploratory play humans like
+   best.  While Dijkstra might prefer that we learn programming
+   as a purely mathematical exercise, never running a program,
+   casual users may find interactive play more appealing.
+
+*  RPN's lack of parentheses and similar syntactic noise, together
+   with the use of zero-address operators that work on implicit
+   stack operands, makes it a concise and convenient language for
+   various sorts of interactive hacking.  I'm thinking particularly
+   of sitting pounding in expressions to interactively create, reshape,
+   manipulate and display 3-D raster graphic objects, but the point
+   is a very general one.
+
+*  Forth's simple operational model allows an enormous amount of
+   flexibility with a minimum of machinery to be learned.  E.g.,
+   Forth allows users to interactively define new types of loops
+   and conditionals, and then immediately begin using them --
+   something which requires years of debate and black-magic
+   hacking by compiler experts in the Algolic world.  Once one
+   leaves Forth behind, one has to travel all the way to Lisp
+   before one again sees this sort of customizability.
+
+Note: ANSI Forth has nasty semantic differences between code executed
+at the commandline and compiled code, since the former is executed by
+a separate interpreter.  Kernighan (I think) once pointed out that it
+is cleaner to compile interactive code into a tempbuf, and later forth
+variants (STOIC, or perhaps PISTOL?) do this.  Muq MUF compiles all
+interactively entered code into anonymous functions which are then
+invoked, achieving similar consistency.
+
+
+
+While MUF/Forth provides one appealing syntax/compilation model, the
+traditional Forth virtual machine is very poorly adapted to Muq's
+design goals.  E.g., even Forth fans concede that Forth resembles
+assembly coding in that frequent recourse to the RESET button or
+equivalent is needed.  Frequent crashes and/or corrupted ram data
+structures are Not Acceptable in a multiuser multitasking network
+server...
+
+
+
+For a primary reference virtual machine model, I have turned to the
+Revised^4 Report on the Algorithmic Language Scheme, whose long and
+illustrious list of authors have distilled the essence of nearly half
+a century of lisp community experience into a concise (40p), readable
+specification of what a simple, clean programming language suited to
+implementing and teaching modern programming practices should (and,
+implicitly, should not) contain.
+
+While the specification is not without flaw (I believe allowing
+side-effects on strings is a bad design error, and do not support it)
+and continues to evolve, I have found it an invaluable guide which has
+resolved several design issues that vexed me (e.g., variable
+semantics), and validated other design decisions which I had worked
+out independently (e.g., promises with implicit forcing).
+
+
+
+While the CLOS paradigm of explicit classes (and metaclass protocols
+and so on) seems excessively complex for Muq's target population of
+novice programmers, the CLOS formulation of message passing as the
+invocation of generic functions, in particular the design principle
+that the caller should not know or care whether a given function being
+called is a generic (message) appears to me an excellent one, which I
+have adopted for Muq.  Muq in general attempts to create these generic
+functions transparently enough that novice programmers may not be
+aware of their existence for awhile, but the hooks are there for
+writing elaborate generics which key on the types of multiple
+parameters ala CLOS, if desired.
+
+Muq also follows the similar Forth rule that primitive operators
+should look exactly like normal functions to the caller; together with
+the above rule, this means that the Muq programmer lives in what looks
+like a very regular world of functions, which may be uniformly
+'quoted, CALLed and so forth without knowing or caring which functions
+are C-coded primitives, which are normal user-coded functions, and
+which are runtime-binding generic functions.  Of such artificial,
+painstakingly implemented regularities are "simple", powerful systems
+made...
+
+}}}
+{{{ Unix-style pipes, tasks, signals and job control:
+
+    -------------------------------------------------
+
+Existing servers (e.g., Fuzzball) have already grown to having 'fork'
+'ps' 'kill' etc; I think unix has a relatively clean model for
+multitasking, which has also been well tested; and sticking to unix
+makes it easier for programmers to transfer skills back and forth
+between Muq and unix: I've decided to stick as close as seems
+reasonable to unix in Muq when it comes to threads.
+
+Muq 'jobs' (threads) are created by 'fork' operations, do I/O via
+pipes (objectstreams, not bytestreams, however), and communicate via a
+set of signals very closely patterned on unix usage.  Live jobs are
+tracked in a global /ps propdir, each job is in exactly one jobqueue
+at any given time, and jobs in the /etc/run jobqueue are run
+round-robin fashion, with short timeslices.
+
+Jobs which write to a full pipe, or read from an empty pipe, block by
+moving from the run queue (/etc/run) to the read or write jobqueue on
+the pipe in question.
+
+Similarly, jobs which are sleeping, stopped or whatever, move to
+queues like /etc/stp.
+
+(Named-pipe functionality comes for free, since pipes are just one
+more class of object, and may be handed around or stored in the db
+just like any other value.)
+
+}}}
+{{{ DB consistency and transaction serialization mechanisms:
+
+    ---------------------------------------------------
+
+Achieving reliable, lag-free operation in the face of lots of code
+written by naive programmers in a multithreaded environment means
+short timeslices (to attempt to serve all 100+ or so users at less
+that the critical 100ms perceptual threshhold) without using
+semaphores or locks (since naive programmers can't be expected to use
+them at all, much less correctly... and since one would rather not
+clutter their programming model with them anyhow).
+
+I considered accomplishing this by buffering all writes to the db (and
+other output) from each job until a flush is performed (implicitly, in
+general, when the job exits, reads from input, or goes to sleep), and
+then either doing all buffered writes atomically, or else (if this is
+impossible due to interference from another job) rolling the job back
+and restarting it from the last flush point.  I rejected this in the
+end as a bit too much baroque machinery for my taste.
+
+Muq currently depends on each side-effectable value being writable by
+only one user -- the owner.  If naive programmers only run one process
+at a time -- not an unreasonable assumption -- this eliminates db
+serialization errors.  A critical-interval operator is available
+allowing any process to lock the entire db for a few bytecodes, and it
+is anticipated that system software and non-naive programmers will use
+this to resolve the remaining problems.
+
+(I don't consider uniformly running tasks to completion a viable
+option -- uncontrollable lag -- nor asking naive programmers to do a
+lot of programming of explicit synchronization primitives.)
+
+}}}
+{{{ Heavy use of object properties:
+
+    -------------------------------
+
+Properties which the interpreter needs efficient access to are stored
+in the object according to layout specified by a C struct; other
+properties are stored in a 2-3 trees (with fat leaves -- this achieves
+about twice the storage efficiency of most competing designs) on the
+object.  The difference between the two is hidden from the application
+programmer, who can access all of them via a uniform set of get-prop
+set-prop first-prop next-prop type operations.
+
+All data types in the system are first-class and may be stored
+anywhere, in particular may be used both as property and value on an
+object: objects implement arbitrary enumerated functions.
+
+Storing all system state uniformly as properties on objects
+facilitates writing generic browsers and editors for the system, in
+contrast (say) to creating a get-tweakable set-tweakable function pair
+for each new tweakable parameter introduced into the system.  This
+provides a "transparent" feel to Muq in much the same way that Unix'
+use of generic text files in generic directories to control most
+system functionality provides a very transparent feel compared to
+operating systems that control most system functionality via binary
+files, each manipulatable only via a special dedicated program.
+
+For example, system tuning parameters such as cache buffer size are
+controlled not via a set of special functions, but via a set of
+properties on a special system-interface class of object.
+
+}}}
+{{{ No class objects -- method directly on object
+
+    ---------------------------------------------
+
+Multi-user network servers are frequently programmed predominantly by
+naive folks, who are using them mostly for low-bandwidth sorts of
+computations where flexibility and simplicity are more important than
+efficiency, when the choice need be made.
+
+At this point (mid-90s) it seems reasonably clear that whereas
+classical "object-oriented" languages with an explicit class concept
+(such as Smalltalk or C++) are appropriate when optimizing heavily for
+efficiency, that the explicit-class formulation introduces a good deal
+of complicated machinery into the programmer's model (is Class Class
+an instance of itself?)  which is avoided quite neatly in
+prototype-based languages such as Self, at little if any cost in
+semantic power -- and as Self demonstrates, potentially at less cost
+in efficiency than popularly supposed.
+
+For Muq, I felt it more appropriate to opt for the simplicity and
+flexibility of the prototype-based model, attaching methods and
+properties directly to object and their parents, than to require
+programmers to operate through a mediating layer of class objects.
+
+(I expect Muq to eventually support Common Lisp and the Common Lisp
+Object System, both being emerging standards, but I think it better to
+make them a separate layer implemented on top of native facilities,
+than to make them the primary native model.)
+
+}}}
+{{{ Single inheritance of both properites and methods:
+
+    --------------------------------------------------
+
+I'm content to let coldmud take the lead in experimenting with
+multiple inheritance, for now; I don't really understand multiple
+inheritance, and I'm not sure anyone else does.  The semantically
+cleaner analyses seem to me to resemble composition of objects more
+than they do multiple inheritance in a naive sense; I think that
+implementing a specific model of multiple inheritance today most
+likely means building in something which in retrospect will be clearly
+understood to be broken.
+
+Single inheritance seems relatively well understood by contrast (if
+still rather mysterious), sufficient for most needs, and comparatively
+well tested.
+
+I'm inclined to see a variable as just a function of no parameters; if
+methods can be inherited, it seems that properties might as well also.
+Property inheritance can also be directly seen to be useful in setting
+up a complex prototypical object which can then be specialized by
+overriding inherited (default) properties.
+
+Messages may be sent to any Muq value; conventional objects carry
+methods conventionally, special values such as int, floats and strings
+search for methods on hardwired parent objects such as /class/int.
+
+}}}
+{{{ Thunks, promises and implicit forcing
+
+    ------
+
+Muq supports special functions called 'thunks' which may be freely
+copied around and stored just like any other value, but which
+transparently evaluate and are replaced by their return value as soon
+as one attempts to do any operation on them such as addition, checking
+type, or whatever.  (Scheme calls this "implicit forcing".)
+
+(This can be implemented essentially 'for free' given the interpreter
+design -- no extra per-instruction machine cycles need be invested
+implementing this.)
+
+This form of delayed evaluation is somewhat reminiscient of functional
+programming but differs in that thunks may be evaluated any number of
+times rather than just once.  Thunks are also vaguely reminiscient of
+named pipes in Unix, in that the latter allow computation of a
+bytestream to be delayed until the bytestream is actually read, and
+thus to vary appropriately from one access to the next, transparently
+to the reading program.
+
+Thunks form a generic solution to the problem of being asked to
+specify a static value in a property or variable when one would in
+fact like to compute that value dynamically at runtime with more
+information available... say, to compute the description of an object
+at the last possible moment, so as to have it depend on the time of
+day.
+
+Many current servers have one or two special-case hacks to solve
+particular instances of this problem (confirming its importance);
+thunks provide a very general solution to this class of problem, since
+any property whatever may be set to a thunk rather than a fixed value,
+and any code accessing that value will automatically trigger
+evaluation of the thunk upon first 'real' use, without any special
+intent on the part of that accessing code.
+
+(The power of a programming system derives in large part from the
+ability to recombine procedural knowledge freely at runtime to achieve
+a combinatorial number of potential results; the practical semantic
+power of a particular programming language is largely a function of
+the recombination mechanisms it provides.  Function invocation is the
+oldest such tool; runtime binding ("message-sending") provides one
+powerful additional recombination tool; thunks provide another code
+recombination tool.  As with most tools which open a new paradigm, the
+utility of thunks is easily underestimated by those unaccustomed to
+using them.)
+
+"Promises" (to use Scheme nomenclature) are similar to thunks, but are
+guaranteed to evaluate at most once, at which point the return value
+is stored within the promise, and further attempts to 'force'
+(evaluate) the promise simply result in immediate return of that same
+value.
+
+This property places promises squarely in the mainstream
+functional-programming tradition, allowing exploration of avante-garde
+functional programming techniques, such as construction of programs
+which specify infinite computations (such as the set of primes) but
+evaluate only those actually needed: Construction of a Muq compiler
+for a simple untyped functional language syntax would not be terribly
+difficult, and is contemplated.
+
+The pure-functional programming style is unlikely to ever approach
+more procedural programming styles in efficiency in Muq, and appears
+somewhat alien to the very stateful object-oriented Muq design, but
+may well prove a powerful and useful tool for writing high-level Muq
+code in which efficiency is of little importance (most computation
+being done by lower-level primitives) but flexibility, conciseness and
+programmer time of great importance:
+
+Programs derive their semantic power from the combinatorial
+composition of partial computation specifications, and the
+pure-functional programming community seems to have devised the most
+productive, finest-grain composition operators yet introduced into
+programming practice.
+
+(The history of programming may usefully be regarded as the
+successive introduction of more powerful ways of specifying,
+recombining and invoking partial specifications for computations:
+ 1940s: Monolithic programs;
+ 1950s: Programs with subroutines;
+ 1960s: Programs with recursive subroutines;
+ 1970s: Programs with subroutines as parameters;
+ 1980s: Programs with runtime subroutine binding (messages);
+ 1990s: "Normal order" evaluation and pure-functional programming.
+The dates are intended to very loosely reflect the era of mainstream
+adoption of the technology.  Note that each listed advance, while
+appearing trivial in retrospect, essentially required training a
+new generation of programmers to become established.  There are
+still programmers who profess not grokking recursion, and of
+course many who don't grok message-passing.  Dating mainstream
+adoption of techniques from the pure-functional community to the
+90s may prove over-optimistic, but the decade is still young.)
+   
+
+}}}
+{{{ Fairly generic network interface
+
+    --------------------------------
+
+To the Muq application programmer, live network sockets look much
+like threads: they produce and consume values via pipes, with the
+oddity that the values produced are always strings, and that sending
+them anything but a string results in an error.
+
+Properties on the socket objects allow selection of raw I/O versus I/O
+cooked to various recipes, loosely patterned on unix I/O modes.
+
+}}}
+{{{ Eight-bit strings:
+
+    ------------------
+
+Lisp obtains a great deal of milage from allowing arbitrary byte
+values in strings, which can then serve as generic containers for
+binary data, which may be used for sounds, images, or whatever.  The
+Lisp analogy appears to me more compelling than the C analogy in this
+case, and Muq follows Lisp in this respect.
+
+It is common in dedicated object oriented database systems to segment
+binary data so that not all of an image (say) need swap into ram at
+once; Muq will likely follow suit in this case, eventually, to promote
+multimedia applications of the basic virtual machine.  The current Muq
+design merely routes all access to strings through a set of interface
+routines designed to facilitate this.
+
+}}}
+{{{ Per-object accounting and protection:
+
+    ------------------------------------
+
+Experience convinces me (at least) that managing a shared database of
+tens of thousands of objects owned by thousands of users requires an
+accounting system roughly as sophisticated as that provided by the
+conventional unix filesystem/kernel: we need to know who created an
+object to assign responsibility, we need to be able to impose quotas
+on storage use, we need to know when objects were last used so as to
+clear out clutter periodically, and we need to be able to restrict
+read/write rights to preserve people's privacy and system sanity.
+
+Muq provides inserver support for these needs in the form of fields in
+each object recording creator, creation time, and such.  (Integers,
+floats and strings are not objects, cannot be modified once created,
+and have no (visible) owner.  Vectors are not objects either; they
+have only a creator field, creation/modification times not being
+tracked.  Vectors are always world-readable and owner-writable.)
+
+Each object contains a number of separate property directories:
+
+  A "public" propdir readable by anyone and writable only by owner;
+  A "secret" propdir readable and writable only by owner;
+  A "method" propdir (world-readable, owner-writable) holding message methods.
+  A "wizard" propdir accessable only to wizards;
+  A "system" propdir writable by wizards and readable by owner;
+
+These are typically accessed via a simple hack on unix path notation.
+E.g., if user 'joe' lives in the /u/ directory, then a property 'x' in
+one of the above propdirs may (given appropriate privileges) be read as:
+
+ In "public" propdir:  /u/joe/x
+ In "secret" propdir:  /u/joe//x
+ In "method" propdir:  /u/joe/:/x
+ In "wizard" propdir:  /u/joe/@/x
+ In "system" propdir:  /u/joe/~/x
+
+This design has the defect that the above propdirs are second-class
+objects, not directly addressable (something likely to get fixed in
+the 64-bit Muq release), but has the advantages that naive users can
+initially remain unaware of the existence of anything but public
+propdirs, that no tricky "rwxr--w--" type permission strings are
+visible to or needed by naive users, and that most addressing may
+be done using the simple unix-style path expressions which are
+also (via WorldWideWeb/Mosaic's Uniform Resource Locator strings)
+becoming a network addressing standard.
+
+E.g., Joe can define a message "hi" on himself which returns the
+string "hello world" by simply doing
+
+ :: "hello world" ;  -->  /u/joe/:/hi
+
+as soon as he understands the ":: ... ;" syntax for defining a
+nameless function, the "-->" syntax for assigning to properties
+and variables, and the path notation for naming properties.
+
+(Many systems make such a procedure not only considerably more
+verbose, but also use a forest of different operators for assigning to
+and reading from different types of properties, variables and data
+types, needlessly lengthening the learning curve.)
+
+}}}
+
+}}}
+{{{ Current status:
+
+    ---------------
+
+Perhaps 2/3 done (I'm usually optimistic... maintains sanity): about
+30Kline of fairly debugged C.  Virtual machine approaching completion,
+no emulator code whatever written.  One can sit at the keyboard and
+do various little interactive computations:
+
+    qwest@betz:muq/c> ./muf
+    muf--> [ "a" "d" "a" "e" | |sort |uniq
+     "a" "d" "e" 3
+    muf--> ]pop 12 seq[
+     0 1 2 3 4 5 6 7 8 9 10 11 12
+    muf--> |for v do{ v 2 * 1 + -> v }
+     1 3 5 7 9 11 13 15 17 19 21 23 12
+    muf--> ]pop 0 12 for j do{ j . " " . } "\n" .
+    0 1 2 3 4 5 6 7 8 9 10 11 
+
+    muf--> 
+
+The outer loop of the above muf shell is itself written in muf (so
+that compiles can timeslice with other jobs smoothly)... there are
+some interesting bootstrap problems at startup.
+
+One can create dbs and return to them across multiple sessions.
+
+An ls listing gives the approximate current scale of the program:
+
+qwest@betz:muq/c> ls -l *.c
+ 50727 Dec  7 00:14 asm.c      -- The assembler.
+  1486 Aug 14 01:33 axe.c      -- Hooks for site-specific extentions.
+ 58493 Nov  7 21:47 dir.c      -- Main code for propdirs/sets (2-3 trees).
+  3780 Sep  4 22:57 err.c      -- Some error-report functions.
+ 19311 Sep 28 23:47 exe.c      -- Executable objects.
+ 10172 Nov  8 17:26 fun.c      -- Functions (has ptrs to src, executable &tc).
+  6560 Jun  5  1993 info.c     -- To read info-format doc files.
+ 43121 Dec  1 02:27 ioq.c      -- Network interface code.
+207512 Dec  1 18:38 job.c      -- Threads and many primitives.
+ 86289 Dec  7 11:40 jobbuild.c -- Automatically generates part of interpreter.
+  7979 Aug 22 15:15 jobpass.c  -- Picks compile strategy for current machine.
+425129 Dec  7 11:41 jobprims.c -- Code and tables generated by jobbbuild.c
+ 13142 Nov 23 03:12 joq.c      -- Job queues.
+ 11096 Dec  1 02:35 jst.c      -- Job sets (process groups).
+  3855 Sep 10 22:35 lib.c      -- Random library fns.
+    72 Aug 22 15:31 map.c      -- Propdirs (dir.c + some #defines).
+ 14886 Nov  8 17:28 msq.c      -- Message queues (pipes).
+ 81172 Dec  9 17:31 muf.c      -- MUF compiler, calls asm.c for dirty work.
+ 39765 Dec  1 01:55 obj.c      -- Generic object support.
+    72 Mar  6  1993 set.c      -- Sets of objects.  (dir.c + some #defines).
+ 11029 Dec  1 02:37 ssn.c      -- Sessions, in the unix job-control sense.
+ 12906 Nov  9 16:05 txt.c      -- Strings, lisp style.
+ 10919 Nov  8 17:46 usr.c      -- Admins, aides, users, puppets.
+ 10148 Nov  9 15:46 vec.c      -- Vectors (CONS cells are two-vectors).
+160451 Sep 28 23:21 vm.c       -- Virtual memory support.
+  9644 Oct 30 10:50 x_dir.c    -- Selftest code for dir.c
+  9355 Jun  5  1993 x_job.c    -- Selftest code for job.c
+    45 Jan 30  1993 x_map.c    -- Selftest code for map.c (x_dir.c + #defines).
+  5539 Aug 20 22:10 x_obj.c    -- Selftest code for obj.c
+    45 Jan 30  1993 x_set.c    -- Selftest code for set.c (x_dir.c + #defines).
+ 13854 Jun  5  1993 x_vm.c     -- Selftest code for vm.c
+  3818 Jun  5  1993 z_info.c   -- Simple app that runs info.c
+ 29102 Dec  1 02:38 z_muq.c    -- Simple app that evaluates muf interactively.
+
+(Selftest code written in muf not shown.)
+
+}}}
+{{{ Future Directions:
+
+    ------------------
+
+I've bit off quite enough to chew for awhile yet... :).
+That hasn't stopped me from thinking about:
+
+{{{ Multiprocessing:
+
+    ----------------
+
+While Muq can be very useful simply used as a toolkit to build network
+servers which then communicate via conventional network bytestreams
+(&etc), it would be a significant win to extend the Muq shared address
+space and database to include not just multiple threads per user and
+multiple users, but also multiple machines.
+
+This is potentially a big win because it would mean that a cluster of
+application clients and servers could interact naturally without
+needing lots of code to translate data from program-natural form into
+network bytestream form and back again constantly: this problem could
+be solved once in the server and then applications could see a single
+shared database and address space extending across multiple machines.
+
+This is quite similar to the win involved in using a standard oodb to
+avoid having to have every application contain custom code to
+translate data back and forth between program-natural form and unix
+filesystem bytestream form.
+
+(I presume the advantages of bringing multiple machines to bear need
+no explanation today.)
+
+I've thought somewhat seriously about how to link a few to many Muqs
+together to present a single virtual address space and database.  That
+looks technically challenging but possible... albeit potentially an
+administrative nightmare.
+
+The major challenges come from the need to keep the system robust, and
+keep performance snappy, in the face of networks that often block for
+a minute at a time, and machines which constantly crash and/or get
+randomly disconnected.  A really general solution to this problem
+would be a quite ambitious undertaking; a much more restricted
+solution, still very practical, would be a master/slave arrangement in
+which a central database "owned" all of its objects while being
+willing to give copies on request to muq-based clients.  The central
+server would guarantee that it was self-consistent, but would never
+depend on the sanity or reliability of the clients accessing it,
+merely providing them with sets of objects on request, and notifying
+them when objects they hold are changed in the central db.
+
+Clients could then be written to offload compute-intensive per-user
+tasks such as 3-D graphics rendering onto a separate machine, with the
+application code "appearing" to run in the server address space
+(network-transparent programming) but perhaps without as strong a
+guarantee of db consistency as true inserver computation offers.
+
+It appears to me quite difficult to both guarantee lagfree response to
+all users and to guarantee db consistency via atomic db transations,
+in the face of 30-second network lags to many users; A reasonable
+compromise might be running compute-intensive display tasks locally in
+the client -- these often won't depend critically on being exactly
+synchronized with the central db -- while performing all updates to
+the central db via code actually executing on the central db server.
+
+Requiring the application programmer to decide which code executes
+where is something one would like to avoid, ideally, but might be a
+very practical interim solution.
+
+To maintain the integrity of the privacy/security/accounting
+mechanisms in the face of maliciously hacked clients, the server needs
+to take some simple precautions, principally never executing code
+which it did not compile itself, carefully validity checking objects
+created remotely (if this is allowed at all) and maintaining a
+per-client list of objects to which the client has established
+legitimate access (to defend against malicious "fishing" by clients
+which simply synthesize random object IDs and request them, in the
+hopes of locating strings or vectors with private information).
+Something like the per-client list is likely needed anyhow to
+notify clients that an object they hold has been updated...
+
+My evolving sense of the protocol I want is that clients can cache
+server objects locally, and count on being told when they have been
+modified (such notification probably including the new object value,
+reducing typical-case shared-object-update network delay to the
+logical minimum of one one-way packet transmission from server to each
+client... probably updating each client at a certain maximum rate, so
+as to allow coalescing multiple updates into single packets), but
+should treat such cached objects as read-only values, modifiable only
+by invoking execution of code on the server itself.  This reduces all
+database-integrity problems to the single-process case, while allowing
+a network of mutually interacting clients in a shared virtual world to
+efficiently refresh their displays from local copies of shared state,
+automatically updated as necessary without polling or such.  If
+invocation of code on the server is limited to invoking an existing
+server function with given arguments, the mechanism can be made both
+reasonably efficient (no need to compile code on the fly for each
+call) and safe (no execution of bytecodes compiled on clients).
+
+}}}
+{{{ User Interface:
+
+    ---------------
+
+Many (most?) multi-user networked applications today depend on simple
+ASCII telnet connections to each user, or perhaps at best ANSI or
+curses text screen addressing.  This is gratingly antique, albeit very
+practical in a world where many users still have access only to a
+vt100 on a vax or a PC connected to a modem.
+
+Some sort of more sophisticated interface to the user would definitely
+be very apropos.  X is one very obvious choice today.  It might not be
+a good idea for a central shared server to take on the compute load of
+dealing directly with an X client per user, but if local Muq clients
+could be linked to central Muq servers as above contemplated, it would
+then be very reasonable to have each per-user Muq client talk to an X
+server for interface purposes.  The current X client C libraries are
+such ghastly single-threaded messes that one might want to
+re-implement sanely from scratch and the X protocol specification,
+however... as an SGI graphics hacker myself, I'd be particularly
+interested in supporting the X protocol with OpenGL extensions 
+
+I haven't studied Gopher, WAIS or WWW.  Likely if Muq is to become a
+truly useful, generic netserver-development toolkit, it should grow
+standard modules for supporting at least one of these.  At present WWW
+seems the runaway winner.
+
+}}}
+
+}}}
+
+{{{ Local variables
+Local Variables:
+shellscript-mode: t
+case-fold-search: nil
+folded-file: t
+fold-fold-on-startup: nil
+eval: (fold-set-marks "{{{" "}}}")
+End:
+}}}

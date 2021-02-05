@@ -1,0 +1,15 @@
+
+(provide (quote muf-mode))
+
+(defvar muf-mode-abbrev-table nil "\
+Abbrev table used while in muf mode.")
+
+(defvar muf-mode-map nil "\
+Major mode keymap for muf-mode buffers")
+
+(if (not muf-mode-map) (progn (setq muf-mode-map (make-sparse-keymap))))
+
+(defun muf-mode nil "\
+Major mode for editing Muq muf source.
+\\{muf-mode-map}
+Turning on Muf mode runs muf-mode-hook." (interactive) (byte-code "ÆˆÇ ˆÈ!ˆÉ‰ˆÊ‰ˆË!ˆ‰ˆÌÍ!‡" [muf-mode-map mode-name major-mode c-mode-syntax-table local-abbrev-table muf-mode-abbrev-table nil kill-all-local-variables use-local-map "Muf" muf-mode set-syntax-table run-hooks muf-mode-hook] 5))

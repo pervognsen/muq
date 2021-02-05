@@ -1,0 +1,83 @@
+#! /bin/sh
+echo "Clobbering muq fileset..."
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+
+# Clean fileset:
+$bindir/muq-clean
+
+
+
+# Remove various sorts of regeneratable files:
+echo "Files removed:"
+
+# Remove machine-dependent jobpass.h:
+if [ -r $hdir/jobpass.h ]
+then
+   echo "$hdir/jobpass.h"
+   rm $hdir/jobpass.h
+fi
+echo "/* This file is a placeholder for that built */"  >$hdir/jobpass.h
+echo "/* by jobpass.t during installation.         */" >>$hdir/jobpass.h
+echo "#ifndef   INCLUDED_JOBPASS_H"                    >>$hdir/jobpass.h
+echo "#define   INCLUDED_JOBPASS_H"                    >>$hdir/jobpass.h
+echo "#endif /* INCLUDED_JOBPASS_H */"                 >>$hdir/jobpass.h
+
+# Remove machine-dependent files created by 'configure':
+for a in			\
+	$cdir/Makefile2		\
+	$cdir/Config.h		\
+	$hdir/Config.h		\
+	$cdir/Config.status	\
+	$cdir/config.log	\
+	$cdir/config.cache	\
+	$cdir/jobpass		\
+;
+{
+    if [ -r $a ]
+    then
+       echo "$a"
+       rm $a
+    fi
+}
+
+# Nuke all compiled executables;
+for a in `muq-config apps` ;
+{
+    if [ -r $cdir/$a ]
+    then
+       echo "$cdir/$a"
+       rm $cdir/$a
+    fi
+
+    if [ -r $bindir/$a ]
+    then
+       echo "$bindir/$a"
+       rm $bindir/$a
+    fi
+
+    if [ -r $bindir/old$a ]
+    then
+       echo "$bindir/old$a"
+       rm $bindir/old$a
+    fi
+}
+if [ -r $bindir/Muq-detexify ]
+then
+   echo "$bindir/Muq-detexify"
+   rm $bindir/Muq-detexify
+fi
+
+# Clean fileset:
+$bindir/muq-deconfig-c-makefile
+
+if [ -r $dbdir ]
+then
+   echo "$dbdir still exists, nuke it by hand if you want it gone."
+fi
+
+exit 0
+

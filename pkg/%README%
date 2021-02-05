@@ -1,0 +1,66 @@
+                   muq/pkg/%README%   last update: 97Jul11
+
+This directory contains the standard muf libraries, in the form of
+".t" (texinfo) files from which the actual code is extracted (via
+Muq-detexify) during the load process.
+
+These are loaded into db/ (&tc) by bin/muq-db-init when
+creating a new db from scratch, or may be loaded into an
+existing db when repairing or updating it (using muq-lib
+or muq-c-lib).
+
+These are NOT loaded automatically each time the muq is
+restarted.
+
+The Muq selftest muf code lives in muq/pkg/Check, and is
+also somewhat useful as a set of examples of using the
+various muf operators;  It is run by doing "make check"
+in muq/c.
+
+
+
+FILENAME KEY
+------------
+
+Library files have names like
+
+  140-C-defstruct.t
+
+where the parts mean:
+
+  140  Muq installs the files in the order specified by
+      the leading digits.  This makes sure that, for
+      example, 030-C-struct.t gets loaded before
+      110-C-compile.t, which depends on it.
+
+  C   The leading letter specifies the file category,
+      and will be one of the following:
+
+      C  A core file.  It is presumed that all Muq
+         servers will install all of these, and hence
+         that portable Muq code can depend on the code
+         in them being present.  If you choose not to
+         install one of these files, you should expect
+         various things to break.
+
+      W  A work-in-progress.  You can freely delete
+         these if you like.
+
+      X  A coding example of some sort.  You may freely
+         delete these in a production system.
+
+      O  Optional utility of some sort.  You may delete
+         any of these which you are not using.
+
+  defstruct
+      A string intended to be humanly mnemonic of the
+      file contents.
+
+  .t
+      An extension indicating the contents are in a
+      format which can be processed either into infotex
+      source (and thence TeX, HTML &tc) for documentation
+      purposes, or else into MUF source for compilation.
+      (Translation is done automatically by the Makefiles
+      and muq-db-* scripts -- no hand translation is needed.)
+

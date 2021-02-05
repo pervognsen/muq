@@ -1,0 +1,87 @@
+\input texinfo   @c -*-texinfo-*-
+@comment %**start of header (This is for running Texinfo on a region.)
+@setfilename ../doc/admin.info
+@settitle Muq Administration
+@setchapternewpage odd
+@comment %**end of header (This is for running Texinfo on a region.)
+@c
+@ifinfo
+Copyright @copyright{} 1995 Jeff Prothero.
+@end ifinfo
+@c --------------------------------------------------------
+@titlepage
+@sp 10
+@center @titlefont{Muq Administration}
+@sp 2
+@c @center Version -1.0.0
+@include versionc.t
+@sp 2
+@center Jeff Prothero
+@center (cynbe@sl.tcp.com)
+@c     ---------------------------------------------
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1995 Jeff Prothero.
+@end titlepage
+@c --------------------------------------------------------
+@c Uncomment these to generate a single index:
+@c @synindex cp fn
+@c @syncodeindex vr fn
+@c @syncodeindex ky fn
+@c @syncodeindex pg fn
+@c @syncodeindex tp fn
+@c
+@node Top, The Muq Vision, , (dir)
+
+
+This version of the manual is a second draft, and still very rough.
+
+@menu
+* The Muq Vision::
+* Why Muq?::
+* Muq Status::
+* Installing Muq::
+* Invoking Muq::
+* Muq Dbfiles::
+* Crash Recovery::
+* Muq Db Layout::
+* Exporting Muq::
+* Function Index::
+* Variable Index::
+* Data Type Index::
+* Concept Index::
+@end menu
+
+@include muqintro.t
+@include muqinstall.t
+@include muqrun.t
+@include muqdbfiles.t
+@include muqcrash.t
+@include muqdb.t
+@include muqexport.t
+
+@node Function Index, Variable Index, Muq Export Wrapup, (dir)
+@unnumbered Function Index
+
+@printindex fn
+
+@node Variable Index, Data Type Index, Function Index, (dir)
+@unnumbered Variable Index
+
+@printindex vr
+
+@node Data Type Index, Concept Index, Variable Index, (dir)
+@unnumbered Data Type Index
+
+@printindex tp
+
+@node Concept Index,  , Data Type Index, (dir)
+@unnumbered Concept Index
+
+@printindex cp
+
+@c Tables of contents
+@summarycontents
+@contents
+
+@bye

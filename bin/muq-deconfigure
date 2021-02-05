@@ -1,0 +1,43 @@
+#! /bin/sh
+echo "Nuking 'configure' & kin..."
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+
+echo "Files removed:"
+
+if [ -r $cdir/Configure ]
+then
+    echo  "$cdir/Configure"
+    rm -rf $cdir/Configure
+fi
+
+if [ -r $cdir/Config.h.in ]
+then
+    echo  "$cdir/Config.h.in"
+    rm -rf $cdir/Config.h.in
+fi
+
+# The following are normally handled by 'muq-clobber':
+if [ -r $cdir/Config.h ]
+then
+    echo  "$cdir/Config.h"
+    rm -rf $cdir/Config.h
+fi
+
+if [ -r $cdir/Makefile2 ]
+then
+    echo  "$cdir/Makefile2"
+    rm -rf $cdir/Makefile2
+fi
+
+if [ -r $cdir/config.status ]
+then
+    echo  "$cdir/config.status"
+    rm -rf $cdir/config.status
+fi
+
+
+exit 0

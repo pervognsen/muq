@@ -1,0 +1,441 @@
+--------------------
+MAKE-INSTANCE
+ This is the top-level user API gfn for creating an object.
+ The system-provided primary method is defined on STANDARD-CLASS.
+
+ Said to be generic, but takes either a class or classname...?!
+ Should we assume that nondefault methods work only in the
+ case where we explicitly hand it a class?  Hrm.  Mebbe
+ string method works by finding class and calling gfn on that.
+
+ -> defclass :initarg option essentially declares a
+    keyword to be legal for make-instance.
+
+ -> defclass :initarg option also allows definition of
+    a value/form to provide value for that initarg in
+    cases where user does not provide one.
+
+ -> "The slot-filling behavior is implemented by
+    a system-provided primary method for
+    INITIALIZE-INSTANCE which invokes
+    SHARED-INITIALIZE.
+
+ -> SHARED-INITIALIZE implements the parts of initialization
+    shared by these four situations:
+
+    o  Making an instance;
+    o  Re-initializing an instance;
+    o  Updating an instance to conform to a redefined class;
+    o  Updating an instance to conform to a different class.
+
+ -> "The system-supplied primary method for SHARED-INITIALIZE
+    directly implements the slot-filling behavior ... and
+    INITIALIZE-INSTANCE simply invokes SHARED-INITIALIZE."
+
+ -> "An initialization argument can be associated with a slot."
+    How?  They say it can also be associated with more than
+    one slot and/or passed to an initialization method...
+
+ -> "An initialization argument can be associated with a method."
+    "When an object is created and an initialization argument
+    provided," it is passed to
+      INITIALIZE-INSTANCE
+      SHARED-INITIALIZE
+      ALLOCATE-INSTANCE
+    otherwise, the lambda list provides a default...
+
+ -> This looks like a fairly good summary of gfns:
+    Object creation:
+      ALLOCATE-INSTANCE
+      INITIALIZE-INSTANCE
+      SHARED-INITIALIZE
+    Re-initializing an instance:
+      REINITIALIZE-INSTANCE
+      SHARED-INITIALIZE
+    Updating an instance to conform to a redefined class:
+      UPDATE-INSTANCE-FOR-REDEFINED-CLASS
+      SHARED-INITIALIZE
+    Updating an instance to conform to a differnt class:
+      UPDATE-INSTANCE-FOR-DIFFERENT-CLASS
+      SHARED-INITIALIZE
+
+  -> Looks like a mistake to require a default value for
+     an initarg in the syntax:  This prevents method
+     defaults from ever coming into play, and hence the
+     possibility of different defaults in different
+     methods.
+
+  -> Should we introduce ]-> and ]--> operators, as
+     shorthands for ]shift -> and ]shift --> respectively?
+
+  -> SHARED-INITIALIZE is hung off STANDARD-OBJECT. Args:
+     o  Instance.
+     o  Slotlist spec:  t nil or a list of slot names.
+     o  Rest are initialize args
+   
+  -> INITIALIZE-INSTANCE is hung off STANDARD-OBJECT.
+     "Initialize instance is invoked after
+     o The defaulted initarg list has been computed.
+     o The validity of the defaulted initarg list has been checked.
+     o A new instance with unbound slots has been created.
+     Args:
+     o Instance
+     o Rest: defaulted initarg list.
+
+
+--------------------
+Current implementation order constraints:
+
+ -> Need ephemeral objects for condition system.
+    Since this will change the condition system API,
+    this should be done as soon as possible.
+
+ -> Need CLOS for ephemeral objects, since condition
+    system is defined in terms of CLOS exception objects.
+
+ -> Need lisp compiler for CLOS, to be sure we're implementing
+    CLOS in a practical way from the compiler's point of view,
+    and because much of CLOS is defined in lisp-centric terms.
+
+ -> Need ephemeral lists for lisp compiler, to implement
+    stuff like &rest which I can't bear to do with vanilla
+    lists.
+
+
+----------------
+-> Implement basic CommonLisp describe/inspect/apropos
+   (i.e., "help") functionality.  Prolly get info.c
+   operational again and hook up a prim to it.
+----------------
+Problems with 'get' on undefined properties, and such...
+would it be better to issue an error msg immediately?
+-> Implement regular expressions.
+--------------------
+-> Implement "I see `x` dogs" alternative to current
+   [ "I see %s dogs" x | ]print syntax.
+----------------
+From discussion with Pakrat:  How hard would a
+    note{ [] [] $ $ }
+syntax be to implement, so the assembler could pin
+down the source of arity errors more precisely?
+----------------
+ICMP specifies that ICMP never generates an error packet
+in response to an error package;  CommonLisp likewise
+takes some efforts to keep handlers from being recursively
+invoked:  Likely the server should do something similar,
+preventing cascades of error messages.  An 'e' bit in the
+status word, and a convention that the server kills a
+job which gets a server error during processing of a
+server error, would be one approach. Or one could make it
+a count, and kill only on nesting of K errors.  Never
+repeating a given specific error while processing it might
+be neatest, but would require a separate bit for every
+error message, or something slow and/or complex.
+----------------
+"`count` dogs"   instead of [ "%d dogs" count | ]print
+-> "`count` dogs" as a regex interface
+----------------
+ecase and ccase are interesting ideas.  Likely generating
+an error should be the default if no default: is given?
+--------------------
+Even the most violent death of a job should
+release locks held by it, surely!  It would
+be nice to eventually find a compromise
+between guaranteeing ability to kill a job,
+and guaranteeing after-do clauses a fair
+chance to run.  An instruction limit on each
+after-do clause should do it?  This limit
+would have to take account of possible
+nesting of them...
+--------------------
+Especially given above, need to look more carefully
+at what happens to signals not caught and to returns
+from the last NORMAL frame on loop stack.
+----------------
+--------------------
+I think "as-me-do" of a remote user has to be
+implemented by job migration to the remote server.
+If we don't want to copy the whole loop and data
+stack when doing this, which we probably don't
+for security reasons, then as-me-do{} should
+probably always run in a thunk-like box, for
+consistency.
+--------------------
+If one considers, say, doing "<=" on two strings which
+are both remote, it is clear one really wants a local
+cache of at least 1K or so of each string as the
+comparison progresses.
+  In general, if an operation involves N objects which
+may be remote, we may need to cache relevant parts of
+all N of them at least long enough for the operation to
+complete.
+  I think this means having in the proxies a 'cache' slot
+and also a 'cache-expires-at' slot.
+  If an operation can have N remote operands, with a
+round-trip time R to fetch each one, it would seem
+that we need to be willing to cache a result at
+least N*R seconds to avoid thrashing in an infinite
+loop.  If objects have on them a "milliseconds-to-cache"
+value, we can use the maximum of the two values when
+setting the 'cache-expires-at' time.
+  LATER:  That sounds sloppy.  I think I prefer a
+scheme which guarantees that an individual instruction
+makes monotonic progress.  There can be an "in-use-by"
+field which gets set to the current job on each
+proxy as the value gets cached, cleared at the end of
+the instruction on all cached values:  The instruction
+can skip refetching cached values for proxies with
+"in-use-by" set.  That should guarantee monotonic
+progress to completion.
+  LATER:  Or should the cache be in the job?  That
+would avoid bloating proxies and make clearing the
+cache at the end of the instruction easier to boot.
+----------------
+Wormholes need to die, I think:  Seems to me proxies
+can replace them.  
+----------------
+Proxies probably need to become something that looks
+like type THUNK, to take advantage of the thunk
+machinery for evaluating them.  I suspect an 'if' in
+the thunk-evaluation code pathway is called for;
+Possibly they can just -be- thunks, without any
+extra server hacking at all...?
+--------------------
+How about /net/betz.biostr.washington.edu.6969/... as
+the path notation for accessing an object on a remote
+server, port 6969?  Or //betz.biostr.washington.edu.6969/... ?
+----------------
+Need to thoroughly vet all server prims to make sure
+thunks are evaluated -everywhere-.  I'm pretty sure a
+number of prims currently fail to do this.
+--------------------
+Maybe should have a special class ghost-index that
+doesn't prevent objects from being garbage-collected?
+This could be used to track proxies on system, for
+example, so we don't create duplicates, deleting
+a proxy from the index whenever it gets garbage
+collected.  This only works if the garbage collector
+knows where to find the proxy in the index.  An
+alternative would be to form all proxies into a
+splaytree via internal pointer fields?  But then we
+need special invisible pointers.  Maybe we can encode
+our regular pointer as an integer by flipping the
+bottom bit?
+----------------
+--------------------
+Should each job have a slot specifying how long in
+milliseconds it should block on a net access before
+generating a signal?
+--------------------
+In view of RFC 1752's percieved concensus that 16 bytes
+should be the next internet IP address length, Muq
+networking should likely use 128-bit slots where-ever
+host addresses are needed, internally in the db and
+(expecially) externally in networking communications.
+(Or perhaps variable length ones, in the net case?)
+--------------------
+Network stuff:
+Should likely allow pty-style loopback sockets.
+Also need to add window-size info to socket
+structures, both row/col and x/y pixels.
+If that's the spot for that sort of info,
+might be the spot for TERM type too.
+--------------------
+Do sockets get closed when they are garbage
+collected?  Should they?  Can they be garbage
+collected without being closed first?
+--------------------
+Can we reduce all module linkage to a single mod_Start call?
+This would make it trivial to run a module as a DSO, as an
+alternative to making it a statically linked library.  I'm
+unclear how good DSO access is to hostprogram functions and
+datastructures, however...
+--------------------
+Worth considering: A limit on how many invocations of
+]do-signal a given job may be running due to external
+signals at any given time.  This would reduce the
+chance that a broken or malicious job can crash
+another job by flooding it with ]do-signal calls
+and overflowing the loop stack.
+----------------
+Animation:  A good Muq implementation of :per-frame-hook
+is likely to have a FRAME flag in each full-fledged object,
+and likewise a THIS-FRAME flag in each job:  We can have
+a 'next-frame' function that toggles the THIS-FRAME bit,
+and we can have each operation depending on the value of
+an object o first compare @%s/this-frame to o%s/frame,
+and if they differ, flip the o%s/frame bit and then
+force a call to the hook function.  If possible we should
+have a may-have-per-frame-hooks bit too, to save having
+to actually search o%s all the time.
+--------------------
+We need similar :when-changed-hook and :before-changing-hook
+facilities, likely...?  Or should these be per-propdir
+instead of global?  Also, should people who don't own an
+object be able to set a :when-changed-hook value?  This
+would save them from polling, but it would allow them
+to screw up processing by the owner :(.  Perhaps a
+very specialized :maybe-signal-when-changed-hook value
+would be best, that fires off a quick signal summarizing
+the change, if possible, but not if it would block the
+running process...?  Changing the hook could be an
+owner-privileged thing, per se, and systems that wish
+could provide a setuid-root hack to allow non-users
+to do so also, if desired.
+  But we can't even update
+such a list as root without adding a lock object to
+every object?!  Eyick.  I suspect WE NEED MANDATORY
+PER-OBJECT LOCKING.  If we limit such locking to one
+object at a time per job, then we can implement it
+with one slot in each job, and one bit in each
+object.  That's pretty satisfying, and fast to
+execute, too.  Lessee:  We need a job queue for
+people waiting on the lock.  That can be on the job,
+however, rather than on the object, so the per-object
+overhead is -still- just one bit.  (I'd hate to add
+a full slot.) -Might- be able to support it on strings,
+even?
+----------------
+Need calendar or priority queues for realtime stuff, sometime.
+----------------
+Need an honest Class Class for CLOS stuff.
+----------------
+Need to implement a select() type operator:
+ [ stream-0 stream-1 ... | ]read-stream-line -> line -> stream
+say.  Needs timeout, and needs to be told which stream
+woke it (or if timeout woke it).
+----------------
+Probably should add 'flagwords' bits to control visiblity of
+the various propdirs.  15 bits would give us 'other' rwx for
+all of them.  30 bits would give us user+other rwx for all
+of them.  There are 9 of 32 flagbits currently actually in
+use, looks like, leaving 23.  That would be one bit allowing
+full 6-bit user+other control of four propdirs:  If we drop
+one bit by always allowing the owner read privileges on one
+or more of these four, it should work.  We might as well
+always allow the owner both read and execute, which cuts
+it to four bits each for four propdirs, or 16 bits total.
+'execute' should be called 'search' in this context.  So
+we want to add sixteen bitprops to the std object:
+
+ [hid|pub|met|sys]-user-write
+ [hid|pub|met|sys]-other-write
+ [hid|pub|met|sys]-other-read
+ [hid|pub|met|sys]-other-search
+
+These can then default to the current arrangments.
+----------------
+95Mar24: I'm more and more inclined to think that we
+should try and freeze the bytecode instruction set at
+some point, and do server extensions via other mechanisms.
+To avoid recompiling the server, to ensure that networked
+servers all speak the same bytecode language, and to
+simplify coding up such extensions.
+  One good extension mechanism would be coprocesses at the
+unix level, communicating via pipes.  We should definitely
+have a clean, convenient way of doing this.
+  Another good extension mechanism would be dynamically
+linked (ideally) libraries that each implement a new
+"hardwired" class of Muq object.  Communication with the
+library would then be via the table-indirection mechanism
+and the set of operations it provides.  To make this fly, it
+would be good to include one utterly general IOCTL type call
+in this set of table-indirected operations: IOCTL should
+take one block, return one block, and have utterly open
+semantics.  We have then pretty much re-invented the Unix
+special device driver in the Muq context :).  (In fact, it
+would be nice to segregate the device-driver sources in a
+separate muq/dev/ directory.)  We also need to be able to
+create instances of these classes without introducing a new
+hardwired "make-xxx" function each time, and a way to test
+their class without introducing a new hardwired "xxx?"
+predicate each time.  (But we could provide muf-coded
+functions like this that use some common hardwired
+function.)
+  Actually, a lot of the miscellaneous type server control
+functions ('root-shutdown' &tc) might be profitably recast
+as IOCTL calls on the /muq device.  Or just get/set ops on
+it.. why not just "nil --> /muq%#/running"?
+----------------
+Setting a global variable one doesn't own should transparently
+establish a special binding.  Possibly only if global variable
+is bound, though, and generate an error otherwise?  Main
+motivation is to support commonlisp portability.
+----------------
+For cleanliness, we would like all programs on the system to maintain
+their per-player db on the player, so the per-player info
+automatically gets recycled when the player gets recycled.
+This can be done by adding a per-propvalpair owner field, or perhaps
+by a system daemon which creates custom read/write function pairs???
+----------------
+Also define-promise: define-thunk: define-type:.
+Possibly define-macro: instead of 'compile-time'.
+----------------
+Can we make textdump format more lispish?  #n=... and #n#
+might be adopted?
+----------------
+Inline support hasn't been implemented yet.
+----------------
+-> Get the in-db muf compiler working again.
+----------------
+-> Add an in-db compiler for lisp syntax.
+(Dave Gilbert is working on this.)
+----------------
+-> Add an in-db compiler for some suitably screwy infix syntax.
+----------------
+Complete and check multi-user protection and resource
+quota stuff.
+----------------
+-> Add an emacs-style text-buffer class to support in-db text editors.
+----------------
+-> Rewrite vm.c and add a production-quality garbage collector.
+----------------
+-> Add distributed near-transparent client-server support.
+----------------
+-> Add commonlisp-style arrays.
+----------------
+Need @rec capability, which means a JUNK type and
+special logic to null (?) out pointers to JUNK
+as they are discovered, and a way of ensuring that
+they will eventually all be discovered.
+----------------
+-> Complete CLX-conforming X support.
+----------------
+-> Add some higher-level X support. (InterViews?
+   GNU Widgets?  Winterp's Athena widget support?)
+----------------
+-> Add more number types, including doubles, exact integers and
+   formulae for symbolic algebra.
+----------------
+MIME support
+----------------
+Non-MIME sound support?
+----------------
+Steal Xlispstat's thunder?
+----------------
+Add XGL-level 3-D graphics, and/or
+add Geomview-level geometry primitives, and/or
+add interface to geomview proper.
+Need to support VRML under any scenario, likely.
+----------------
+Add procedural world-building support.
+----------------
+95Aug28 Stuff Andy would like by beta time:
+1) Being able to make everything from top level (scheduled already)
+2) Being able to selectively install 'official' packages that aren't
+   needed just to run the server.  (don't think it's on the schedule)
+3) Some way to easily install 'contrib' distributions.  It'd be neat if
+   Muq had a setup to easily install packages in 'contrib' once people
+   untar distributions to there.  I'm not sure if we might want one
+   'contrib' style directory for in-db code and one for server hacks
+   (say a 3D Doom client rendering engine. :)  But then if we kept
+   everything tidy they prolly all could fit in one directory happily.
+   Hmm, we could maybe even have a /contrib object that shows what packages
+   or other hacks are installed, prolly be good with the axe.t code you
+   mentioned. /ctb seems kinda ugly, hmm, not sure what one would call it,
+   /hak or /cst for custom maybe, or just /axe could be neat too.
+4) Auto install or find some other way to get around the need for $PATH
+   settings and such.  It's so easy once you have it done but it can be
+   such a pain if someone is a C guru and not a unix-shell guru.  (New
+   CS or EE grads are prolly a good example. :)
+----------------

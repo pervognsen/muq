@@ -1,0 +1,25 @@
+#! /bin/sh
+# Just a personal debugging support hack...
+echo "Clearing out existing muq dbs..."
+rm -rf muq*db*
+rm -rf ../db
+echo "Building new muq dbs..."
+muq-db-c
+mkdir ../db
+cp -R muq*db* ../db
+echo "Building new linex-elf tarfile..."
+make install
+if [ -f ~/muq/muq.-1.*.0-linux-elf.tar ] ; then
+    rm ~/muq/muq.-1.*.0-linux-elf.tar
+fi
+if [ -f ~/muq/muq.-1.*.0-linux-elf.tar.gz ] ; then
+    rm ~/muq/muq.-1.*.0-linux-elf.tar.gz
+fi
+muq-elf-tar
+echo "Done creating linux-elf tarfile:"
+ls -l ~/muq/muq.-1.*.0-linux-elf.tar.gz
+echo "Copying linux-elf tarfile to donna..."
+rcp ~/muq/muq.-1.*.0-linux-elf.tar.gz donna:
+echo "Done copying tarfile to donna:"
+rsh donna ls -l 'muq.-1.*.0-linux-elf.tar.gz'
+./muq

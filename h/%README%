@@ -1,0 +1,16 @@
+                   muq/h/#README#       last update: 94Jul21
+
+This directory contains oodles of #include files used by the
+Muq C code.  There is basically one per Muq module, plus:
+
+   All.h           #includes all the other files, more or less.
+   Config.h        Portability stuff produced automatically by c/Configure
+   Defaults.h      Sets things Side-config.h doesn't set.
+   Hax.h           Support stuff for Config.h
+   Modules.h       Support for optional C modules.  Needs revamping.
+   Need.h          Support stuff for Config.h
+   Site-config.h   Put all your site-local customization settings here.
+   VERSION         Current version number for distribution.
+   Version.h       Produced automatically from VERSION.
+   jobpass.h	   Machine-specific info produced automatically by jobpass.c
+   jobprims.h      Interpreter support produced automatically by jobbuild.c

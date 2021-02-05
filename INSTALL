@@ -1,0 +1,758 @@
+
+                          -=-=-=-=-=-
+                          muq/INSTALL
+                          -=-=-=-=-=-
+
+                      Last update: 99Oct02
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++          Note: MUQ ONLY RUNS ON UNIX (POSIX) SYSTEMS		    +
++          -------------------------------------------		    +
++ 								    +
++ If you don't have one, you can stop right now.   (And go get one  +
++ *grin*:  Any 386 can run Linux, among other completely free unix  +
++ clones, so this is not an unreasonably difficult proposition any  +
++ more.  See http://www.linux.org/ or sunsite.unc.edu:pub/Linux.)   +
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++                  Quick And Dirty Install			    +
++                  -----------------------			    +
++ 								    +
++ This is the fastest, simplest way to just try out Muq,	    +
++ presented tersely for impatient experts.  See the more            +
++ verbose instructions below if you find these too terse:	    +
++ 								    +
++ cd $HOME        # Must be in $HOME for Quick-And-Dirty install    +
++ gunzip muq*gz   # Uncompress the downloaded file		    +
++ tar -xf muq*tar # Unpack the archive				    +
++ cd muq/c        # Go to source code directory			    +
++ make            # Compile server.  Configures to your system too. +
++ make check      # Skip this if you're a trusting soul.	    +
++ ../bin/muq-db-c # Build a db with standard libraries.		    +
++ ./muq           # Run Muq on db.  Muf Tutorial has stuff to try.  +
++ ^C^C            # Two ^C (INTERRUPT) chars get you out.           +
++ 								    +
++ If you decide to use Muq a lot, I recommend that you consult      +
++ the more detailed instructions and configure your .cshrc or       +
++ such to set your MUQDIR and PATH environment variables properly.  +
++ 								    +
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+    NOTE: If you find this file confusing or unclear, please
+    email cynbe@eskimo.com and explain.  If possible, please
+    indicate what you would like it to have said.  You shouldn't
+    have to be a unix guru to install Muq;  If you are having
+    trouble following the instructions, that is their fault, not
+    yours.
+
+
+
+Installing Muq -- the TWELVE STEP WAY!
+--------------------------------------
+
+   --Resources needed to install and run--
+
+Installing and running Muq comfortably requires about
+20-30Meg of diskspace.  If you're tight for space, you can
+get by with a bit less by nuking unwanted manual sources and
+such, and by nuking all the source tree once you have a
+working executable.  I wouldn't venture to guess just what
+the minimum diskspace needed is.
+
+The Muq executable proper consumes less than  a meg of ram,
+and by default allocates another two meg of ram as a disk
+buffer.  (This is commandline configurable.)
+
+You'll also need a nice ANSI C compiler.  Muq gets tested
+more under gcc (the GNU C Compiler) than any other, so that
+is probably your best bet if you have it available.
+
+Muq has been tested on most of the common 32-bit and 64-bit Unices at
+this point, including AIX, DEC OSF1, HP/UX, Irix, Linux, NeXTStep,
+NetBSD, Solaris, SunOS, Ultrix and UnixWare:  If you have anything
+at all modern supporting Berkeley sockets (that is, anything but a
+few pathologically pure AT&T Unix releases) you should find that
+Muq will install with little or no tweaking.
+
+
+
+Step 1
+------
+   If you have not already done so, uncompress and unarchive the Muq
+   distribution. (If you do this in your home directory ($HOME), you
+   can skip setting MUQDIR in step 2.)   My distributions consist of
+   'tar' archives compressed with the GNU compression gzip, and have
+   names like
+
+     muq-1.9.4.tar.gz
+
+  (In the unlikely event that your distribution came via someone
+   else who packs them differently, you may instead have a file
+   name more like one of:
+
+     muq-1.9.4.tar.Z	# Built using 'tar' and then 'compress'
+     muq-1.9.4.tar.z	# Built using 'tar' and then 'pack' (or an old gnuzip)
+     muq-1.9.4.zip	# Built using 'zip' (dos-derived archiver).
+
+   If so, see the "UNCOMPRESSING OFFBEAT ARCHIVES" appendix.)
+
+   First, uncompress the file:
+
+     gunzip muq-1.9.4.tar.gz
+
+  (If you have problems, see the "UNCOMPRESSING .gz ARCHIVES" appendix.)
+
+   Next, unpack the resulting archive into a zillion files under
+   a directory named 'muq'.  (If you already have a directory named
+   'muq', you'd best rename it first: "mv muq old-muq".)
+
+     tar -xvf muq-1.9.4.tar
+
+  (If you have problems, see the "UNPACKING .tar ARCHIVES" appendix.)
+
+
+
+Step 2:  Setting MUQDIR and PATH.
+---------------------------------
+   
+   You can skip this step if you are installing Muq in your
+   home directory and are willing to type full pathnames
+   when running Muq and related utilities:  "./muq" or
+   "../bin/muq" instead of just "muq".
+
+   If  you are not keeping Muq in ~/muq (that is, if you are
+   not unpacking it in your home directory), you need to set
+   the MUQDIR environment variable so that the various parts
+   of Muq can find each other. For example, if you are doing
+   the install in $HOME/src instead of $HOME, you need to do
+
+       setenv MUQDIR ~/src/muq/bin
+
+   or whatever.  You also need to change muqhome in
+   $MUQDIR/Muq-config.sh appropriately.
+
+   If you wish to build documentation, you need to set $PATH
+   to include the $MUQDIR/bin directory.
+
+       setenv PATH $muqhome/bin:$PATH
+
+   and it doesn't hurt to tell 'info' and related utilities
+   where to find the Muq manuals:
+
+       setenv INFOPATH ~/src/muq/doc:$INFOPATH
+
+   Rather than do all the above by hand every time you log
+   in and want to use Muq, you may wish to automate the
+   process using your .cshrc file.  Just put:
+
+       if ( ! $?MUQDIR   &   -d $HOME/muq/bin ) then
+         setenv MUQDIR "$HOME/muq/bin"
+         setenv PATH "`$MUQDIR/muq-config bindir`:$PATH"
+         setenv INFOPATH "`$MUQDIR/muq-config docdir`:/usr/local/info"
+       endif
+
+   in your ~/.cshrc file and then do "source ~/.cshrc"
+   and "rehash" to make the changes in your current shell.
+
+   To save you typing, doing "muq/bin/muq-patch-cshrc" will
+   install the above changes in your ~/.cshrc for you.
+
+   (NOTE: `$MUQDIR/muq-config bindir` is enclosed in back-quotes,
+   NOT single-quotes.  Same with `$MUQDIR/muq-config docdir`.)
+
+   I recommend putting the above at the very top of your .cshrc.  In
+   particular, you want it done even for non-interactive shells spawned
+   by makefiles or such.
+
+      (You can usually get away with putting the above in your
+       .login instead of your .cshrc, but you will sometimes
+       find systems in which, for example, shells spawned under
+       emacs neither inherit MUQDIR via the environment, nor
+       source .login.  Csh (almost) always reads .cshrc, so
+       that is the safest place to define MUQDIR.)
+
+   It won't hurt and might help to do a 'rehash' now.
+
+       HINT:  Check that, if your .login or .cshrc sets your PATH,
+       it does it by something that preserves the existing $PATH, like
+	  setenv PATH "~/bin:$PATH"
+       not by clobbering the existing path completely, like
+	  setenv PATH "~/bin:/bin:/usr/bin"
+       because the latter will clobber the PATH information set
+       up above.  If you _must_ clobber your path completely,
+       include `$MUQDIR/muq-config bindir` as one component.
+
+   NOTE: If you are using sh or bash instead of csh or tcsh, the
+   above will not work.  See the "OTHER SHELLS" appendix.
+   NOTE:  The 'info' files live in different places on different
+   systems.  You should do
+     ls -l /usr/local/info/dir
+   to verify that that file exists on your system.  If it does not, try
+     ls -l /usr/info/dir
+     ls -l /usr/local/emacs/info/dir
+   and if either of those exists, substitute that directory for
+   "/usr/local/info" in the above INFOPATH settings.  If you do
+   this, you should make the matching change inside muq/doc/dir.
+   (If none of the three exist, ignore the problem for now.)
+
+
+
+   Either way, when done you can (and should) should do
+
+       muq-config apps
+
+   to confirm that you set PATH correctly, putting Muq's
+   bin/ directory on your search path:  It should print out
+
+       muq z-info muq-import muq-export
+
+   or something similar.  If it doesn't, try again, or get a
+   local expert to help.
+
+
+
+Step 3
+------
+   --> THIS STEP IS SILLY AT THE MOMENT (-1.x releases) <--
+   You may wish to edit ~/muq/h/Modules.h" to configure
+   the Muq-based application you wish to compile.
+
+
+
+Step 4
+------
+   I have tried to build no assumptions about directory layout
+   into Muq;  The only place with directory layout knowledge
+   is supposed to be bin/Muq-config.sh.  If you want to change
+   the default directory layout, edit this file.  You may wish
+   to read it anyhow.
+
+
+
+Step 5
+------
+
+   cd to ~/muq/c (or equivalent if you're installing somewhere
+   other than your home directory) and do "make".  This should
+   compile a ~/muq/c/muq executable.  If you are very short of disk
+   space, you may wish to discard all the source files for
+   the manuals before doing this: "rm ~/muq/doc/*"
+
+      NOTE:  The first time you compile, Makefile automatically
+      invokes 'Configure' to customize Makefile2 and Config.h to your
+      system. If you are a guru, you may wish to invoke Configure by
+      hand and then edit Makefile2 and Config.h to suit your taste
+      before doing the first full 'make'.
+
+      NOTE:  By default, Configure will build a Makefile2 which
+      uses gcc, if available.  If you want to override this, or
+      to specify favorite gcc switches or whatever, you might
+      want to do something like one of the following
+
+        setenv CC cc
+        setenv CC "cc -g -Wf,-XNc1000"
+        setenv CC "gcc -O -traditional -Wall"
+
+      before doing your first make;  Configure will build a Makefile2
+      using the specified definition for CC instead of its normal
+      choice.
+
+
+
+Step 6
+------
+
+   Do "make check".  This should report zero errors detected when
+   done, and should also print out no "***"-flagged error lines.
+
+   This step takes a long time to run on some systems, and you
+   may want to skip it if Muq is known to be stable on your system.
+--------------------------------------------------------------
+NOTE: Muq -1.*.* is a very pre-production release, and should
+actually report two failures at present:
+***** Failed test number 46 because: Didn't return TRUE value.
+***** Failed test number 47 because: Didn't return TRUE value.
+--------------------------------------------------------------
+
+
+
+Step 7
+------
+   Do "make install".  This will install ~/muq/c/muq as ~/muq/bin/muq.
+   If you are short of disk space, you may wish to do a "make clean"
+   now to remove .o files etc.  If you're really short of disk space,
+   you may wish to just do "rm -rf muq/c muq/h" and completely eliminate
+   all the C source code.
+
+Step 8
+------
+   Doing a "rehash" will ensure that your shell
+   realizes that ~/muq/bin/muq now exists.
+
+Step 9
+------
+   Do "make db".  This will create a ~/muq/db/muq-* fileset
+   constituting a runnable Muq database image.
+
+
+Step 10
+-------
+   The Muq manuals are written in .texi (GNU texinfo) format,
+   which is processed to produce four different output formats:
+
+     .ascii  for vanilla printers and file viewers;
+
+     .info   for online reading via 'info', 'emacs' and 'xinfo';
+
+     .dvi    TeX device-independent format, which some systems
+             can print directly, also convertable to most high-
+	     quality hardcopy outpuf formats;
+
+     .ps     Postscript, one of the most popular high-quality
+             hardcopy formats.
+
+   To reduce distribution size and download time, preformatted
+   versions of the Muq manuals are not included in the basic
+   source distribution, but are available as separate .tar.gz
+   files.  Check the site from which you obtained this distribution,
+   and grab the manual distribution(s) you prefer.
+
+Step 11
+-------
+   If you prefer, you may generate the above manual versions
+   yourself.  You will need the appropriate software tools,
+   which to save space are not included in the Muq distribution
+   proper:
+
+      GNU makeinfo to generate the .ascii and .info formats;
+      TeX to generate the .dvi formats;
+      TeX plus dvips or equivalent to generate the .ps formats.
+
+   Given that, you may generate any desired manual set by doing
+
+      cd muq/doc
+
+   and then one or more of
+
+      make ascii
+      make info
+      make dvi
+      make ps
+      make all
+
+   More specific commands are also available:  Skim muq/doc/Makefile*
+
+
+Step 12
+-------
+-> cd to ~/muq/db and do "muq" to run muq; That will let you
+   type "2 2 +" and see the result, and similar amazing things.
+   Muq version -1.0.0 comes with a simple nanomud (source in
+   pkg/30-X-nanomud.t and pkg/31-X-nanomsh.t) which may be started up
+   by doing "nanomud:start" at the prompt. Do control-C (or
+   whatever your INTERRUPT character is) to exit, or
+   "root-shutdown", if you prefer.
+
+Object properties will be preserved across runs; Muq jobs ("threads",
+"tinyprocesses") and variables local to muq jobs currently will not.
+
+ -- Cynbe
+
+
+
+=====================================================================
+UNCOMPRESSING OFFBEAT ARCHIVES
+------------------------------
+
+If you have an offbeat archive, your best bet might be to just
+get a standard one via anonymous-ftp from muq.com.  If for
+some reason you want to continue, here are some tries:
+
+-----------
+Files like:
+
+     muq-1.9.4.tar.Z	# Built using 'tar' and then 'compress'
+
+Files with a capital-Z at the end were compressed using the
+old Unix "compress" utility.  (This utility is being phased
+out because after it was widely adopted, a patent on it was
+announced.)  You should be able to uncompress it via
+
+    uncompress muq-1.9.4.tar.Z
+
+If you can't find "uncompress" on your system, you might try
+
+    zcat muq-1.9.4.tar.Z >zcat muq-1.9.4.tar
+
+-----------
+Files like:
+
+    muq-1.9.4.tar.z	# Built using 'tar' and then 'pack' (or an old gnuzip)
+
+For years, the lower-case z at the end indicated compression
+using the unix "pack" utility.  A few early versions of gzip
+(the GNU compression utility) also produced this ending, before
+they switched to the ".gz" ending to avoid confusion.  If you
+have a "pack" file, 
+
+    unpack muq-1.9.4.tar.z
+
+is the recipe.  Failing that, try using the GNU uncompressor:
+
+    gunzip muq-1.9.4.tar.z
+
+-----------
+Files like:
+
+    muq-1.9.4.zip	# Built using 'zip' (dos-derived archiver).
+
+Some poor refugee from the DOS world must have packed this for
+you.  On the offchance that you have "unzip", the unix version
+of this DOS utility, on your system, you can try
+
+    unzip muq-1.9.4.zip
+
+Good luck!
+
+
+
+=====================================================================
+UNCOMPRESSING .gz ARCHIVES
+--------------------------
+
+If 'gunzip' complains about the file, it most likely
+got trashed while being FTPed.  Try again, and be
+sure to do "binary" or equivalent before beginning
+the transfer.
+
+If 'gunzip' isn't found at all, it might be because:
+
+1) Your PATH isn't searching the directory that
+   contains 'gunzip'.  You might try
+
+       /usr/local/bin/gunzip muq-1.9.4.tar.gz
+
+   instead of just
+
+       gunzip muq-1.9.4.tar.gz
+
+   If that fails, you can try
+
+       find / -name 'gunzip' -print
+
+   which will search the whole machine for files
+   named 'gunzip', but be warned that on a big
+   machine this may both take forever and upset
+   your system administrator(s).
+
+2) It has been installed, but under another name.
+   You might try things like
+
+       ungzip muq-1.9.4.tar.gz
+       /usr/local/bin/unzip muq-1.9.4.tar.gz
+       unzip muq-1.9.4.tar.gz
+       /usr/local/bin/unzip muq-1.9.4.tar.gz
+       gnunzip muq-1.9.4.tar.gz
+       /usr/local/bin/gnunzip muq-1.9.4.tar.gz
+       gzip -d muq-1.9.4.tar.gz
+       /usr/local/bin/gzip -d muq-1.9.4.tar.gz
+
+   or see what
+       ls -l /usr/local/bin/*zip*
+   turns up.
+
+3) Nobody has installed it on your system yet.  It
+   is free software, and doesn't come standard with
+   unix, so this is quite possible.  You might want
+   to try grabbing it from prep.ai.mit.edu pub/gnu
+   (or any other major net archive) and installing
+   it yourself.  This is very easy to do, and
+   requires no programming skills, just the ability
+   to follow very simple directions. Or get a local
+   expert to do it if you prefer.
+
+
+
+=====================================================================
+UNPACKING .tar ARCHIVES
+-----------------------
+
+Common problems here, other than running out of disk
+space or disk quota:
+
+
+tar isn't found
+---------------
+
+Very unusual!  Try /bin/tar and /usr/bin/tar
+instead of just 'tar'.  Or look around for
+GNU tar: /usr/local/bin/tar or /usr/local/bin/gnutar
+or /usr/local/bin/gtar.  Or install GNU tar yourself,
+from prep.ai.mit.edu pub/gnu or almost any major
+net archive.  Recent releases install very easily.
+
+
+tar complains file is invalid
+-----------------------------
+
+Did you ftp it uncompressed?  If so, it probably
+got trashed in transit.  Try again, being sure to
+select "binary" transfer before starting.
+
+You might also just have an incredibly antique
+'tar'.  If so, try GNU tar.  (See above.)
+
+
+tar creates unwritable directories or files
+-------------------------------------------
+
+Some 'tar's will restore unwanted file permission
+bits or ownership fields.  Sometimes adding a
+flag like 'o' will help:
+
+    tar -xof muq-1.9.4.tar
+
+instead of
+
+    tar -xf muq-1.9.4.tar
+
+Or try using GNU tar instead.  (See above.)
+
+Sometimes you can work around this problem by
+changing the permission bits on the new
+directories tar creates each time it jams, then
+starting it over again.  Ick!
+
+
+
+=====================================================================
+OTHER SHELLS
+------------
+
+If you are running bash or sh instead or csh or tsch,
+editing ".cshrc" won't do you any good.  Instead, you
+need to prepend something like
+
+   if [ -z ${MUQDIR:-""}   -a   -d $HOME/muq/bin ] ; then
+
+     MUQDIR="$HOME/muq/bin"
+     export MUQDIR
+
+     PATH="`$MUQDIR/muq-config bindir`:$PATH"
+     export PATH
+
+     INFOPATH="`$MUQDIR/muq-config docdir`:/usr/local/info"
+     export INFOPATH
+   fi
+
+to your $HOME/.profile file (note the backquotes!) and then do
+
+   . $HOME/.profile
+
+If you don't know what shell you are using, try doing:
+
+     setenv XXX xxx
+
+If this works, you're on something csh-ish;  If it
+complains 'setenv not found', you're on something sh-ish,
+or some shell so exotic you're likely a guru who doesn't
+need my help.:)
+
+
+
+=====================================================================
+SYSTEMS ON WHICH MUQ HAS BEEN REPORTED TO WORK
+----------------------------------------------
+
+You may find it helpful to check this list and see if Muq
+is known to work on a configuration like yours.  If you
+have new results, please email them to cynbe@muq.org.
+
+NB: Debian Linux i386 ELF is the development platform,
+hence is mostly not listed.
+
+        Muq
+Date    Version  OS              Compiler  Comments
+------- -------  --------------- --------  -----------------------------------
+99Jul04 -1.44.0  SunOs    5.5.1  gcc 2.7.2 Solid.
+99Jul04 -1.44.0  Irix     5.3    gcc 2.8.1 Solid. gcc 2.7.2.3 coredumped.   [4]
+98Jul10 -1.43.0  Irix     6.2    gcc 2.8.1 Solid, port required one fix.    [3]
+96Oct24 -1.33.0  UnixWare 2.01   gcc 2.6.2 Solid, port required two fixes.  [2]
+96Aug31 -1.31.0  Linux    1.2.1  gcc 2.6.3 Compiled clean straight from box.[1]
+95Aug18 -1.18.1  DEC OSF1 1.3a   cc        Fixed a X11/Xfuncs.h header problem.
+95Aug18 -1.18.1  Irix     5.2    gcc 2.7.0 Solid.
+95Aug18 -1.18.1  HP/UX A.09.01 A gcc 2.7.0 Had to disable X support.
+95Mar17 -1.11.0  HP/UX A.09.01 A gcc 2.6.3 select() proto is wrong but works.
+95Mar17 -1.11.0  SunOS    5.3    gcc 2.6.3 No special problems.
+95Mar17 -1.11.0  Linux    1.2.03 gcc 2.5.8 No special problems.
+95Mar17 -1.11.0  DEC OSF1 1.3a   cc        No special problems.
+95Mar17 -1.11.0  NeXTStep 3.2    216.obj~13No special problems.
+95Mar17 -1.11.0  Irix     5.2    gcc 2.6.3 Solid.
+95Jan19 -1.10.2  NetBSD   1.0    gcc 2.4.5 By leo@dash.com: 2 header fixes.
+94Dec26 -1.9.4   Ultrix   4.2a   gcc 2.3.3 Ok 'cept for 3  missing prototypes.
+94Oct12 -1.0.0   SunOS    4.1.3  gcc 2.5.8 Ok 'cept for 3  missing prototypes.
+94Oct10 -1.0.0   Linux    1.1.51 gcc 2.5.8 Ok. Emacs shells don't read .cshrc?!
+94Jul19 -2.11.0  Irix     4.0.5H gcc 2.5.8 Irix is main development platform.
+94Jul19 -2.11.0  SunOS    4.1.3  gcc 2.5.8 Looks solid. Very non-Ansi C system.
+94Jul15 -2.11.0  DEC OSF1 1.3a   cc        Looks solid. Alpha is fast!
+94Jul11 -2.10.0  Ultrix   4.2a   gcc       Looks solid. Awful 'make', though.
+94Jul11 -2.10.0  SunOS    5.3    gcc 2.5.8 Looks solid. Shared libs took work.
+94Jul11 -2.10.0  NeXTStep 4.2a   gcc       Looks flaky: Many odd header probs.
+94Jul11 -2.10.0  Linux    1.1.16 gcc 2.5.8 Looks solid. Exposed a vm.c bug.
+94Jul11 -2.10.0  AIX      3.2    cc 1.02   No problems. Tail recursion works!!
+
+
+=====================================================================
+UNIX SYSTEMS ON WHICH MUQ IS REPORTED TO NOT WORK
+-------------------------------------------------
+
+        Muq
+Date    Version  OS              Compiler  Comments
+------- -------  --------------- --------  -----------------------------------
+99Nov19 -1.46.0  FreeBSD  2.2.7  gcc 2.7.2 Coredumps: Use newer FreeBSD.   [5]
+
+I'd be curious to hear results from offbeat systems like
+QNX, but at present I am not eager to put a lot of effort
+into supporting basically non-POSIX systems, especially ones
+nobody has any immediate interest in actually using Muq on.
+
+(The longer we wait, the more POSIX most systems are likely
+to become.)
+
+I'll be happy to offer reasonable cooperation to other folks
+taking on such projects, however.
+
+
+=====================================================================
+FOOTNOTES ON ABOVE INSTALL SUCCESSES/FAILURES
+
+[5] FreeBSD 2.2.7 libc appears to have problems with 'long long' args.
+    Here is a sample program which reproduced the coredump -- and
+    which works fine on the latest FreeBSD:
+    #include <stdio.h>
+    int main( int argc, char** argv ) {
+	long long sys_Ip0      = (long long) 205;
+	long long sys_Ip1      = (long long) 178;
+	long long sys_Ip2      = (long long) 16;
+	long long sys_Ip3      = (long long) 44;
+	long long sys_Muq_Port = (long long) 30023;
+	unsigned char jobbuf[32], nambuf[32], datbuf[32], buffer[8192*2];
+	strcpy( datbuf, "1999/11/19/13:15:22.984" );
+	strcpy( jobbuf, ""                        );
+	strcpy( nambuf, ""                        );
+	sprintf( buffer,
+	    "date:%s muq:%03lld.%03lld.%03lld.%03lld:%05lld job:%16s user:%-16s msg: ",
+	    datbuf, sys_Ip0, sys_Ip1, sys_Ip2, sys_Ip3, sys_Muq_Port, jobbuf, nambuf
+	);
+	printf("buffer = '%s'\n", buffer );
+	exit(0);
+    }
+
+[4] gcc 2.7.2.3 coredumped while compiling asm.t (first file).
+    Possibly a corrupt install.  Also discovered that Irix
+    'test' doesn't have "-e" (exists) test: Changed to using
+    "-f" (file exists) test.
+[3] Irix 6.2 /bin/echo semantics were a bit different, so that
+muq/bin/muq-libs
+    echo "\"Installing library $m\\n\" ,"   >>$our_muq_libs/tmp.t
+no longer worked as expected (the \\n wound up as a real newline
+in the .muf file, instead of as a "\n" as intended.  Given that
+several years have passed since the last Irix check, which
+included a new major version on the Irix end and (e.g.) the
+switch to 64-bit operation on the Muq end, I'm pretty pleased.
+In particular, suggests no endian-dependent code has crept into
+the multi-precision arithmetic or network serialization code.
+Had to install gcc 2.8.1, however, since 2.7.x doesn't support
+Irix6.
+
+[2] Unixware had no prototype for 'strcasecmp', resulting in a
+harmless compile warning: Added an autoconfig hack to fix this.
+More seriously, the Unixware assembler choked on job.t, which
+was well over half a meg of source code.  Broke job.t into four
+source files, which resolved the problem.  Thanks to Andrew Bolt
+(Andrew.Bolt@ait.co.uk) for this port!
+
+[1] Compiled clean straight from the box, took almost an entire day to finish
+compiling/running the checks, but it worked just peachy.  Seemed to be
+solid when I looked it over and started mucking around with it too.  Now
+to just learn how to do everything...  *sigh*  It's real nice from what
+I've mucked with so far.  -- wolfwings@kernvalley.com
+
+
+=====================================================================
+INSTALLATION HINTS AND KNOWN PROBLEMS
+
+Muq is intended to install hands-off on all systems, but new
+systems are forever presenting new problems.  Please inform
+me (cynbe@eskimo.com) of installation problems you have.
+
+Here are some hints that may help you resolve installation
+problems.
+
+
+LOCATING NEEDED HEADER FILES
+----------------------------
+
+Two ways to locate needed header files:
+
+ 1) The civilized approach: Do
+        man missingthing
+    for the missingthings that came up missing.  The manpage
+    will frequently tell you what #include files to use.
+
+ 2) The brutal approach:  Do
+        find /usr/include -name '*.h' -exec egrep missingthing {} \; -print
+    and so on for the functions that came up missing.  This may
+    spam you with a lot of false hits, but if the functions are
+    declared anywhere in your system's standard header files, this
+    will normally turn it up.
+
+
+
+LOCATING NEEDED LIBRARIES
+-------------------------
+
+If you get link warnings that a given function cannot be found,
+you definitely cannot ignore the problem.  Unfortunately, the
+manpage frequently won't tell you what library you need, either.
+~/muq/bin/find-lib is one hack designed to help track down the
+right library: You can try
+  find-lib socket
+(say).  If it chokes on the "odump -P", you can edit the script to
+use "strings" instead.  (Anyone know better a trick?)  find-lib
+searches all the libs in /usr/lib.
+
+If it produces what looks like a hit, say libbsd.a, you can
+try adding "-lbsd" to the LIBS line in c/Makefile2.  (Do it
+to Makefile2.in also, to be safe.)
+
+If you find nothing in /usr/lib/ you can poke around to see
+if your system has any other library directories.  They will
+often have names like /usr/ucblib or such.  You can try just
+doing
+  ls -l /usr
+and eyeballing, or something more brute-force like
+  find /usr -type d -name '*lib*' -print
+or even
+  find /usr -type f -name 'lib*a' -print
+... these may search the entire filesystem on your machine, and
+your sysadmin may not be happy if it is a big filesystem.  If
+you find an alternate directory to search, you can adapt find-lib
+to search it;  if that turns up the library you need, you can add
+  -Lpath -lbsd
+where 'path' is the directory and 'bsd' is the library name, to
+Makefile2*:LIBS, as described above.
+
+
+GCC ON MIPS (INCLUDING SGI)
+---------------------------
+
+You will probably need at least gcc 2.8.0 to compile Muq -- the "long
+long" support Muq uses to do 64-bit integers was defective in gcc
+2.7.x for MIPS. (It was fine on x86.)  An exception may be if you are
+compiling in a fully 64-bit MIPS environment where "long long" isn't
+needed to do 64-bit integer operations.

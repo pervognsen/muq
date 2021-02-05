@@ -1,0 +1,371 @@
+( This is a warm-up for the eventual public announcement.
+  Comments welcome!  95Jan02:00:50CrT)
+
+Muq, the next-generation mudserver, is now publicly available.
+
+If you are sick of trying to do real work with toy tools,
+Muq might be what you've been looking for.
+
+Muq is not just another chip off the old block, but a total
+re-analysis, re-design and re-implementation of the
+mudserver concept by someone who has been mudding for years
+and implementing compilers, interpreters and software
+environments for decades.
+
+(Confession: I compiled most of the following feature list
+just by merging the problems reported in the FAQs for various
+other mud servers... :)
+
+
+Feature summary
+===============
+
+    True bytecoded compiler/interpreter, carefully optimized for speed.
+    True software virtual memory.
+    True compacting ram manager.
+    True incremental garbage collection.
+    True policy-free virtual machine.
+    True symbolic pathnames.
+    True user shells.
+    True pre-emptive multitasking.
+    True contemporary first-class datastructures, including floats.
+    True contemporary programming languages.
+    True delegation-based object-oriented programming.
+    True multi-user protection.
+    True incremental backup.
+    True eight-bit strings, streams and network sockets.
+    True factored support libraries.
+    True portability.
+    True reliability.
+    True security throughout.
+    Heavily commented source throughout.
+
+If you are ready for the next generation, it is ready for you!
+
+
+
+Feature descriptions
+====================
+
+
+True bytecoded compiler/interpreter, carefully optimized for speed.
+-------------------------------------------------------------------
+
+   Muq compiles code into true byte-coded executables,
+   executed by a tuned interpreter with peak instruction
+   issue rates several times that of the closest competitor.
+   This means you can afford to code in-db things which
+   you would have to code in-server on other servers.
+   Furthermore, Muq executables demand-page in virtual memory
+   just like everything else:  You can afford to have lots of 
+   code in-db without bloating your process or slowing
+   server startup.
+
+True software virtual memory.
+-----------------------------
+
+   Muq only loads into memory what you are actually
+   using.  This means that your process size can be
+   a tenth of your db size, opening doors other servers
+   close in your face.  Muq's virtual memory support
+   was designed in from day one, not awkwardly
+   retrofitted, and uses a carefully tuned custom
+   virtual memory module, not a generic database
+   package, yielding unexcelled disk and ram performance.
+
+True compacting ram manager.
+----------------------------
+
+   No more endlessly bloating processes or memory leaks!
+   Other servers abuse malloc() shamelessly rather than
+   implement a true ram management system like those
+   used by production-quality Lisp and Smalltalk systems
+   (or even Basics, for that matter).  Muq periodically
+   compacts memory to free up wasted ram, potentially
+   saving you hundreds or even thousands of dollars worth
+   of ram.
+
+True incremental garbage collection.
+------------------------------------
+
+   Modern programming environments like Smalltalk and Lisp
+   automatically recover lost objects, so you don't have to
+   waste time and effort worrying about memory leaks.  Muq
+   does too, using an incremental algorithm so the server
+   never stops long enough for you to notice.
+
+True policy-free virtual machine.
+---------------------------------
+
+   Tired of fighting your server?  The C-coded Muq server
+   implements just the functionality you need, while leaving
+   policy issues to in-db code:  You can reconfigure Muq to
+   be virtually anything you want, without touching a line of
+   C code.
+
+True symbolic pathnames.
+------------------------
+
+   You will never type "#61422" in Muq.  You will never be
+   embarassed explaining to a new user that objects are
+   named by numbers, and one has to get used to writing them
+   down.  You will never face the portability headaches
+   posed by hardwired numeric dbrefs.  You will never feel
+   as though you had been transported back to the software
+   environments of the early 1950s, before the idea of
+   symbolic names was introduced.
+
+   Muq uses a variant of the familiar /usr/local/lib path
+   notation used by unix and World Wide Web URLs, integrated
+   with the package:symbol notation from Common Lisp -- two
+   winning notations backed by untold hacker-millenia of
+   testing and incremental refinement.  Paths may be
+   expressed relative to the current job, current user,
+   current object, current root, or any current variable,
+   and may chain through any property on any object (subject
+   to privilege checking).
+
+True user shells.
+-----------------
+
+   Many servers hardwire the user interface into the server.
+   Unix makes the user shell a separate unprivileged process,
+   allowing users to individually select whatever interface
+   style they wish.
+
+   Muq does too: The user shells are coded entirely in-db
+   and require no special privileges.  The standard Muq
+   distribution provides a selection of shells, and in
+   addition a number of third-party user shells have already
+   been written, and it seems safe to say that more are on
+   the way.
+
+True pre-emptive multitasking.
+------------------------------
+
+   Tired of servers that seem perpetually lagged?  Muq is
+   carefully designed throughout to have a crisp, responsive
+   feel, and as part of that implements a pre-emptive
+   multi-tasking system similar to that universally used
+   by production timesharing operating systems.  This means
+   that simple user requests can get quick responses while
+   more demanding user computations continue in the background.
+
+   Muq jobs also communicate via streams which operate
+   much like unix pipes extended to allow transmission
+   of arbitrary values (instead of just a bytestream),
+   allowing unix-style pipelines of jobs and trivial
+   construction of in-db robots.  Unleash your imagination! :)
+
+True contemporary first-class datastructures, including floats.
+---------------------------------------------------------------
+
+   Tired of servers that seem to think that all the world's
+   a string?  Muq provides a full range of modern datatypes
+   and datastructures, including strings, integers, floats,
+   arrays, Lisp-style lists, packages, symbols, stacks,
+   streams, and objects with property directories.
+
+   All value slots in Muq are first class:  Any value can
+   be stored anywhere any other value can.
+
+True contemporary programming languages.
+----------------------------------------
+
+   Tired of trying to write real programs in toy languages?
+   Tired of servers that offer you any language syntax you
+   want, as long as it is X?
+
+   Muq bytecode compilers are implemented in-db using an
+   assembler class that handles most of the busywork and
+   guarantees production of only valid executables, allowing
+   new compilers to be written by unprivileged users.
+
+   Muq already supports a variety of popular programming
+   syntaxes including a large and growing subset of
+   Common Lisp which should eventually be a complete,
+   compatible implementation, allowing you to port
+   code back and forth and to take advantage of existing
+   code libraries.  If your syntactic religion isn't
+   supported yet, it is not hard to add a compile for
+   it as well, probably starting with one of the existing
+   ones.
+
+   At the semantic level, the Muq virtual machine provides
+   just about everything you've heard of, and some things
+   you may not have, including vanilla functions, generic
+   functions, anonymous functions, promises with implicit
+   forcing (in Scheme nomenclature -- a substrate suitable
+   for experimenting with functional programming), thunks
+   (something vaguely like named pipes in unix), semaphores
+   for mutual exclusion, implicit job blocking on bounded
+   streams, and sophisticated exception handling facilities.
+
+True delegation-based object-oriented programming.
+--------------------------------------------------
+
+   Experience has shown that classical object-oriented
+   programming is a clumsy tool for rapid, experimental
+   such as one tends to find in the mud environment.
+
+   As a result, attention has been focussing recently on
+   delegation-based system which dispense with indirection
+   through classes, and instead attach methods directly to
+   objects and allow objects to inherit directly from each
+   other.
+
+   Muq implements a delegation-based object system
+   with multiple inheritance and message passing via
+   generic functions, so simply that a new message
+   may be interactively defined, implemented, and
+   attached to an object in half a line of code.
+
+True multi-user protection.
+---------------------------
+
+   If you are like me, you want to empower the users
+   of your virtual world while providing them a stable,
+   reliable environment with real privacy where it
+   counts -- and you resent servers so insecure that
+   you are forced to choose between refusing programming
+   privileges to most users, or else dispensing with any
+   real expectation of reliability, security or privacy.
+
+   Muq lets you have it both ways, by implementing
+   serious multi-user protection inserver:  In a bare
+   system, users can modify only datastructures which
+   they own, and access only datastructures deliberately
+   published by other users.  You provide additional
+   means of interaction by providing system utilities,
+   either from the standard distribution, third party
+   libraries, or custom code you've written yourself.
+
+True incremental backup.
+------------------------
+
+   Tired of seeing interactions between dozens of users
+   come to a screeching halt while the server checkpoints
+   the db?  Muq does backups incrementally while user
+   code continues to run -- one more may of improving
+   interactive response.
+
+True eight-bit strings, streams and network sockets.
+----------------------------------------------------
+
+   Interested in multimedia applications or binary
+   communication with other servers?  Muq strings
+   may contain arbitrary eight-bit data, and Muq
+   network sockets may be configured to pass eight-bit
+   binary data by a simple parameter setting.  (By
+   default, Muq sockets filter out various control
+   characters, for security security-conscious users
+   who prefer that.)
+
+True factored support libraries.
+--------------------------------
+
+   Tired of "minimal db"s full of stuff you don't want?
+   Tired of core facilities which are impossibly difficult
+   to update in an established db?  Tired of portability
+   problems tranferring code between even matching servers?
+
+   The Muq "minimal db" isn't even an empty file:  The server
+   can create and initialize a blank db starting from nothing.
+
+   System libraries are distributed as unix source files, and
+   may be installed not at all, one at a time by hand, or en
+   masse via one of the distributed scripts, according to your
+   preference.  Install as much or as little as you please.
+
+   Inside the db, code is segregated into Common Lisp style
+   packages, making is a snap to remove an unwanted package
+   if you change your mind.
+
+   When system library updates come out, installing any
+   library updates you wish is just as simple as the
+   original installation.
+
+   You'll think you're living in the '90s!
+
+True portability.
+-----------------
+
+   Tired of tweaking config.h to get the server to compile?
+   Muq autoconfigures and compiles on most major Unix
+   variants (including Irix, OSF/1, Linux, Ultrix, SunOS,
+   NeXTStep and AIX) with a simple "make".  Support for
+   other unix variants is being added as quickly as I
+   can get access to them.
+
+True reliability.
+-----------------
+
+   Tired of daily bug reports?  Tired of discovering the
+   hard way that it didn't install right?  Tired of
+   servers that leave reliability to chance?  That look
+   like throwaway toys written by undergrads?
+
+   Muq was developed from day one with the design goal of
+   production-quality reliability, and the willingness to
+   invest the work needed to make it happen.
+
+   The regression test suite has been developed hand-in-hand
+   with the server implementation, and each software layer
+   in Muq has been thoroughly tested before starting
+   implementation of the next layer.  There are thousands of
+   lines of code inside and outside the server devoted
+   exclusively to selfcheck.
+
+   The regression suite has been used constantly throughout
+   development to catch bugs promptly and efficiently, and
+   is available to you for use in verifying that Muq is
+   functioning correctly on your system.  If the complete
+   Muq selftest runs without reporting any problems, you
+   have reasonable assurance that you have a good install.
+
+   Finally, the policy-free server design means that you
+   can implement almost all needed local customizations
+   entirely in-db, vastly reducing the incidence of locally
+   generated crashing bugs.
+
+True security.
+--------------
+
+   You can run a Muq without having your users run amok:
+
+   -> Consistent attention to intra-db security issues
+      throughout the architecture:  In general, users
+      can only modify objects they own and read values
+      designated as public.  You can let your users write
+      real code without paying a real security/privacy cost.
+      You can extend additional privileges as needed by
+      supplying setuid-root functions, which can be written
+      to work for one, some or all users.
+
+   -> Separate 8K bitmaps allow port-by-port control of
+      outbound network connections for Muq users and Muq
+      admins:  You can let your users access the Web
+      without having them access your passwords via your
+      subnet X servers or NFS servers. If you prefer,
+      clear the bitmaps to zero to completely disable
+      outbound network connections.
+
+   -> Carefully limited access to the host system from Muq,
+      to ensure that even if internal Muq security is
+      compromised, (perhaps via a badly written local
+      setuid-root function) the host account and system
+      remain secure.
+
+Heavily commented source throughout.
+------------------------------------
+
+   Tired of implementors who seem to feel that it is better
+   that a thousand reader hours be spent guessing what was
+   on their mind than that they waste a single minute
+   commenting?
+
+   Muq source, in-server and in-db, is written to be read,
+   not just to be compiled.  Even if you don't enjoy the
+   jokes, quotations and epigrams, you'll appreciate the
+   code clarity when the day comes to modify or extend
+   part of it.

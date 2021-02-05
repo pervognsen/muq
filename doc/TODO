@@ -1,0 +1,210 @@
+/************************************************************************/
+/*-    TODO					Created: 99Jul27	*/
+/************************************************************************/
+
+Various notes to myself (Cynbe) on work in progress or coming up.
+
+/************************************************************************/
+/*-    SHOULD BE DONE PRE-BETA						*/
+/************************************************************************/
+
+*   Um.. Muq Classes manual never made it into the Muq root page...?!
+
+*   Good email comments from Nolan need to be followed up on.
+
+*   muqhint should be phased out and integrated with other stuff
+    like mufhack and muqfaq.
+
+*   The task mechanism needs to be documented somewhere.
+
+*   A "Muq MUF for tinyMUCK MUF programmers" introduction would be nice.
+
+*   A "MUF programming for Micronesia users" introduction would be
+    great.
+
+*   A "How you can help" and/or "Planned projects" and/or "Future
+    Directions" section would be good.  Many of the incomplete code
+    and documentation projects could be covered here.
+ 
+*   The WAFE manual should be dropped.  Wrappers for Tcl/Tk GUI should
+    be added to the projects page.
+
+*   Micronesia tutorial?
+
+*   Micronesia user reference manual?
+
+*   Micronesia administration manual?
+
+*   Maybe review and reorganize the implementation overview and
+    source code?
+
+
+/************************************************************************/
+/*-    PRE-BETA work in Administrator's manual				*/
+/************************************************************************/
+
+*   Dbfile overview including naming convention needs to be added.
+
+*   "Invoking Muq" overview needs updating.
+
+*   "Muq commandline options" should be reviewed for currency.  The
+    security issues should be moved to a separate Security Issues
+    section.
+
+*   Bootstap MUF shell overview should be dropped or moved to a
+    "Tour of the C implemention" manual.
+
+*   "Muq db layout" section should be reviewed for accuracy and
+    completeness.
+
+*   Overview of the standard daemons.
+
+*   There's currently no task-oriented documentation at all!  Need to
+    have sections devoted to all the common tasks:
+
+    *  Installation. Current version needs added stuff on how to get
+       from merely compiled to actually operational.
+
+    *  Configuration and tuning.
+    *  Recovery from a softcode server crash.
+    *  Recovery from a C server crash.
+    *  Runaway processes.
+    *  Periodic maintainance.
+    *  Dealing with user abuse of the server:
+       o  Local users.
+       o  Remote users.
+
+
+/************************************************************************/
+/*-    PRE-BETA work in Elementary MUF manual				*/
+/************************************************************************/
+
+*   The elementary muf section on messages is completely obsolete -- uses
+    the discarded $m notation.
+
+*   The elementary muf cheatsheet syntax section needs checking.  In
+    particular, 'div' and 'mod' are now wrong.
+
+/************************************************************************/
+/*-    PRE-BETA work in Intermediate MUF manual				*/
+/************************************************************************/
+
+*   The regex section is completely unwritten.  We now -have- regular
+    expressions, so we need to document them.
+
+*   The "method" keyvals section needs to be killed.
+
+*   The "messages and inheritance" section is completely unwritten.
+
+*   The "understanding job creation" needs to be written, and should
+    come first.  The initial sections are too long on boring background
+    and too short on active motivation and examples.
+
+*   "Understanding Signals" needs to be written.
+
+*   "Understanding Transactions" needs to be dropped.
+
+*   "Understanding sockets" needs to be written.
+
+*   The whole lists section seems slow and unmotivated.  Many of the
+    traditional uses for lists are better served by index objects.
+
+*   "Lists overview" needs to be written.
+
+*   "Cons Cell" needs to be written.
+
+*   "Lists as binary trees" hasn't been written.
+
+*   "Lists as n-ary trees" hasn't been written.
+
+*   "Lists as digraphs" hasn't been written.
+
+*   "Creating lists" hasn't been written.
+
+*   "List sharing" hasn't been written.
+
+*   "Operations on lists" hasn't been written.
+
+*   "Destructive operations on lists" hasn't been written.
+
+*   "Property lists" hasn't been written.
+
+*   "Association lists" hasn't been written.
+
+*   "MUF Macros" hasn't been written, and they currently
+    do not exist.  Should likely kill the section.
+
+*   "Coding style overview" hasn't been written.
+
+*   "Comment style" is preachy and incomplete.  Should be phrased
+    as how to make sure you can understand your own code:  "If you've
+    done any amount of coding at all, you've had the experience of
+    coming back to your own code a month later and discovering you
+    can not understand it at all."
+
+*   "Identifier style" recommends the obsolete dashed style of
+    identified.
+
+*   "Coding style backup" hasn't been written.
+
+/************************************************************************/
+/*-    PRE-BETA work on Advanced MUF manual				*/
+/************************************************************************/
+
+*   "Overview" has not yet been written.
+
+*   Starting with Big-Oh notation seems pedantic.  Especially if it is
+    not going to be used heavily in the next section.
+
+*   Doubly linked lists... most people will just use Index objects,
+    right?  This should likely be a late section.
+
+*   Splay trees... again, most people will use index objects in Muq,
+    right?  Not worth re-inventing the wheel.  Should be a late
+    section or dropped.
+
+*   B-trees... these are provided in the form of index objects, so
+    this should be just a theory of operation section, maybe in
+    the implementation overview instead.
+
+*   Relational Algebra:  We should implement it if we are going to
+    discuss it.  This should probably be delayed to post-beta.
+ 
+*   General graphs:  We should implement them if we're going to
+    discuss them.  Post-beta material.
+
+*   Muq compilers:  This would be a good candidate for a first
+    chapter.   Currently, this section is largely non-existent.
+
+*   The "mud worlds" and "mud shells" are currently unwritten.  For
+    beta, tours of the existing Micronesia implementation would be
+    more useful than a purely theoretical discussion.
+
+*   The Citadel section is unwritten.  Should be included only if a
+    working example can be presented, which is unlikely pre-beta.
+
+*   The 'Eliza' clone can probably not be written pre-beta.  It should
+    be implemented within the standard Micronesia avatar framework, as
+    a bot.
+
+*   The symbolic algebra section should probably be linked fairly
+    closely to the List section...?  Or else some other motivation
+    provided.
+
+*   The 'portability' section should be more practical and less
+    preachy?
+
+
+
+
+/************************************************************************/
+/*-    File variables							*/
+/************************************************************************/
+/*
+
+Local variables:
+mode: text
+mode: outline-minor
+outline-regexp: "[ \\t]*\/\\*-"
+End:
+*/

@@ -1,0 +1,118 @@
+#! /bin/sh
+
+if [ "$#" -ne 2 ]
+then
+    echo "Usage: muq-diff -1.4.0 -1.5.0"
+    echo "Generates diffs between:"
+    echo "  muq/muq.-1.4.0.tar.gz"
+    echo "  muq/muq.-1.5.0.tar.gz"
+    echo "Oldest file must be first!"
+    exit 1
+fi
+
+oldversion=$1
+newversion=$2
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+# Pick a temporary place to work:
+diffdir=$muqhome/dIff
+
+# Construct the full names of the given two archives:
+oldtar=muq.${oldversion}.tar
+newtar=muq.${newversion}.tar
+
+# Construct the compressed names of the given two archives:
+oldname=${oldtar}.gz
+newname=${newtar}.gz
+
+# Construct the full paths of the given archives:
+oldpath=$muqhome/${oldname}
+newpath=$muqhome/${newname}
+
+# Construct name for diff file:
+difname=muq.${oldversion}-${newversion}.diff
+
+# Test that both archives exist:
+if [ ! -f $oldpath ]
+then
+    echo "Sorry, couln't find ${oldpath}"
+    exit 1
+fi
+if [ ! -f $newpath ]
+then
+    echo "Sorry, couln't find ${newpath}"
+    exit 1
+fi
+
+# Test we can create our diffdir where we think:
+if [ -f $diffdir -o -d $diffdir ]
+then
+   echo "A $diffdir already exists, please rm/mv and retry."
+   exit 1
+fi
+
+# Test we can leave final difffile where we think:
+if [ -f ${muqhome}/${difname}.gz -o -d ${muqhome}/${difname}.gz ]
+then
+   echo "A ${muqhome}/${difname}.gz already exists, please rm/mv and retry."
+   exit 1
+fi
+
+
+cd $muqhome
+
+echo "Creating $diffdir ..."
+mkdir $diffdir
+
+cd $diffdir
+
+
+# Unpack the two archives to be diffed:
+
+echo
+echo "Copying $oldpath..."
+cp $oldpath .
+echo "Copying $newpath..."
+cp $newpath .
+
+echo
+echo "Unzipping $oldname..."
+gunzip $oldname
+echo "Unzipping $newname..."
+gunzip $newname
+
+echo
+echo "Untarring $oldtar..."
+tar -xf $oldtar
+mv muq old # Prevent new from overwriting old
+echo "Untarring $newtar..."
+tar -xf $newtar
+
+echo
+echo "Removing $oldtar..."
+rm $oldtar
+echo "Removing $newtar..."
+rm $newtar
+
+# You need to be using gnu diff, because others
+# won't have unified diff output format in
+# general.  Since I don't really expect non-gurus
+# to be making diffs, I've hardwired this to
+# 'gnudiff' rather than autoconfig'ing to search
+# for gnu diff and distinguish it from others,
+# or do different things for different tars.
+echo "Diffing..."
+diff -u --recursive old muq >${difname}
+echo "Zipping ${difname}..."
+gzip ${difname}
+echo "Moving ${difname}.gz to ${muqhome}/${difname}.gz..."
+mv ${difname}.gz ${muqhome}/${difname}.gz
+
+cd $muqhome
+
+echo "Removing $diffdir ..."
+rm -rf $diffdir
+
+exit 0

@@ -1,0 +1,75 @@
+Fri Jul 10 23:10:39 1998    <cynbe@al.banffcentre.ab.ca>
+
+	* muq-libs: Changed
+            echo "\"Installing library $m\\n\" ,"   >>$our_muq_libs/tmp.t
+	to
+            echo '"Installing library #n" ,'         >$our_muq_libs/y
+	    sed -e "s|#|$m\\\\|" <$our_muq_libs/y   >>$our_muq_libs/tmp.t
+	    /bin/rm -f                                $our_muq_libs/y
+	because the first wasn't portable to Irix 6.2 and the
+	latter was the simplest, most portable replacement I could
+	work out.
+	
+	* Changed
+	    #!/bin/sh
+	eveywhere to
+	    #! /bin/sh
+	per autoconfig "Portable Shell" recommendation -- supposedly
+	4.2BSD systems need this, because they treat "#! /" as a file
+	magic number.
+	
+Sun Dec 28 09:11:35 1997    <cynbe@xx>
+
+	* muq-std-checkmuf: Tests now run in big batches, instead of
+	firing up a server per library.  (Speed optimization.)
+
+	* muq-libs: Libraries now loaded in one or two big batches,
+	instead of firing up a server per library. (Speed optimization.)
+
+Mon Nov  6 01:46:22 1995  Jeff Prothero  <jsp@muq.org>
+
+	* muq-config: Added "srvdir" support.
+
+Sun Oct  1 11:42:37 1995  Jeff Prothero  <jsp@muq.org>
+
+	* muq-c-lib: Created, to simplify installing a single file
+	in muq/c/vm during development.
+
+Sat Aug  5 11:21:54 1995  Jeff Prothero  <jsp@muq.org>
+
+	* Added a similar check to muq-deconfigure-c-makefile.
+
+	* Added a couple of similar checks to muq-clean.
+
+	* (muq-clean-doc): Following a Pakrat suggestion, added a check
+	that $docdir actually exists before attempting to operate on it,
+	to avoid "make clean" and such getting upset at missing dirs.
+
+Sat Apr 15 15:15:25 1995  Jeff Prothero  <jsp@muq.org>
+
+	* muq-lib: Fixed: It wasn't checking return status from Muq.
+	Return-correct-exit-status fixes in various other files.
+
+Tue Mar 14 17:31:48 1995  Jeff Prothero  <jsp@muq.org>
+
+	* Renamed 'muq-clobber' to 'muq-distclean', which seems more standard.
+
+	* muq-texi2html has been added.  This is texi2html 1.35 with a few
+	additional twiddles that I need for Muq (and which I've fed
+	back to Lionel Cons for possible inclusion in future releases.)
+
+	* muq-install-htm has been added.
+
+Tue Feb 21 22:34:41 1995  Jeff Prothero  <jsp@muq.org>
+
+	* muq-config: Added 'htmldir' to standard set of directories.
+
+Mon Feb 20 21:35:08 1995  Jeff Prothero  <jsp@muq.org>
+
+	* Renamed info/ to doc/
+
+Sun Nov 13 04:42:35 1994  Jeff Prothero  <jsp@muq.org>
+
+	* Added muq-diff.
+
+

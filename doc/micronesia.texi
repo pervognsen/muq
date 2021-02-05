@@ -1,0 +1,82 @@
+\input texinfo   @c -*-texinfo-*-
+@comment %**start of header (This is for running Texinfo on a region.)
+@setfilename ../doc/mufhack1.info
+@settitle Micronesia
+@setchapternewpage odd
+@comment %**end of header (This is for running Texinfo on a region.)
+@c
+@ifinfo
+Copyright @copyright{} 2000 Jeff Prothero.
+@end ifinfo
+@c --------------------------------------------------------
+@titlepage
+@sp 10
+@center @titlefont{Micronesia}
+@sp 2
+@include versionc.t
+@sp 2
+@center Jeff Prothero
+@center (cynbe@@muq.org)
+@c     ---------------------------------------------
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2000 Jeff Prothero.
+@end titlepage
+@c --------------------------------------------------------
+@c Uncomment these to generate a single index:
+@c @synindex cp fn
+@c @syncodeindex vr fn
+@c @syncodeindex ky fn
+@c @syncodeindex pg fn
+@c @syncodeindex tp fn
+@c
+@node Top, Micronesia User Tutorial, , (dir)
+
+Micronesia is a softcoded Muq application implementing a distributed virtual
+text world which to the end user appears similar to those implemented
+by the traditional tinyMUD derived family of servers.
+
+@include versiont.t
+This version of the manual is a first draft, and still very rough.
+
+@menu
+* Micronesia User Tutorial::
+* Micronesia User Manual::
+* Micronesia Hacking Tutorial::
+* Micronesia Architecture::
+* Function Index::
+* Variable Index::
+* Data Type Index::
+* Concept Index::
+@end menu
+
+@include micronesia1.t
+@include micronesia2.t
+@include micronesia3.t
+@include micronesia4.t
+
+@node Function Index, Variable Index, Micronesia Architecture Wrapup, (dir)
+@unnumbered Function Index
+
+@printindex fn
+
+@node Variable Index, Data Type Index, Function Index, (dir)
+@unnumbered Variable Index
+
+@printindex vr
+
+@node Data Type Index, Concept Index, Variable Index, (dir)
+@unnumbered Data Type Index
+
+@printindex tp
+
+@node Concept Index,  , Data Type Index, (dir)
+@unnumbered Concept Index
+
+@printindex cp
+
+@c Tables of contents
+@summarycontents
+@contents
+
+@bye

@@ -1,0 +1,213 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+thisdir=`pwd`
+
+# Create #check.tmp# dir if it doesn't exist:
+if [ ! -d ${thisdir}/#check.tmp# ]
+then
+    ${bindir}/muq-db ${thisdir}/#check.tmp# Clean ${cdir}/muq
+    if [ $? -ne 0 ]
+    then
+      exit 1
+    fi
+fi
+
+# Handle standard individual regression-test files:
+if [ -r ${pkgdir}/Check/x-$1.muf ]
+then
+    cd ${thisdir}/#check.tmp#
+
+    # Re-initialize db:
+    rm -rf check*db*
+    $bindir/muq-copy-db `pwd` Clean check
+
+#	       --log-bytecodes		\
+#
+    ${cdir}/muq check			\
+	-f ${pkgdir}/Check/begin.muf	\
+	-f ${pkgdir}/Check/x-$1.muf	\
+	-f ${pkgdir}/Check/end.muf	\
+	--logfile=muq.log
+else
+    # Handle standard paired regression-test files:
+    if [ -r ${pkgdir}/Check/xx-$1.muf ]
+    then
+	# If other half of file pair exists:
+        if [ -r ${pkgdir}/Check/xy-$1.muf ]
+        then
+	    cd ${thisdir}/#check.tmp#
+
+	    # Re-initialize db:
+	    rm -rf check*db* czech*db*
+	    $bindir/muq-copy-db `pwd` Clean check
+	    $bindir/muq-copy-db `pwd` Clean czech
+
+	    # Assume any .pid file is due to previous run crashing:
+            if   [ -f muq-czech.pid ] ; then
+		rm -f muq-czech.pid
+	    fi
+
+	    echo "Starting ${pkgdir}/Check/xy-$1.muf in background on #check.tmp#/czech* db..."
+	    $cdir/muq	czech			\
+	       -x muf:compileMufFile		\
+	       -f $pkgdir/Check/begin.muf	\
+	       -f ${pkgdir}/Check/xy-$1.muf	\
+	       -f $pkgdir/Check/end.muf		\
+	       --logfile=xy.log &
+
+	    # Wait for background server to start up
+	    # before starting foreground Muqserver process:
+	    while [ ! -f muq-czech.pid ]
+	    do
+		echo "Waiting for background Muq server to start..."
+		sleep 1
+	    done
+
+	    echo "Starting ${pkgdir}/Check/xx-$1.muf in foreground #check.tmp#/check* db..."
+#	       --log-bytecodes		\
+#
+	    time $cdir/muq	check		\
+	       -x muf:compileMufFile		\
+	       -f $pkgdir/Check/begin.muf	\
+	       -f ${pkgdir}/Check/xx-$1.muf	\
+	       -f $pkgdir/Check/end.muf		\
+	       --logfile=xx.log
+	    echo "(Above is elapsed time for ${pkgdir}/Check/xx-$1.muf run on #check.tmp#/check* db.)"
+
+	    # Signal background server to exit:
+	    echo "Killing background Muq via kill -INT to `cat ${thisdir}/#check.tmp#/muq-czech.pid`"
+	    kill -INT `cat ${thisdir}/#check.tmp#/muq-czech.pid`
+
+	    # Wait for background server to exit
+	    # before proceeding to next test:
+	    while [ -f muq-czech.pid ]
+	    do
+		echo "Waiting for background Muq server to exit..."
+		sleep 1
+	    done
+	fi
+    else
+        # Handle standard triple-server regression-test files:
+        if [ -r ${pkgdir}/Check/xxx-$1.muf ]
+        then
+	    # If second of the three files exists:
+	    if [ -r ${pkgdir}/Check/xxy-$1.muf ]
+            then
+	        # If third of the three files exists:
+	        if [ -r ${pkgdir}/Check/xxz-$1.muf ]
+                then
+
+		    cd ${thisdir}/#check.tmp#
+
+		    # Re-initialize db:
+		    rm -rf check*db* czech*db*  chequ*db*
+		    $bindir/muq-copy-db `pwd` Clean check
+		    $bindir/muq-copy-db `pwd` Clean czech
+		    $bindir/muq-copy-db `pwd` Clean chequ
+
+		    # Assume any .pid files are due to previous run crashing:
+		    if   [ -f muq-czech.pid ] ; then
+			rm -f muq-czech.pid
+		    fi
+		    if   [ -f muq-chequ.pid ] ; then
+			rm -f muq-chequ.pid
+		    fi
+
+		    echo "Starting ${pkgdir}/Check/xxz-$1.muf in background on #check.tmp#/chequ* db..."
+		    $cdir/muq	chequ		\
+		       -x muf:compileMufFile	\
+		       -f $pkgdir/Check/begin.muf	\
+		       -f ${pkgdir}/Check/xxz-$1.muf	\
+		       -f $pkgdir/Check/end.muf		\
+		       --logfile=xxx.log &
+
+		    # Wait for background server to start up
+		    # before starting foreground Muqserver process:
+		    while [ ! -f muq-chequ.pid ]
+		    do
+			echo "Waiting for Z background Muq server to start..."
+			sleep 1
+		    done
+
+		    echo "Starting ${pkgdir}/Check/xxy-$1.muf in background on #check.tmp#/czech* db..."
+		    $cdir/muq	czech		\
+		       -x muf:compileMufFile	\
+		       -f $pkgdir/Check/begin.muf	\
+		       -f ${pkgdir}/Check/xxy-$1.muf	\
+		       -f $pkgdir/Check/end.muf		\
+		       --logfile=xxx.log &
+
+		    # Wait for background server to start up
+		    # before starting foreground Muqserver process:
+		    while [ ! -f muq-czech.pid ]
+		    do
+			echo "Waiting for Y background Muq server to start..."
+			sleep 1
+		    done
+
+		    echo "Starting ${pkgdir}/Check/xxx-$1.muf in foreground #check.tmp#/check* db..."
+		    time $cdir/muq	check		\
+		       -x muf:compileMufFile	\
+		       -f $pkgdir/Check/begin.muf	\
+		       -f ${pkgdir}/Check/xxx-$1.muf	\
+		       -f $pkgdir/Check/end.muf		\
+		       --logfile=xxx.log
+		    echo "(Above is elapsed time for ${pkgdir}/Check/xxx-$1.muf run on #check.tmp#/check* db.)"
+
+		    # Signal Z background server to exit:
+		    echo "Killing Z background Muq via kill -INT to `cat ${thisdir}/#check.tmp#/muq-chequ.pid`"
+		    kill -INT `cat ${thisdir}/#check.tmp#/muq-chequ.pid`
+
+		    # Wait for background server to exit
+		    # before proceeding to next test:
+		    while [ -f muq-chequ.pid ]
+		    do
+			echo "Waiting for Z background Muq server to exit..."
+			sleep 1
+		    done
+
+		    # Signal Y background server to exit:
+		    echo "Killing Y background Muq via kill -INT to `cat ${thisdir}/#check.tmp#/muq-czech.pid`"
+
+		    kill -INT `cat ${thisdir}/#check.tmp#/muq-czech.pid`
+
+		    # Wait for background server to exit
+		    # before proceeding to next test:
+		    while [ -f muq-czech.pid ]
+		    do
+			echo "Waiting for Y background Muq server to exit..."
+			sleep 1
+		    done
+	        fi
+	    fi
+        else
+	    # Over all directories of optional muq selfcheck code:
+	    for i in `${cdir}/muq -M` ;
+	    {
+		# Check that $moddir/${i} exists:
+		if [ -d $moddir/${i} ]
+		then
+
+		    # If given file found
+		    if [ -r ${moddir}/${i}/$1.muf ]
+		    then
+			# Found desired selfcheck file, run it and exit:
+			cd ${thisdir}/#check.tmp#
+			${cdir}/muq check			\
+			    -f ${pkgdir}/Check/begin.muf	\
+			    -f ${moddir}/${i}/$1.muf	\
+			    -f ${pkgdir}/Check/end.muf	\
+			    --logfile=muq.log
+			exit $?
+		    fi
+		fi
+	    }
+	    echo "Cannot find a selfcheck file x-$1.muf"
+	fi
+    fi
+fi	
+
+exit 0

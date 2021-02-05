@@ -1,0 +1,247 @@
+/* {{{ CODING.STYLE -- TinyMuq C coding conventions.			*/
+
+/* This file is formatted for use with folding.el for emacs, sort	*/
+/* of an outline-mode for programmers, ftp-able from elisp archives	*/
+/* such as tut.cis.ohio-state.edu (128.146.8.52).  If you don't use	*/
+/* folding-mode and/or emacs, you may want to prepare a table of	*/
+/* contents for this file by doing "grep '{{{' thisfile.c".		*/
+/* }}} */
+
+/* {{{ Dedication and Copyright.					*/
+
+/************************************************************************/
+/*									*/
+/*		For Lanya:  Lovely lady, ladylove.			*/
+/*									*/
+/************************************************************************/
+
+/************************************************************************/
+/* Author:       Cynbe ru Taren						*/
+/* Created:      93Aug26						*/
+/* Modified:								*/
+/* Language:     C							*/
+/* Package:      N/A							*/
+/* Status:       							*/
+/* 									*/
+/* Copyright (c) 1994, by Cynbe ru Taren.				*/
+/*									*/
+/* This program is free software; you can redistribute it and/or modify	*/
+/* it under the terms of the GNU General Public License as published by	*/
+/* the Free Software Foundation; either version 1, or (at your option)	*/
+/* any later version.							*/
+/*									*/
+/*   This program is distributed in the hope that it will be useful,	*/
+/*   but WITHOUT ANY WARRANTY; without even the implied warranty of	*/
+/*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the	*/
+/*   GNU General Public License for more details.			*/
+/*									*/
+/*   You should have received a copy of the GNU General Public License	*/
+/*   along with this program; if not, write to the Free Software	*/
+/*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.		*/
+/*									*/
+/* CYNBE RU TAREN DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,*/
+/* INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN	*/
+/* NO EVENT SHALL CYNBE RU TAREN BE LIABLE FOR ANY SPECIAL, INDIRECT OR	*/
+/* CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS	*/
+/* OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,		*/
+/* NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION	*/
+/* WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.			*/
+/*									*/
+/* Please send bug reports/fixes etc to jsp@glia.biostr.washington.edu.	*/
+/* Post fuzzball-specific questions/info to fuzzball-support@netcom.com.*/
+/************************************************************************/
+
+/* }}} */
+/* {{{ Motivation -- Why this file?					*/
+
+I have zero interest in religious wars over coding styles and
+conventions.  This file documents the conventions I followed in
+writing tinyMuq.  Reading it may make reading tinyMuq source code
+easier.
+
+/* }}} */
+/* {{{ C coding conventions.						*/
+
+/* {{{ Symbol conventions.						*/
+
+TinyMuq symbols have one of the formats
+
+   Mod_Sym	/* An exported type.			*/
+   mod_Sym	/* An exported variable or function.	*/
+   Mod_sym	/* A  private  type.			*/
+   mod_sym	/* A  private  variable or function.	*/
+
+where
+
+  'mod' is the module name;
+  'Sym' identifies the particular item in the module;
+  'mod.c' is the module source file;
+  'mod.h' is the module header file;
+
+Module names are two or three chars long in muq.
+
+The general convention is that an initial capital letter on the module
+name indicates a type, and an initial capital letter on the 'Sym'
+portion indicates an exported item.
+
+For conciseness, tinyMuq often drops the 'mod_' prefix on local
+function names, which may still be recognized as local by the lack of
+any capitals in their name.
+
+Following standard C   usage, all-caps symbols are macro names.
+Following standard muq usage, macro names begin with the module name:
+
+  #define MOD_MACRO(...) ...
+
+As usual, macros private to one file may drop the module-name prefix.
+
+/* }}} */
+/* {{{ Indentation conventions.						*/
+
+TinyMuq code is indented according to the two simple rules:
+
+* Nested constructs are indented four spaces relative to
+  enclosing construct.
+
+* Nested lines are always terminated by an un-indented
+  delimiter.
+
+One theorem consequent on the above axiom pair is that running up
+vertically from the beginning of any closing delimiter on a line by
+itself leads directly to the line containing the matching opening
+delimiter.
+
+Canonical forms for the usual C control structures are thus:
+
+    fn(
+        type arg,
+        type arg
+    ) {
+        code;
+        code;
+    }
+
+    /* A comma almost always deserves a following blank: */
+    fn( arg, arg );
+
+    /* Fn calls with many or long args are best done one/line: */
+    fn(
+        very_long_argument_expression,	  /* It is often sensible to */
+        even_longer_argument_expression   /* label such fn args.     */
+    );
+
+    /* Two-line if-then-else is very kind to the eye: */
+    if (condition)   code;
+    else             code;
+
+    /* We try to put shortest alternative */
+    /* first for maximum readability:     */
+    if (condition) {
+        muchcode;
+    } else {
+        morecode;
+    }
+
+    /* Elaborate 'if' conditions are often most */
+    /* readable when formatted like this:       */
+    if (exp
+    ||  exp
+    ||  exp
+    ){
+        code;
+    }
+
+    while (condition) {
+        muchcode;
+    }
+
+    /* We use triple blanks between 'for' clauses */
+    /* to help the eye separate them:             */
+    for (a = exp;   a;   a = exp) {
+        code;
+    }
+
+    /* Switch statements are easier to scan */
+    /* if each case fits on one line:       */
+    switch (expr) {
+    case a:   code;                  break;
+    case b:   code;                  /*FALLTHRU*/
+    case c:   code;                  break;
+    default:
+        code;
+    }
+
+
+
+    /* Otherwise, we make each case a paragraph: */
+    switch (expr) {
+
+    case a:
+        /* Comment: */
+        code;
+        break;
+
+    case b:
+        /* Comment: */
+        code;
+        break;
+   
+    default:
+        /* Switches should almost always */
+        /* have a 'default' clause, if   */
+        /* only as a cheap way of trap-  */
+        /* ping errors:                  */
+        code;
+	break;
+    }
+
+
+
+Discouraged formattings include:
+
+
+    /* Dropping space makes control structure look    */
+    /* needlessly like a function, confusing the eye: */
+    if(exp) code;
+    for(exp; exp; exp);
+    while(exp) code;
+
+    /* Indenting a line without braces or such breaks */
+    /* rule that every indentation closes with an     */
+    /* unindented closing delimiter, confusing the    */
+    /* eye and making it harder to spot genuine       */
+    /* syntax errors:                                 */
+    if (exp)
+        code;
+
+    /* Putting 'else' on new line in multiline 'if'   */
+    /* reduces the visual cohesiveness of the         */
+    /* construct, confusing the eye:                  */
+    if (exp) {
+        muchcode;
+    }
+    else {
+        morecode;
+    }
+
+
+    /* Adding space after fn call identifier makes fn */
+    /* call look needlessly like a control structure  */
+    /* or infix expression, confusing the eye:        */
+    fn (a);
+
+    /* Parens around return expression are never      */
+    /* needed, make return look needlessly like a     */
+    /* fn call, and are extra noise for eye to        */
+    /* process:                                       */
+    return (a);
+
+/* }}} */
+/* {{{ Paragraphing and commenting conventions.				*/
+
+I attempt to break code up into logical paragraphs, separated by
+whitespace, and beginning with a comment.  This is intended to work
+well with natural skimming habits, which seem to consist of reading
+the first line or two of each block of text.
+
+/* }}} */

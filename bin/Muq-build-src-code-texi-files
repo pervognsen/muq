@@ -1,0 +1,45 @@
+#! /bin/sh
+#
+# A little hack to copy c/*.t and pkg/*.t to be
+# info pkg/*.tt, running them through Muq-entexify
+# as we do so.
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+# Check that needed directories  exist:
+if [ ! -d $pkgdir ]
+then
+   echo "Sorry, can't find $pkgdir."
+   exit 1
+fi
+if [ ! -d $docdir ]
+then
+   echo "Sorry, can't find $docdir."
+   exit 1
+fi
+if [ ! -d $cdir ]
+then
+   echo "Sorry, can't find $cdir."
+   exit 1
+fi
+
+# Convert all C source files:
+cd $cdir
+echo "Entexifying $cdir/*.t -> $docdir/*.tt..."
+for f in *.t ;
+{
+  echo "Entexifying file $f -> $docdir/${f}t"
+  $bindir/Muq-entexify <$f >$docdir/${f}t
+}
+
+# Convert all source files:
+cd $pkgdir
+echo "Entexifying $pkgdir/*.t -> $docdir/*.tt..."
+for f in *.t ;
+{
+  echo "Entexifying file $f -> $docdir/${f}t"
+  $bindir/Muq-entexify <$f >$docdir/${f}t
+}
+
+exit 0

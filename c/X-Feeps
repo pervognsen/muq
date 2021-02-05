@@ -1,0 +1,308 @@
+
+    =======================================
+    Things that need doing in the X support
+    =======================================
+
+
+(I've been working my way through implementing enough
+functionality to run the example given in the CLX doc.)
+
+
+
+    ==============
+    Current Status
+    ==============
+
+
+
+I've implemented classes corresponding to the basic
+CLX entities:
+
+  xcl.[th]  x-color
+  xcm.[th]  x-colormap
+  xcr.[th]  x-cursor
+  xdp.[th]  x-display
+  xft.[th]  x-font
+  xgc.[th]  x-graphics-context
+  xpx.[th]  x-pixmap
+  xsc.[th]  x-screen
+  xwd.[th]  x-window
+
+
+
+I've implemented basic predicates on these types:
+
+  color?
+  color-map?
+  cursor?
+  display?
+  font?
+  gcontext?
+  pixmap?
+  screen?
+  window?
+
+
+
+I've also done at least partial implementations of the following
+primitives:
+
+    ]create-gcontext
+    ]create-window
+    ]draw-glyphs
+    ]draw-image-glyphs
+    ]make-event-mask
+    ]text-extents
+    close-display
+    destroy-subwindows
+    destroy-window
+    display-roots[
+    drawable-border-width
+    drawable-depth
+    drawable-display
+    drawable-height
+    drawable-width
+    drawable-x
+    drawable-y
+    flush-display
+    font-ascent
+    font-descent
+    gcontext-background
+    gcontext-font
+    gcontext-foreground
+    map-subwindows
+    map-window
+    open-font
+    query-pointer
+    root-open-display
+    screen-black-pixel
+    screen-root
+    screen-white-pixel
+    unmap-subwindows
+    unmap-window
+
+Their status is discussed individually below:
+
+
+]create-gcontext
+================
+
+Usable, but all options are ignored except for
+
+    :background (must be an int)
+    :drawable   (must be a window)
+    :font       (must be a font)
+    :foreground (must be an int)
+
+
+]create-window
+================
+
+Usable, but all options are ignored except for
+
+    :class      (defaults to :copy)
+    :event-mask (must be int)
+    :height     (must be int)
+    :parent     (must be window)
+    :width      (must be int)
+    :x          (must be int)
+    :y          (must be int)
+
+
+]draw-glyphs
+================
+
+Usable?
+
+
+]draw-image-glyphs
+================
+
+Usable?
+
+
+
+]make-event-mask
+================
+
+Should be usable.
+
+
+
+]text-extents
+================
+
+Usable?  Ignores keywords.
+
+
+
+close-display
+================
+
+Should be usable.
+
+
+destroy-subwindows
+================
+
+Should be usable.
+
+
+destroy-window
+================
+
+Should be usable.
+
+
+
+display-roots[
+================
+
+Should be usable.
+
+
+
+drawable-border-width
+================
+
+Should be usable (on windows).
+
+
+
+drawable-depth
+================
+
+Should be usable (on windows).
+
+
+drawable-display
+================
+
+Should be usable (on windows).
+
+
+
+drawable-height
+================
+
+Should be usable (on windows).
+
+
+drawable-width
+================
+
+Should be usable (on windows).
+
+
+drawable-x
+================
+
+Should be usable (on windows).
+
+
+drawable-y
+================
+
+Should be usable (on windows).
+
+
+flush-display
+================
+
+Should be usable.
+
+
+
+font-ascent
+================
+
+Should be usable.
+
+
+
+font-descent
+================
+
+Should be usable.
+
+
+gcontext-background
+================
+
+Should be usable.
+
+gcontext-font
+================
+
+Should be usable.
+
+gcontext-foreground
+================
+
+Should be usable.
+
+
+map-subwindows
+================
+
+Should be usable.
+
+
+map-window
+================
+
+Should be usable.
+
+
+open-font
+================
+
+Should be usable.
+
+
+
+query-pointer
+================
+
+Should be usable.
+
+
+
+root-open-display
+================
+
+Should be usable.
+
+
+
+screen-black-pixel
+================
+
+Should be usable.
+
+
+screen-root
+================
+
+Should be usable.
+
+
+screen-white-pixel
+================
+
+Should be usable.
+
+
+unmap-subwindows
+================
+
+Should be usable.
+
+
+unmap-window
+================
+
+Should be usable.
+
+
+

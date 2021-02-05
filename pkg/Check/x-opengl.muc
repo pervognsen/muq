@@ -1,0 +1,457 @@
+/* --------------------------------------------------------------------- */
+/*			x-opengl.muf				    CrT  */
+/* Exercise Multi-User-C and OpenGL stuff.				 */
+/* --------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------- */
+/* Author:       Jeff Prothero						 */
+/* Created:      99Sep10						 */
+/* Modified:								 */
+/* Language:     MUF							 */
+/* Package:      N/A							 */
+/* Status:       							 */
+/* 									 */
+/*  Copyright (c) 2000 by Jeff Prothero.				 */
+/* 									 */
+/*  This program is free software; you may use, distribute and/or modify */
+/*  it under the terms of the GNU Library General Public License as      */
+/*  published by the Free Software Foundation; either version 2, or at   */
+/*  your option	any later version FOR NONCOMMERCIAL PURPOSES.		 */
+/*									 */
+/*  COMMERCIAL operation allowable at $100/CPU/YEAR.			 */
+/*  COMMERCIAL distribution (e.g., on CD-ROM) is UNRESTRICTED.		 */
+/*  Other commercial arrangements NEGOTIABLE.				 */
+/*  Contact cynbe@eskimo.com for a COMMERCIAL LICENSE.			 */
+/* 									 */
+/*    This program is distributed in the hope that it will be useful,	 */
+/*    but WITHOUT ANY WARRANTY; without even the implied warranty of	 */
+/*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the	 */
+/*    GNU Library General Public License for more details.		 */
+/* 									 */
+/*    You should have received a copy of the GNU General Public License	 */
+/*    along with this program: COPYING.LIB; if not, write to:		 */
+/*       Free Software Foundation, Inc.					 */
+/*       675 Mass Ave, Cambridge, MA 02139, USA.			 */
+/* 									 */
+/* Jeff Prothero DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,	 */
+/* INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN	 */
+/* NO EVENT SHALL Jeff Prothero BE LIABLE FOR ANY SPECIAL, INDIRECT OR	 */
+/* CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS	 */
+/* OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,		 */
+/* NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION	 */
+/* WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.			 */
+/* 									 */
+/* Please send bug reports/fixes etc to bugs@@muq.org.			 */
+/* --------------------------------------------------------------------- */
+/* --------------------------------------------------------------------- */
+/*                              history                              CrT */
+/*                                                                       */
+/* 99Oct12 jsp	Created.						 */
+/* --------------------------------------------------------------------- */
+
+
+// Only do the OpenGL tests if the server
+// was in fact compiled with OpenGL support:
+#if (.cfg.haveOpenGL)
+
+float* light_diffuse  = (float*) { 1.0, 1.0, 1.0, 1.0 };
+float* light_position = (float*) { 1.0, 1.0, 1.0, 0.0 }; 
+
+
+
+// ------------------------------ Draw a basic teapot ---------------------------- 
+
+shouldWork( {glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );} );
+shouldWork( {glutCreateWindow("Static Teapot");} );
+
+shouldWork({	glLightfv( GL_LIGHT0, GL_DIFFUSE, light_diffuse );			});
+shouldWork({	glLightfv( GL_LIGHT0, GL_POSITION, light_position );			});
+shouldWork({	glEnable( GL_LIGHTING );						});
+shouldWork({	glEnable( GL_LIGHT0 );							});
+shouldWork({	glEnable( GL_DEPTH_TEST );						});
+shouldWork({	glMatrixMode( GL_PROJECTION );						});
+shouldWork({	gluPerspective( 40.0, 1.0, 1.0, 10.0 );					});
+shouldWork({	glMatrixMode( GL_MODELVIEW );						});
+shouldWork({	glutSwapBuffers();							});
+
+shouldWork({	gluLookAt( /*eye:*/ 0.0,0.0,3.0, /*centre:*/ 0.0,0.0,0.0, /*up:*/ 0.0,1.0,0.0); });
+shouldWork({	glTranslatef( 0.0,0.0, -2.0 );						});
+shouldWork({	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );			});
+shouldWork({	glutSolidTeapot( 1.0 );							});
+shouldWork({	glutSwapBuffers();							});
+shouldWork({	glFlush();								});
+shouldWork({	sleepJob( 250 );							});
+shouldWork({	glutDestroyWindow( glutGetWindow() );					});
+
+
+
+// ------------------------------ Rotate a basic teapot ----------------------------
+
+void rotateTeapot( void ) {
+    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+    glutCreateWindow("Rotating Teapot");
+
+    glLightfv( GL_LIGHT0, GL_DIFFUSE, light_diffuse );
+    glLightfv( GL_LIGHT0, GL_POSITION, light_position );
+    glEnable( GL_LIGHTING );
+    glEnable( GL_LIGHT0 );
+    glEnable( GL_DEPTH_TEST );
+    glMatrixMode( GL_PROJECTION );
+    gluPerspective( 40.0, 1.0, 1.0, 10.0 );
+    glMatrixMode( GL_MODELVIEW );
+    glutSwapBuffers();
+
+    gluLookAt( /*eye:*/ 0.0,0.0,3.0, /*centre:*/ 0.0,0.0,0.0, /*up:*/ 0.0,1.0,0.0);
+
+    float degrees;
+    for (degrees = 0.0;  degrees < 360.0;  degrees += 10.0) {
+	glPushMatrix();
+
+	glTranslatef( 0.0,0.0, -2.0 );
+	glRotated( degrees, 0.0, 1.0, 0.0 );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glutSolidTeapot( 1.0 );
+	glutSwapBuffers();
+	glFlush();
+
+	glPopMatrix();
+    }				
+
+    glutDestroyWindow( glutGetWindow() );
+}
+
+shouldWork({	rotateTeapot();		});
+
+
+
+// ------------------------------ Change shininess of a teapot ----------------------------
+
+void shinyTeapot( void ) {
+    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+    glutCreateWindow("Changing Shininess");
+
+    glLightfv( GL_LIGHT0, GL_DIFFUSE, light_diffuse );
+    glLightfv( GL_LIGHT0, GL_POSITION, light_position );
+    glEnable( GL_LIGHTING );
+    glEnable( GL_LIGHT0 );
+    glEnable( GL_DEPTH_TEST );
+    glMatrixMode( GL_PROJECTION );
+    gluPerspective( 40.0, 1.0, 1.0, 10.0 );
+    glMatrixMode( GL_MODELVIEW );
+    glutSwapBuffers();
+
+    float* ambientColor = (float*) { 0.7, 0.7, 0.0, 1.0 };
+    glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambientColor );
+
+    float* specularColor = (float*) { 1.0, 1.0, 1.0, 1.0 };
+    glMaterialfv( GL_FRONT_AND_BACK, GL_SPECULAR, specularColor );
+
+    gluLookAt( /*eye:*/ 0.0,0.0,3.0, /*centre:*/ 0.0,0.0,0.0, /*up:*/ 0.0,1.0,0.0);
+
+    float degrees;
+    for (degrees = 0.0;  degrees < 360.0;  degrees += 10.0) {
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glPushMatrix();
+
+	float increasing = (degrees / 360.0) * 128.0;
+        glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, increasing );
+
+	glTranslatef( 0.0,0.0, -2.0 );
+	glRotated( degrees, 0.0, 1.0, 0.0 );
+	glutSolidTeapot( 1.0 );
+
+
+	glPopMatrix();
+	glutSwapBuffers();
+	glFlush();
+    }				
+
+    glutDestroyWindow( glutGetWindow() );
+}
+
+shouldWork({	shinyTeapot();		});
+
+
+
+// ------------------------------ Rotate a basic sphere ----------------------------
+
+float* light_diffuse  = (float*) { 1.0, 1.0, 1.0, 1.0 };
+float* light_position = (float*) { 1.0, 1.0, 1.0, 0.0 }; 
+
+void rotateBall( void ) {
+    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+    glutCreateWindow("Rotating Sphere");
+
+    glLightfv( GL_LIGHT0, GL_DIFFUSE, light_diffuse );
+    glLightfv( GL_LIGHT0, GL_POSITION, light_position );
+    glEnable( GL_LIGHTING );
+    glEnable( GL_LIGHT0 );
+    glEnable( GL_DEPTH_TEST );
+    glMatrixMode( GL_PROJECTION );
+    gluPerspective( 40.0, 1.0, 1.0, 10.0 );
+    glMatrixMode( GL_MODELVIEW );
+    glutSwapBuffers();
+
+    gluLookAt( /*eye:*/ 0.0,0.0,3.0, /*centre:*/ 0.0,0.0,0.0, /*up:*/ 0.0,1.0,0.0);
+
+    float degrees;
+    for (degrees = 0.0;  degrees < 360.0;  degrees += 1.0) {
+	glPushMatrix();
+
+	glTranslatef( 0.0,0.0, -2.0 );
+	glRotated( degrees, 0.0, 1.0, 0.0 );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glutSolidSphere( 1.0, 6, 6 );
+	glutSwapBuffers();
+	glFlush();
+
+	glPopMatrix();
+    }				
+
+    glutDestroyWindow( glutGetWindow() );
+}
+
+shouldWork({	rotateBall();		});
+
+
+// ------------------------------ Rotate a face ----------------------------
+
+float* light_diffuse  = (float*) { 1.0, 1.0, 1.0, 1.0 };
+float* light_position = (float*) { 1.0, 1.0, 1.0, 0.0 }; 
+
+void drawFace(
+    void
+) {
+    /* Draw main box, with bilateral symmetry: */
+    glBegin(GL_TRIANGLES);
+
+    /* UPPER/MIDDLE FACE TRIANGLES */
+    glColor3f( 0.6, 0.5, 0.4 );
+    glVertex3f(  0.000,  1.000,  0.000 );  /* top middle  */
+    glVertex3f( -0.666,  1.000,  0.000 );  /* top left    */
+    glVertex3f(  0.0,   -0.333,  0.000 );  /* lip middle  */
+					    glVertex3f(  0.000,  1.000,  0.000 );  /* top middle  */
+					    glVertex3f(  0.666,  1.000,  0.000 );  /* top right   */
+					    glVertex3f(  0.0,   -0.333,  0.000 );  /* lip middle  */
+
+    /* LOWER/OUTER FACE TRIANGLES */
+    glColor3f( 0.6, 0.5, 0.4 );
+    glVertex3f(  0.0,   -0.333,  0.000 );  /* lip middle  */
+    glVertex3f( -0.666, -0.333,  0.000 );  /* lip left    */
+    glVertex3f( -0.666,  1.000,  0.000 );  /* top left    */
+					    glVertex3f(  0.0,   -0.333,  0.000 );  /* lip middle  */
+					    glVertex3f(  0.666, -0.333,  0.000 );  /* lip left    */
+					    glVertex3f(  0.666,  1.000,  0.000 );  /* top left    */
+
+    /* UPPER/MIDDLE JAW TRIANGLES */
+    glColor3f( 0.6, 0.5, 0.4 );
+    glVertex3f(  0.000, -0.333,  0.000 );  /* top middle  */
+    glVertex3f( -0.666, -0.333,  0.000 );  /* top left    */
+    glVertex3f(  0.0,   -1.000,  0.000 );  /* lip middle  */
+					    glVertex3f(  0.000, -0.333,  0.000 );  /* top middle  */
+					    glVertex3f(  0.666, -0.333,  0.000 );  /* top right   */
+					    glVertex3f(  0.0,   -1.000,  0.000 );  /* lip middle  */
+
+    /* LOWER/OUTER JAW TRIANGLES */
+    glColor3f( 0.6, 0.5, 0.4 );
+    glVertex3f(  0.0,   -1.000,  0.000 );  /* lip middle  */
+    glVertex3f( -0.333, -1.000,  0.000 );  /* lip left    */
+    glVertex3f( -0.666, -0.333,  0.000 );  /* top left    */
+					    glVertex3f(  0.0,   -1.000,  0.000 );  /* lip middle  */
+					    glVertex3f(  0.333, -1.000,  0.000 );  /* lip left    */
+					    glVertex3f(  0.666, -0.333,  0.000 );  /* top left    */
+
+
+    /* NOSE TRIANGLES */
+    glColor3f( 0.7, 0.7, 0.7 );
+    glVertex3f(  0.000,  0.000,  0.000 );
+    glVertex3f(  0.000, -0.333,  0.150 );
+    glVertex3f( -0.150, -0.333,  0.000 );
+					    glVertex3f(  0.000,  0.000,  0.000 );
+					    glVertex3f(  0.000, -0.333,  0.150 );
+					    glVertex3f(  0.150, -0.333,  0.000 );
+
+
+    /* MOUTH TRIANGLES */
+    glColor3f( 1.0, 0.2, 0.5 );
+    glVertex3f(  0.000, -0.555,  0.000 );
+    glVertex3f(  0.000, -0.655,  0.000 );
+    glVertex3f( -0.333, -0.605,  0.000 );
+					    glVertex3f(  0.000, -0.555,  0.000 );
+					    glVertex3f(  0.000, -0.655,  0.000 );
+					    glVertex3f(  0.333, -0.605,  0.000 );
+
+
+    /* EYE TRIANGLES */
+    glColor3f( 0.9, 0.9, 0.9 );
+    glVertex3f( -0.150,  0.000,  0.000 );
+    glVertex3f( -0.300,  0.150,  0.000 );
+    glVertex3f( -0.666,  0.000,  0.000 );
+					    glVertex3f(  0.150,  0.000,  0.000 );
+					    glVertex3f(  0.300,  0.150,  0.000 );
+					    glVertex3f(  0.666,  0.000,  0.000 );
+
+
+    /* EYEBROW TRIANGLES */
+    glColor3f( 0.3, 0.3, 0.3 );
+    glVertex3f( -0.150,  0.210,  0.000 );
+    glVertex3f( -0.400,  0.280,  0.000 );
+    glVertex3f( -0.650,  0.133,  0.000 );
+					    glVertex3f(  0.150,  0.210,  0.000 );
+					    glVertex3f(  0.400,  0.280,  0.000 );
+					    glVertex3f(  0.650,  0.133,  0.000 );
+
+
+
+    glEnd();
+}
+
+void rotateFace( void ) {
+    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+    glutCreateWindow("Rotating Face");
+
+    glLightfv( GL_LIGHT0, GL_DIFFUSE,  light_diffuse  );
+    glLightfv( GL_LIGHT0, GL_POSITION, light_position );
+    glDisable( GL_LIGHTING );
+    glDisable( GL_LIGHT0 );
+    glDisable( GL_DEPTH_TEST );
+    glMatrixMode( GL_PROJECTION );
+    gluPerspective( 40.0, 1.0, 1.0, 10.0 );
+    glMatrixMode( GL_MODELVIEW );
+    glutSwapBuffers();
+
+    gluLookAt( /*eye:*/ 0.0,0.0,3.0, /*centre:*/ 0.0,0.0,0.0, /*up:*/ 0.0,1.0,0.0);
+
+    float degrees;
+    for (degrees = 0.0;  degrees < 360.0;  degrees += 1.0) {
+	glPushMatrix();
+
+	glTranslatef( 0.0,0.0, -2.0 );
+	glRotated( degrees, 0.0, 1.0, 0.0 );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	drawFace( );
+	glutSwapBuffers();
+	glFlush();
+
+	glPopMatrix();
+    }				
+
+    glutDestroyWindow( glutGetWindow() );
+}
+
+rotateFace();
+
+shouldWork({	rotateFace();		});
+
+// -------------------------- Changing color on a cube ----------------------------
+
+void coloredCube( void ) {
+    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+    glutCreateWindow("Changing Color");
+
+    glLightfv( GL_LIGHT0, GL_DIFFUSE, light_diffuse );
+    glLightfv( GL_LIGHT0, GL_POSITION, light_position );
+    glEnable( GL_LIGHTING );
+    glEnable( GL_LIGHT0 );
+    glEnable( GL_DEPTH_TEST );
+    glMatrixMode( GL_PROJECTION );
+    gluPerspective( 40.0, 1.0, 1.0, 10.0 );
+    glMatrixMode( GL_MODELVIEW );
+    glutSwapBuffers();
+
+    gluLookAt( /*eye:*/ 0.0,0.0,3.0, /*centre:*/ 0.0,0.0,0.0, /*up:*/ 0.0,1.0,0.0);
+
+    float* cubeColor = (float*) { 1.0, 0.0, 0.0, 1.0 };
+
+    float degrees;
+    for (degrees = 0.0;  degrees < 360.0;  degrees += 1.0) {
+	glPushMatrix();
+
+	float increasing = degrees / 360.0;
+	float decreasing = 1.0 - increasing;
+	glTranslatef( 0.0,0.0, -2.0 );
+	glRotated( degrees, 0.0, 1.0, 0.0 );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	cubeColor[0] = increasing;
+	cubeColor[1] = decreasing;
+	cubeColor[2] = 0.5;
+	glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, cubeColor );
+
+	glutSolidCube( 1.0 );
+	glutSwapBuffers();
+	glFlush();
+
+	glPopMatrix();
+    }				
+
+    glutDestroyWindow( glutGetWindow() );
+}
+
+shouldWork({	coloredCube();		});
+
+
+
+// ------------------------- Changing opacity on a cube ----------------------------
+
+void clearCube( void ) {
+    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+    glutCreateWindow("Changing Opacity");
+
+    glLightfv( GL_LIGHT0, GL_DIFFUSE, light_diffuse );
+    glLightfv( GL_LIGHT0, GL_POSITION, light_position );
+    glEnable( GL_LIGHTING );
+    glEnable( GL_LIGHT0 );
+    glEnable( GL_DEPTH_TEST );
+    glEnable( GL_CULL_FACE  );
+    glMatrixMode( GL_PROJECTION );
+    gluPerspective( 40.0, 1.0, 1.0, 10.0 );
+    glMatrixMode( GL_MODELVIEW );
+    glutSwapBuffers();
+
+    gluLookAt( /*eye:*/ 0.0,0.0,3.0, /*centre:*/ 0.0,0.0,0.0, /*up:*/ 0.0,1.0,0.0);
+
+    float* innerCubeColor = (float*) { 0.0, 1.0, 0.0, 1.0 };
+    float* outerCubeColor = (float*) { 1.0, 0.0, 0.0, 1.0 };
+
+    float degrees;
+    for (degrees = 0.0;  degrees < 360.0;  degrees += 1.0) {
+
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	float increasing = degrees / 360.0;
+	float decreasing = 1.0 - increasing;
+
+
+	// Draw inner cube:
+	glPushMatrix();
+	glTranslatef( 0.0,0.0, -2.0 );
+	glRotated( -degrees, 0.0, 1.0, 0.0 );
+	glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, innerCubeColor );
+	glutSolidCube( 1.0 );
+	glPopMatrix();
+
+	// Draw outer cube:
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glPushMatrix();
+	glTranslatef( 0.0,0.0, -2.0 );
+	glRotated( degrees, 0.0, 1.0, 0.0 );
+	outerCubeColor[3] = decreasing;
+	glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, outerCubeColor );
+	glutSolidCube( 1.5 );
+	glPopMatrix();
+	glDisable( GL_BLEND );
+
+	glutSwapBuffers();
+	glFlush();
+
+    }				
+
+    glutDestroyWindow( glutGetWindow() );
+}
+
+shouldWork({	clearCube();		});
+
+
+#endif

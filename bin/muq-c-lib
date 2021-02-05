@@ -1,0 +1,27 @@
+#! /bin/sh
+
+# A very specialized hack to install one
+# $pkgdir/ file in $cdir/muq*db* using $cdir/muq:
+
+if [ "$#" -ne 1 ]
+then
+    echo "Usage: muq-c-lib a-pkg-file [muq-executable]"
+    echo "(where 'a-pkg-file' is a library to install in cwd,"
+    echo "and 'muq-executable' defaults to $bindir/muq.)"
+    exit 1
+fi
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+our_muq_lib=`echo $pkgdir/$1*.t`
+our_muq_executable=$cdir/muq
+our_db_name=muq
+# Install specified file in db in current directory:
+echo "Installing $our_muq_lib in $our_db_name"
+${bindir}/Muq-detexify <${our_muq_lib} >${our_muq_lib}.muf
+$our_muq_executable $our_db_name --logfile=muq.log -f ${our_muq_lib}.muf -f $pkgdir/Shutdown
+result=$?
+rm ${our_muq_lib}.muf
+
+exit $result

@@ -1,0 +1,17 @@
+#!/bin/sh
+blap="abc.def.muf.t"
+blip="abc.muf.def.t"
+if { echo $blap | egrep 'muf.t$' ;}
+then
+ echo "blap had muf.t"
+else
+ echo "blap had no muf.t"
+fi
+if { echo $blip | egrep 'muf.t$' ;}
+then
+ echo "blip had muf.t"
+else
+ echo "blip had no muf.t"
+fi
+
+/*                      x-aaa.muc                                   CrT  */

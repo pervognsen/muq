@@ -1,0 +1,42 @@
+#! /bin/sh
+echo "Cleaning muq fileset..."
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+if [ ! -d $docdir ] ; then
+    echo "($docdir does not exist.)"
+    exit 0
+fi
+for a in					\
+	$docdir/*~				\
+	$docdir/whymuq/*~			\
+	$docdir/tmp.*				\
+	$docdir/*.muf				\
+	$docdir/*.muf				\
+	$docdir/*.log				\
+	$docdir/*.aux				\
+	$docdir/*.ps				\
+	$docdir/*.dvi				\
+	$docdir/*.ascii				\
+	$docdir/*.tt				\
+	$docdir/version?.t			\
+	$docdir/*.info*				\
+	$docdir/*.html				\
+	$docdir/*.toc				\
+	$docdir/*.pg	$docdir/*.pgs		\
+	$docdir/*.cp	$docdir/*.cps		\
+	$docdir/*.tp	$docdir/*.tps		\
+	$docdir/*.vr	$docdir/*.vrs		\
+	$docdir/*.ky	$docdir/*.kys		\
+	$docdir/*.fn	$docdir/*.fns		\
+;
+{
+    if [ -r $a ]
+    then
+       echo "$a"
+       rm $a
+    fi
+}
+
+exit 0

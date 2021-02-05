@@ -1,0 +1,30 @@
+#! /bin/sh
+# Create emacs TAGS file for netmuck fileset.
+# This assumes you have 'etags' (part of emacs distribution) around:
+
+
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+
+cd $muqhome
+echo "Creating $muqhome/TAGS..."
+
+# etags doesn't really understand makefiles, of course,
+# but including them on our list lets tags-search find
+# filenames and such in there as well as the c sources:
+etags -f TAGS		\
+  $hdir/*.h		\
+  $cdir/*.t		\
+  $cdir/Check/*.t	\
+  $pkgdir/*.t		\
+  $pkgdir/Check/*.muf	\
+  $cdir/Makefile	\
+  $cdir/Makefile2.in	\
+  $cdir/Makefile3	\
+  $docdir/*.texi	\
+  $docdir/*.t
+
+exit 0

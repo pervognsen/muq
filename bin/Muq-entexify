@@ -1,0 +1,44 @@
+#! /usr/bin/perl
+# I'm trying to include all the C source in the online
+# HTML documentation, eventually.  I'm doing this by
+# basically making the C source files valid texinfo
+# files, with the C source in the @example constructs.
+#
+# When compiling, we just run the C source through
+# Muq-detexify to strip out everything but the contents
+# of the examples.  
+#
+# Main problem with that is that I _really_ don't want
+# to write @{ ... @} everywhere in the C source in place
+# of simply { ...  } -- ick!
+#
+# So I don't, and instead run the C sourcefiles through
+# this little filter before handing them to any of the
+# texinfo tools -- the filter converts { } to @{ }@
+# within examples.
+$in_example=0;
+while (<>) {
+    if (/^\@end example$/) {
+        $in_example=0;
+    }
+    if ($in_example) {
+
+	# Convert @ to @@:
+        s/([^\@])\@([^\@])/$1\@\@$2/g;
+
+	# Convert { to @{:
+        s/([^\@])\{/$1\@\{/g;
+
+	# Convert } to @}:
+        s/([^\@])\}/$1\@\}/g;
+
+	# Special cases for all of the above at start of line:
+	s/^\@([^\@])/\@\@$1/g;
+        s/^\{/\@\{/g;
+        s/^\}/\@\}/g;
+    }
+    if (/^\@example  \@c$/) {
+        $in_example=1;
+    }
+    print;
+}

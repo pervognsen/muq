@@ -1,0 +1,103 @@
+#! /bin/sh
+
+if [ "$#" -ne 2 ] ; then
+    if [ "$#" -ne 1 ] ; then
+	if [ "$#" -ne 0 ] ; then
+	    echo "Usage: muq-std-checkmuf-xxb file logfile"
+	    echo "(Runs standard muq dual-server selfcheck code.)"
+	    exit 1
+	else
+	    file=oldmud2
+	    checklog=/dev/null
+	fi
+    else
+	file=$1
+	checklog=/dev/null
+    fi
+else
+    file=$1
+    checklog=$2
+fi
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+# Check that $pkgdir/Check exists:
+cd $cdir/#check.tmp#
+if [ -d $pkgdir/Check ]
+then
+
+    # Execute $pkgdir/Check/x[xy]-*muf:
+    for i in $pkgdir/Check/xx-${file}*muf ;
+    {
+      j=`echo $i | sed -e 's/xx-/xy-/'`
+      if [ ! -f $j ]
+      then
+	echo "Found $i but no $j exists, ignoring."
+      else
+	echo "Found matching pair:"
+	echo "    $i"
+	echo "    $j"
+
+	# Re-initialize db:
+	rm -rf check*db* czech*db*
+	$bindir/muq-copy-db `pwd` Clean check
+	$bindir/muq-copy-db `pwd` Clean czech
+
+	echo "Starting $j in background on #check.tmp#/czech* db..."
+	$cdir/muq	czech		\
+	   -x muf:compileMufFile	\
+	   -f $pkgdir/Check/begin.muf	\
+	   -f $j			\
+	   --logfile=xx-muq.log		\
+	   -f $pkgdir/Check/end.muf &
+
+#	   --log-bytecodes		\
+#
+
+	# Wait for background server to start up
+	# before starting foreground Muqserver process:
+	while [ ! -f muq-czech.pid ]
+	do
+	    echo "Waiting for background Muq server to start..."
+	    sleep 1
+	done
+	# Keep any gprof output from two servers from colliding:
+	if [ -f $cdir/#check.tmp#/gmon.out ] ; then
+	    mv  $cdir/#check.tmp#/gmon.out  $cdir/#check.tmp#/gmon.out.xy
+	fi
+	echo "Starting $i in foreground #check.tmp#/check* db..."
+	time $cdir/muq	check		\
+	   -x muf:compileMufFile	\
+	   -f $pkgdir/Check/begin.muf	\
+	   -f $i			\
+	   -f $pkgdir/Check/end.muf	\
+	   --logfile=xy-muq.log		\
+	| tee -a $checklog
+
+#	   --log-bytecodes		\
+#
+	echo "(Above is elapsed time for $i run on #check.tmp#/check* db.)"
+	# Signal background server to exit:
+	echo "Killing background Muq via kill -INT to `cat muq-czech.pid`"
+	kill -INT `cat muq-czech.pid`
+	# Wait for background server to exit
+	# before proceeding to next test:
+	while [ -f muq-czech.pid ]
+	do
+	    echo "Waiting for background Muq server to exit..."
+	    sleep 1
+	done
+	echo "Background Muq server has exited."
+	# Keep any gprof output from two servers from colliding:
+	if [ -f $cdir/#check.tmp#/gmon.out ] ; then
+	    mv  $cdir/#check.tmp#/gmon.out  $cdir/#check.tmp#/gmon.out.xx
+	fi
+      fi
+    }
+
+else
+   echo "No $pkgdir/Check exists!"
+   exit 1
+fi
+exit 0

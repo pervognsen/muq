@@ -1,0 +1,32 @@
+94Dec07
+
+Ernie Kent says MicroMUSE has being doing some sort of
+distributed stuff, and gives
+
+   "Try Cyberion City at chezmoto.ai.mit.edu 4201"
+
+as a pointer.
+
+
+94Dec4
+Distributed DB stuff:
+
+ACM Computing Surveys V26#2(94Jun) has a relevant survey of
+PRAM simulation techniques.  It also cites Thomas 79: "A
+majority concensus approach to concurrency control for
+multiple copy databases," ACM Trans Database Sys $, 1,
+180-209:  If each of (2c-1) copies of a datum has a
+timestamp, then it suffices to always read and write
+a minimum of c of them, and always take the value with
+the most recent timestamp.
+
+I don't understand how to ensure that the c writes
+collectively succeed/fail atomically; I probably need to
+review "two-phase commits" or some such?
+
+This machinery is probably too slow to use generally in a
+continentally-distributed netserver, but it might be
+appropriate for a small nucleus of shared data, such as the
+set of servers considered part of the system, and perhaps
+the set of account/password combinations valid on the system
+as a whole.

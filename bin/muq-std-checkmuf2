@@ -1,0 +1,42 @@
+#! /bin/sh
+
+if [ "$#" -ne 1 ]
+then
+    echo "Usage: muq-std-checkmuf2 logfile"
+    echo "(Runs standard muq selfcheck code.)"
+    exit 1
+fi
+checklog=$1
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+cd #check.tmp#
+
+# Re-initialize db:
+rm -rf check*db*
+$bindir/muq-copy-db `pwd` clean check
+
+# Check that $pkgdir/Check exists:
+if [ -d $pkgdir/Check ]
+then
+    # Execute $pkgdir/Check/x-*muf:
+    for i in $pkgdir/Check/x-*muf ;
+    {
+      echo ""	# Unportable is:   echo "\n\n..."
+      echo ""
+      echo "Running testfile $i..."
+      $cdir/muq	check			\
+	 -x muf:compileMufFile		\
+	 -f $pkgdir/Check/begin.muf	\
+	 -f $i				\
+	 -f $pkgdir/Check/end.muf	\
+	 --logfile=muq.log		\
+      | tee -a $checklog
+    }
+else
+   echo "No $pkgdir/Check exists!"
+   exit 1
+fi
+
+exit 0

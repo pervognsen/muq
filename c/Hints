@@ -1,0 +1,26 @@
+--------------------
+A fuzzball fix that might someday apply to Muq:
+
+From: foxen@netcom.com (Foxen)
+Message-Id: <199510120147.SAA01321@netcom5.netcom.com>
+Subject: Compiling FB under Linux
+To: fuzzball-support@netcom.com
+Date: Wed, 11 Oct 1995 18:47:17 -0700 (PDT)
+X-Mailer: ELM [version 2.4 PL23]
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Content-Length: 743
+
+Problem: Compiling FB under Linux with gcc 2.6.x using -g (the default)
+                gives an internal compiler error and asks for "libc.so.4".
+                This is common with Slackware releases 2.2.x and 2.3.x.
+
+Reason: Nonexistent "libg.sa"
+Remedy: As root, make libg.sa by
+
+                # cd /usr/lib; ln -s libc.sa libg.sa
+
+Note: If you already have a softlink from libg.sa to libg.a, and you still
+                have problems, rm that link, then retry the above commands.
+

@@ -1,0 +1,38 @@
+#! /bin/sh
+
+if [ "$#" -eq 3 ]
+then
+    dst_dir=$1
+    src_dir=$2
+    file=$3
+else
+    echo "Usage: muq-install2 dst-dir src-dir file"
+    echo "(Copies file from src-dir to dst-dir, first saving"
+    echo "(any pre-existing dst-dir/file as dst-dir/oldfile.)"
+    exit 1
+fi
+
+if [ -f $src_dir/$file ]
+then
+    if [ -f $dst_dir/$file ]
+    then
+	if [ -f $dst_dir/old$file ]
+	then
+	    echo "Unlinking $dst_dir/old$file"
+	    rm $dst_dir/old$file
+	fi
+
+	echo "Saving $dst_dir/$file as $dst_dir/old$file"
+	mv $dst_dir/$file $dst_dir/old$file
+    fi
+
+    echo "Copying $src_dir/$file to $dst_dir/$file..."
+    cp $src_dir/$file $dst_dir/$file
+
+else
+    echo "No $src_dir/$file!"
+    exit 1
+fi
+
+
+exit 0

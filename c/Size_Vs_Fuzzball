@@ -1,0 +1,214 @@
+(94Jul19, -2.11.0 Muq release vs fb5.24q.)
+
+Wyatt writes [re Sun 4.x]:
+
+| Here's the size, if any body was curious:
+| -rwxrwxrwx  1 wmiler    1507328 Jul 19 06:43 muq
+
+That's about right:
+
+    qwest@betz:muq/c> ls -l muq
+
+    -rwxr-xr-x   1 qwest    user      1470968 Jul 19 12:08 muq*
+
+    qwest@betz:muq/c> strip muq
+    qwest@betz:muq/c> ls -l muq
+
+    -rwxr-xr-x   1 qwest    user       479232 Jul 19 12:13 muq*
+
+(And after recompiling without -g switch:)
+
+    qwest@betz:muq/c> ls -l ./muq
+
+    -rwxr-xr-x   1 qwest    user       727324 Jul 19 12:19 ./muq*
+
+    qwest@betz:muq/c> strip ./muq
+    qwest@betz:muq/c> ls -l ./muq
+
+    -rwxr-xr-x   1 qwest    user       471040 Jul 19 12:20 ./muq*
+
+    qwest@betz:muq/c> size ./muq
+
+    Size of ./muq:521732
+
+	    Section         Size      Physical Address    Virtual Address
+
+	      .text      349616          4194784            4194784
+	      .init          32          4544400            4544400
+	     .rdata       44912         268502688           268502688
+	      .data       67232         268435456           268435456
+	      .lit8          32         268547600           268547600
+	     .sdata        4720         268547632           268547632
+	      .sbss         400         268552352           268552352
+	       .bss       54752         268552752           268552752
+	   .comment          36                0                  0
+    qwest@betz:muq/c>
+
+That's fat by CP/M standards, certainly, but not out of the ballpark
+relative to the competition.  For example, here's the fuzzball
+server Qwest is actually running:
+
+    qwest@betz:muck/bin> ls -l ./netmuck
+
+    -rwxr-xr-x   1 qwest    user      1250544 Jul 16 21:50 ./netmuck*
+
+    qwest@betz:muck/bin> size ./netmuck
+
+    Size of ./netmuck:853508
+
+	    Section         Size      Physical Address    Virtual Address
+
+	      .text      484784          4194784            4194784
+	      .init          32          4679568            4679568
+	     .rdata       53808         268452272           268452272
+	      .data       16816         268435456           268435456
+	      .lit8          48         268506080           268506080
+	     .sdata        8416         268506128           268506128
+	      .sbss        1088         268514544           268514544
+	       .bss      288480         268515632           268515632
+	   .comment          36                0                  0
+    qwest@betz:muck/bin>
+
+Muq has about 130K less actual code (.text) than Fuzzball still
+(Fuzzball was written by people who didn't understand the existing
+code, so -- for example -- it wound up with five implementations of
+binary trees and other sorts of code duplication, where Muq tends to
+assiduously avoid code duplication except where fairly essential to
+module integrity).
+
+Muq also has 130K less in static buffers and such (.bss).
+
+Muq is only really bigger in initialized data (.data), which is a
+deliberate design decision to trade large lookup table size for
+increased interpretation speed: the Muq bytecode interpreter uses a
+32K (configurable -- I may expand this to 64K or 128K in future
+releases) lookup table to achieve integer instruction dispatch rates
+about 3.5x faster than Fuzzball.  (This is written up in jobbuild.c)
+
+If the "Size of ...:..." lines indicate size of program at startup,
+then Muq at 521732 is 61% as big as Fuzzball at 853508.  This is
+somewhat apples to oranges, of course.  For example, Fuzzball
+has functionality inserver that Muq will have in-db while Muq
+has functionality inserver that Fuzzball won't have at all.
+
+More to the point, Muq and Fuzzball ram usage is an any event
+dominated by buffers used for the db, not by code, usually something
+on the order of half a dozen to several dozen megabytes for a large
+db.  Fuzzball and just about every other server I know of tends to
+bloat process size uncontrollably; Muq runs with whatever fixed buffer
+size you tell it to use.
+
+(It defaults to 512 bytes at the moment -- which auto-expands to 4K to
+be big enough to hold one complete job -- for testing purposes, which
+is probably the main reason Muq runs so slowly in current releases.)
+
+  Cynbe
+
+Hmm. Actually, the above comparison was needlessly biased, Fuzzball
+was compiled -O -g while Muq was compiled with neither.  But
+recompiling Muq -O -g turns out to favor Muq:
+
+    Size of ./muq:415348
+
+	    Section         Size    As proportion of fuzzball
+
+Kuranes says, "Text: 315392  Data: 69632  Bss: 12664 Dec: 397688 Hex: 61178"
+	      .text      243232     50%
+	      .init          32    100%
+	     .rdata       44912     83%
+	      .data       67232    400%
+	      .lit8          32     67%
+	     .sdata        4720     56%
+	      .sbss         400     37%
+	       .bss       54752     19%
+	   .comment          36    100%
+	    ---------------------------
+	     "Size"      415348	49%
+
+    qwest@betz:muq/c>
+
+So the bottom line appears to be that Muq's startup size is
+half the size of Fuzzball at present.  (I'm surprised!)
+
+Muq being truly diskbased the process size disparity in
+practical use is likely to be even larger.
+
+BTW: It is true that Muq is far from finished, but I think
+the size is about right.  Most of the intended code is in
+place.  Most of the remaining code likely to be added is
+quite small, and almost the entire inserver muf compiler
+will be ripped out shortly:  I expect the two to roughly
+cancel.
+
+Of course, addition of something like X-windows support is
+likely to bloat the server a lot -- X is a megabloat package
+-- but that's another issue.
+
+  Cynbe
+
+
+------------------------------------------------------------
+
+(94Aug15, -2.11.0 Muq release on Linux:
+Kuranes says, "GNU size is semi-busted on my box, but it reports:"
+Kuranes says, "Text: 315392  Data: 69632  Bss: 12664 Dec: 397688 Hex: 61178"
+
+(397688 above vs SGI overall size of 415348 is 4% smaller.)
+
+
+
+------------------------------------------------------------
+(96Sep22, -1.32.0 Muq on Linux:
+
+cynbe@eith muq/c> size muq   # This is when compiled -g -O
+text	data	bss	dec	hex	filename
+389088 	126976 	170832 	686896 	a7b30  	muq
+
+cynbe@eith muq/c> size muq   # This is when compiled -O9
+text	data	bss	dec	hex	filename
+421856 	126976 	170832 	719664 	afb30  	./muq
+
+
+
+For comparison, here's Neonmuck (a recent fuzzball
+variant) on Linux:
+
+text	data	bss	dec	hex	filename
+495584 	8192   	314360 	818136 	c7bd8  	neonmuck
+
+And a recent MUSH on Linux:
+
+text	data	bss	dec	hex	filename
+275428 	65585  	60848  	401861 	621c5  	netmush
+
+And a recent MOO on Linux:
+
+text	data	bss	dec	hex	filename
+134288 	25091  	26336  	185715 	2d573  	Moo/178/moo
+
+For comparison with the past above, here's Muq v -1.32.0 on
+an SGI box:
+
+        Section          Size   Physical Address      Virtual Address
+
+          .text        586240            4414608              4414608 
+          .init            32            5000848              5000848 
+        .rodata        120384          268562064            268562064 
+          .data        126608          268435456            268435456 
+           .lib           112            4194944              4194944 
+          .sbss           544          268688448            268688448 
+           .bss        170976          268688992            268688992 
+       .dynamic           256            4194688              4194688 
+        .dynstr         30112            4339968              4339968 
+       .conflic           912            4324528              4324528 
+          .msym         14528            4325440              4325440 
+       .rel.dyn        129472            4195056              4195056 
+        .dynsym         29056            4370080              4370080 
+           .got          6000          268682448            268682448 
+          .hash         15472            4399136              4399136 
+        .interp            19            4194592              4194592 
+       .compact        205500                  0                    0 
+
+
+Looks like Muq and fuzzball have been growing at
+comparable rates :)

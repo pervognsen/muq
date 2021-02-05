@@ -1,0 +1,49 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+# Print one of above if requested:
+if [ "$#" -eq 1 ]
+then
+   case "${1}" in 
+
+   apps )
+       echo "$apps" ;;
+
+   autoconfigdir )
+       echo "$autoconfigdir" ;;
+
+   bindir )
+       echo "$bindir" ;;
+
+   cdir )
+       echo "$cdir" ;;
+
+   dbdir )
+       echo "$dbdir" ;;
+
+   hdir )
+       echo "$hdir" ;;
+
+   docdir )
+       echo "$docdir" ;;
+
+   pkgdir )
+       echo "$pkgdir" ;;
+
+   pubdir )
+       echo "$pubdir" ;;
+
+   srvdir )
+       echo "$srvdir" ;;
+
+   htmldir )
+       echo "$htmldir" ;;
+
+   version )
+       echo "`cat $hdir/VERSION`" ;;
+   esac
+fi
+
+exit 0

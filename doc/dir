@@ -1,0 +1,23 @@
+-*- Text -*-
+This is the file .../doc/dir, which contains the topmost node of the
+Info hierarchy.  The first time you invoke Info you start off
+looking at that node, which is (dir)Top.
+
+File: dir	Node: Top	This is the top of the INFO tree
+  This (the Directory node) gives a menu of major topics. 
+  Typing "d" returns here, "q" exits, "?" lists all INFO commands, "h" 
+  gives a primer for first-timers, "mTexinfo<Return>" visits Texinfo topic,
+  etc.
+  --- PLEASE ADD DOCUMENTATION TO THIS TREE. ---
+
+* Menu: The list of major topics begins on the next line.
+
+* muf1:    (muf1).	        Elementary MUF Tutorial.
+* muf2:    (muf2).	        Intermediate and Advanced MUF Tutorials.
+* muf3:    (muf3).	        MUF Mastery.
+* wafe:    (wafe).	        The WAFE frontend.
+* mufref:  (mufref).	        MUF Reference.
+* lspref:  (lspref).	        Lisp Reference.
+* admin:   (admin).	        Muq administration.
+* src:     (src).	        Guide through the Muq source code.
+* root:    (/usr/info/dir)	Main info hierarchy

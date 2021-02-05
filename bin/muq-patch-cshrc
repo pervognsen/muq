@@ -1,0 +1,47 @@
+#! /bin/sh
+if [ -r $HOME/.cshrc ]
+then
+    if egrep MUQDIR $HOME/.cshrc >/dev/null 2>&1; then
+	echo
+	echo "Your $HOME/.cshrc appears to already have a MUQDIR hack."
+	echo "If you really want to run muq-patch-cshrc, please edit"
+        echo "the existing MUQDIR stuff out of $HOME/.cshrc and retry."
+	echo
+	exit 1
+    fi
+    cp $HOME/.cshrc /usr/tmp/.muqtmp1.
+    mv $HOME/.cshrc $HOME/.cshrc.old
+else
+    touch /usr/tmp/.muqtmp1.
+fi
+echo "# Following patch made `date` by muq-patch-cshrc:" >/usr/tmp/.muqtmp0.
+cat >>/usr/tmp/.muqtmp0. <<'EOF'
+# See muq/INSTALL file for a discussion.
+# (Muq is available from tf.tcp.com pub/muq.)
+if ( ! $?MUQDIR   &   -d $HOME/muq/bin ) then
+    setenv MUQDIR "$HOME/muq/bin"
+    setenv PATH "`$MUQDIR/muq-config bindir`:$PATH"
+    setenv INFOPATH "`$MUQDIR/muq-config infodir`:/usr/local/info"
+endif
+# End of muq-patch-cshrc patch.
+
+
+
+EOF
+
+cat /usr/tmp/.muqtmp0. /usr/tmp/.muqtmp1. >$HOME/.cshrc
+rm /usr/tmp/.muqtmp0. /usr/tmp/.muqtmp1.
+echo
+echo "I have patched your ~/.cshrc file."
+if [ -r $HOME/.cshrc.old ] ; then
+    echo
+    echo "Your original file is saved as ~/.cshrc.old:"
+    echo "You may do 'mv ~/.cshrc.old ~/.cshrc' to restore it."
+fi
+echo
+echo "You should do 'source ~/.cshrc' and then 'rehash' now"
+echo "to make these changes take effect."
+echo
+echo "Alternatively, you may just log in again."
+echo
+exit 0

@@ -1,0 +1,140 @@
+#! /bin/sh
+
+if [ "$#" -ne 2 ] ; then
+    if [ "$#" -ne 1 ] ; then
+	if [ "$#" -ne 0 ] ; then
+	    echo "Usage: muq-std-checkmuf-xxxb file logfile"
+	    echo "(Runs standard muq triple-server selfcheck code.)"
+	    exit 1
+	else
+	    file=oldmud3
+	    checklog=/dev/null
+	fi
+    else
+	file=$1
+	checklog=/dev/null
+    fi
+else
+    file=$1
+    checklog=$2
+fi
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+# Check that $pkgdir/Check exists:
+cd $cdir/#check.tmp#
+if [ -d $pkgdir/Check ]
+then
+
+    # Execute $pkgdir/Check/xx[xyz]-*muf:
+    for i in $pkgdir/Check/xxx-${file}*muf ;
+    {
+      j=`echo $i | sed -e 's/xxx-/xxy-/'`
+      if [ ! -f $j ]
+      then
+	echo "Found $i but no $j exists, ignoring."
+      else
+	k=`echo $i | sed -e 's/xxx-/xxz-/'`
+	if [ ! -f $k ]
+        then
+	    echo "Found $i and $j but no $k exists, ignoring."
+        else
+	  echo "Found matching triple:"
+	  echo "    $i"
+	  echo "    $j"
+	  echo "    $k"
+
+	  # Re-initialize db:
+	  rm -rf check*db* czech*db*  chequ*db*
+	  $bindir/muq-copy-db `pwd` Clean check
+	  $bindir/muq-copy-db `pwd` Clean czech
+	  $bindir/muq-copy-db `pwd` Clean chequ
+
+	  echo "Starting $k in background on #check.tmp#/chequ* db..."
+	  $cdir/muq	chequ		\
+	     -x muf:compileMufFile	\
+	     -f $pkgdir/Check/begin.muf	\
+	     -f $k			\
+	     --logfile=xxz.log		\
+	     -f $pkgdir/Check/end.muf &
+	  # Wait for background server to create
+	  # chequ-0v0 before starting foreground Muqserver process:
+	  while [ ! -f muq-chequ.pid ]
+	  do
+	      echo "Waiting for Z background Muq server to start..."
+	      sleep 1
+	  done
+
+	  # Keep any gprof output from three servers from colliding:
+	  if [ -f $cdir/#check.tmp#/gmon.out ] ; then
+	      mv  $cdir/#check.tmp#/gmon.out  $cdir/#check.tmp#/gmon.out.xxz
+	  fi
+
+	  echo "Starting $j in background on #check.tmp#/czech* db..."
+	  $cdir/muq	czech		\
+	     -x muf:compileMufFile	\
+	     -f $pkgdir/Check/begin.muf	\
+	     -f $j			\
+	     --logfile=xxy.log		\
+	     -f $pkgdir/Check/end.muf &
+	  # Wait for background server to create
+	  # czech0 before starting foreground Muqserver process:
+	  while [ ! -f muq-czech.pid ]
+	  do
+	      echo "Waiting for Y background Muq server to start..."
+	      sleep 1
+	  done
+
+	  # Keep any gprof output from three servers from colliding:
+	  if [ -f $cdir/#check.tmp#/gmon.out ] ; then
+	      mv  $cdir/#check.tmp#/gmon.out  $cdir/#check.tmp#/gmon.out.xxy
+	  fi
+
+	  echo "Starting $i in foreground #check.tmp#/check* db..."
+	  $cdir/muq	check		\
+	     -x muf:compileMufFile	\
+	     -f $pkgdir/Check/begin.muf	\
+	     -f $i			\
+	     -f $pkgdir/Check/end.muf	\
+	     --logfile=xxx.log		\
+	  | tee -a $checklog
+
+	  # Keep any gprof output from three servers from colliding:
+	  if [ -f $cdir/#check.tmp#/gmon.out ] ; then
+	      mv  $cdir/#check.tmp#/gmon.out  $cdir/#check.tmp#/gmon.out.xxx
+	  fi
+
+	  # Signal Z background server to exit:
+	  echo "Killing Z background Muq via kill -INT to `cat muq-chequ.pid`"
+	  kill -INT `cat muq-chequ.pid`
+	  # Wait for Z background server to exit
+	  # before proceeding to next test:
+	  while [ -f muq-chequ.pid ]
+	  do
+	      echo "Waiting for Z background Muq server to exit..."
+	      sleep 1
+	  done
+	  echo "Z background Muq server has exited."
+
+	  # Signal Y background server to exit:
+	  echo "Killing Y background Muq via kill -INT to `cat muq-czech.pid`"
+	  kill -INT `cat muq-czech.pid`
+	  # Wait for background server to exit
+	  # before proceeding to next test:
+	  while [ -f muq-czech.pid ]
+	  do
+	      echo "Waiting for Y background Muq server to exit..."
+	      sleep 1
+	  done
+	  echo "Y background Muq server has exited."
+        fi
+      fi
+    }
+
+else
+   echo "No $pkgdir/Check exists!"
+   exit 1
+fi
+
+exit 0

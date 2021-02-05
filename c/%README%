@@ -1,0 +1,5 @@
+gbeThis directory contains files for a running server.
+This directory and /usr/home/cynbe/muq/bin are the only directories
+needed to simply run a Muq;   All other directories
+may be removed when installation is complete, if so
+desired.

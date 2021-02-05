@@ -1,0 +1,79 @@
+\input texinfo   @c -*-texinfo-*-
+@comment %**start of header (This is for running Texinfo on a region.)
+@setfilename ../doc/muf3.info
+@settitle MUF Mastery
+@setchapternewpage odd
+@comment %**end of header (This is for running Texinfo on a region.)
+@c
+@ifinfo
+Copyright @copyright{} 1995 Jeff Prothero.
+@end ifinfo
+@c --------------------------------------------------------
+@titlepage
+@sp 10
+@center @titlefont{MUF Mastery}
+@sp 2
+@include versionc.t
+@sp 2
+@center Jeff Prothero
+@center (cynbe@sl.tcp.com)
+@c     ---------------------------------------------
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1995 Jeff Prothero.
+@end titlepage
+@c --------------------------------------------------------
+@c Uncomment these to generate a single index:
+@c @synindex cp fn
+@c @syncodeindex vr fn
+@c @syncodeindex ky fn
+@c @syncodeindex pg fn
+@c @syncodeindex tp fn
+@c
+@node Top, Muf Mastery, , (dir)
+
+@include versiont.t
+This version of the manual is a second draft, and still very rough.
+
+@menu
+* Muf Mastery::
+* Biographical Sketches::
+* Reference Shelf::
+* Net Re-sources::
+* Function Index::
+* Variable Index::
+* Data Type Index::
+* Concept Index::
+@end menu
+
+@include mufprog4.t
+@include bio.t
+@include ref.t
+@include netsrc.t
+
+@node Function Index, Variable Index, Net Re-sources Wrapup, (dir)
+@unnumbered Function Index
+
+@c TeX crashes obscurely if I uncomment this -- Cynbe
+@c @printindex fn
+
+@node Variable Index, Data Type Index, Function Index, (dir)
+@unnumbered Variable Index
+
+@printindex vr
+
+@node Data Type Index, Concept Index, Variable Index, (dir)
+@unnumbered Data Type Index
+
+@printindex tp
+
+@node Concept Index,  , Data Type Index, (dir)
+@unnumbered Concept Index
+
+@printindex cp
+
+@c Tables of contents
+@summarycontents
+@contents
+
+@bye

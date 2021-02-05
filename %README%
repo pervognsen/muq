@@ -1,0 +1,19 @@
+
+			muq/#README#
+
+Last update: 95Jan02CrT (cynbe@sl.tcp.com)
+
+Muq is a toolkit for developing leading-edge
+programmable multi-user network servers.
+
+Installation instructions are in muq/INSTALL.
+
+A sales blurb explaining how incredibly wonderful
+Muq is may be found in WHY-MUQ.TXT.
+
+The manual sources are in muq/info/*;  Preformatted
+versions are available as separate distributions.
+
+Source code and some design docs are in muq/c.
+
+The canonical Muq archive is tf.tcp.com pub/muq.

@@ -1,0 +1,939 @@
+dnl Should add tests for presence of X11 .h files before
+dnl trying to compile with HAVE_X11.  
+
+dnl Configure.in -- Run through GNU 'autoconf' to produce 'Configure'.
+dnl                 Run through GNU 'autoheader' to produce 'Config.h.in'.
+dnl                (See Makefile3).
+dnl -----------------------------------------------------------------------
+dnl				Overview
+dnl This file consists of GNU 'm4' macros, and requires the GNU autoconfig
+dnl package (latest is v1.11 as of 94Jul).  You don't need this just to
+dnl install normally, only if you're doing serious hacking, and it will be
+dnl automatically invoked by a simple 'make muq' if needed, anyhow.
+dnl -----------------------------------------------------------------------
+dnl				History
+dnl 94May19 CrT: Created, from autoconfig sample script.
+dnl -----------------------------------------------------------------------
+dnl
+dnl Random CrT notes to itself:
+dnl "uname -a" is the most typical way of getting host unix version info.
+dnl "hostinfo" is the NeXT equivalent. (No "uname -a".)
+dnl "hinv" gives hardware inventory on an SGI. (But "uname -a" is supported.)
+dnl
+dnl   Initialize autoconf, and give it a filename which occurs
+dnl   only in the c/ directory -- it likes to use this to verify
+dnl   that it has found the intended directory before proceeding:
+AC_INIT(Uniq-to-c-dir)
+dnl
+dnl   Tell autoconfig that we want to generate a Config.h file
+dnl   as well as a Makefile2 (from Makefile2.in):
+AC_CONFIG_HEADER(Config.h)
+dnl
+dnl   List programs which "make all" should build, and tell autoconf
+dnl   to substitute it for '@PROGS@' when it builds Makefile2:
+PROGS="muq"
+AC_SUBST(PROGS)dnl
+dnl
+dnl   Tell autoconf to look for '@CFLAGS@' when it builds Makefile2:
+AC_SUBST(CFLAGS)dnl
+dnl
+dnl   Tell autoconf to look for '@RM@' when it builds Makefile2:
+AC_SUBST(RM)dnl
+dnl
+dnl   Tell autoconf to look for '@MV@' when it builds Makefile2:
+AC_SUBST(MV)dnl
+dnl
+dnl   Tell autoconf to look for '@LN@' when it builds Makefile2:
+AC_SUBST(LN)dnl
+dnl
+dnl   Tell autoconf to look for '@NICE@' when it builds Makefile2:
+AC_SUBST(NICE)dnl
+dnl
+dnl   Tell autoconf to look for '@GREP@' when it builds Makefile2:
+AC_SUBST(GREP)dnl
+dnl
+dnl   Tell autoconf to look for '@SH@' when it builds Makefile2:
+AC_SUBST(SH)dnl
+dnl
+dnl   Tell autoconf to look for '@MAKE@' when it builds Makefile2:
+AC_SUBST(MAKE)dnl
+dnl
+dnl   If `gcc' is found, set `make' variable `CC' to `gcc':
+AC_PROG_CC
+dnl
+dnl   Set shell and `make' variable `CPP' to a command that runs the C
+dnl   preprocessor.  If `$CC -E' doesn't work, it uses `/lib/cpp':
+AC_PROG_CPP
+dnl
+dnl   Add `-traditional' to `make' variable `CC' if using the GNU C
+dnl   compiler and `ioctl' does not work properly without `-traditional':
+AC_PROG_GCC_TRADITIONAL
+dnl
+dnl   Set `make' variable `INSTALL' to `install -c' if `install' is
+dnl   found and is compatible with the BSD and GNU versions.  Otherwise,
+dnl   set `INSTALL' to `@top_srcdir@/install.sh -c' if that script
+dnl   exists, or to `cp' as a last resort.
+AC_PROG_INSTALL
+dnl
+dnl   If on AIX, define `_ALL_SOURCE'.  Allows the use of some BSD
+dnl   functions.  Should be called before any macros that run the C
+dnl   compiler:
+AC_AIX
+dnl
+dnl   If on Minix, define `_MINIX' and `_POSIX_SOURCE' and define
+dnl   `_POSIX_1_SOURCE' to be 2.  This allows the use of POSIX
+dnl   facilities.  Should be called before any macros that run the C
+dnl   compiler.
+AC_MINIX
+dnl
+dnl   If on a POSIXized ISC UNIX, define `_POSIX_SOURCE' and add
+dnl   `-posix' (for the GNU C compiler) or `-Xp' (for other C compilers)
+dnl   to `make' variable `CC'.  This allows the use of POSIX facilities.
+dnl   Must be called after `AC_PROG_CC' and before any other macros
+dnl   that run the C compiler:
+AC_ISC_POSIX
+dnl
+dnl   If on IRIX (Silicon Graphics UNIX), add `-lsun' to `make' variable
+dnl   `LIBS'.  Needed to get `getmntent'.  At sites using Yellow
+dnl   Pages/NIS, it is also needed to get properly working `gethostby*',
+dnl   `getpw*', `getgr*', `getnetby*', and so on.
+dnl old AC_IRIX_SUN
+AC_CHECK_LIB(sun,getpwnam,,,-lc)
+dnl
+dnl   If `signal.h' declares `signal' as returning a pointer to a
+dnl   function returning `void', define `RETSIGTYPE' to be `void';
+dnl   otherwise, define it to be `int'.
+AC_TYPE_SIGNAL
+dnl
+dnl   If the C compiler does not fully support the keyword `const',
+dnl   define `const' to be empty:
+AC_C_CONST
+dnl
+dnl   If words are stored with the most significant byte first (like
+dnl   Motorola and SPARC, but not Intel and VAX, CPUs), define
+dnl   `WORDS_BIGENDIAN'.
+AC_C_BIGENDIAN
+dnl
+dnl   NeXT has no .h files whatever in /usr/include: they are all
+dnl   one deeper, in /usr/include/ansi, /usr/include/bsd and such.
+dnl   Test for this and if so, add them to directory search list
+dnl   before we begin checking for specific header files:
+AC_REQUIRE_CPP
+dnl if test -f /usr/include/ansi/stdio.h; then
+dnl     CFLAGS="$CFLAGS -I/usr/include/ansi"
+dnl     dnl So AC_HEADER_STDC &tc work, since they don't use CFLAGS:
+dnl     ac_cpp="$ac_cpp -I/usr/include/ansi"
+dnl fi
+dnl if test -f /usr/include/bsd/unistd.h; then
+dnl     dnl /usr/include/bsd is a NeXT thing, and defining _POSIX_SOURCE
+dnl     dnl on NeXT gives us clock_t instead of time_t and probably other
+dnl     dnl good stuff:
+dnl     dnl LATER: -lposix seems to always give a floating point exception
+dnl     dnl at runtime on NEXTSTEP 3.2: gave up on it.
+dnl     dnl AC_DEFINE(_POSIX_SOURCE)
+dnl     CFLAGS="$CFLAGS -I/usr/include/bsd"
+dnl     dnl So AC_HEADER_STDC &tc work, since they don't use CFLAGS:
+dnl     ac_cpp="$ac_cpp -I/usr/include/bsd"
+dnl fi
+dnl
+dnl   If `size_t' is not defined in `sys/types.h', define `size_t' to be
+dnl   `unsigned'.
+AC_TYPE_UID_T
+dnl
+AC_HEADER_STDC
+dnl
+dnl   AC_PATH_XTRA is an enhanced version of AC_PATH_X.
+dnl   Adds the C compiler flags that X needs to output variable
+dnl   X_CFLAGS, and the X linker flags to X_LIBS. If X is not
+dnl   available, addd `-DX_DISPLAY_MISSING'
+dnl   to X_CFLAGS.
+dnl
+dnl   Also checks for special libraries that some systems need in
+dnl   order to compile X programs. Adds any that the system needs
+dnl   to output variable X_EXTRA_LIBS. And checks for special X11R6
+dnl   libraries that need to be linked with before `-lX11', and adds
+dnl   any found to the output variable X_PRE_LIBS. 
+dnl
+dnl   Commented out, since nobody is working on completing X support:
+dnl   AC_PATH_XTRA
+dnl
+dnl   If the above sets no_x to "yes", set X11 to -lX11, otherwise
+dnl   set it to the empty string.  Either way, export X11 to the
+dnl   Makefile:
+dnl
+dnl   Commented out, since nobody is working on completing X support:
+dnl   if test "$no_x" = yes; then
+dnl       X11=
+dnl   else
+dnl       AC_DEFINE(HAVE_X11)
+dnl       X11=-lX11
+dnl   fi
+dnl   AC_SUBST(X11)dnl
+dnl
+dnl   For each given HEADER-FILE in the whitespace-separated argument
+dnl   list that exists, define `HAVE_HEADER-FILE' (in all caps):
+AC_CHECK_HEADERS(string.h fcntl.h memory.h utime.h unistd.h)
+dnl
+AC_CHECK_HEADERS(sys/resource.h) dnl Irix  4.x declares struct rusage here.
+AC_CHECK_HEADERS(sys/rusage.h)   dnl SunOS 5.x declares struct rusage here.
+dnl
+dnl OpenGL/Mesa files:
+AC_CHECK_HEADERS(GL/gl.h GL/glu.h GL/glx.h GL/osmesa.h)
+dnl
+dnl Gtk files:
+AC_CHECK_HEADERS(gtk/gtk.h)
+dnl
+dnl Some basic X files. Prolly should be using AC_PATH_XTRA instead?
+AC_CHECK_HEADERS(X11/keysymh X11/Xlib.h X11/Xutil.h)
+dnl
+dnl   Using STDC_HEADERS to decide whether to include stdarg.h kinda sucks,
+dnl   since I want it even if the macro thinks one of the other files
+dnl   standard files is slightly defective.  So, check for it individually:
+AC_CHECK_HEADERS(stdarg.h stdlib.h)
+dnl
+dnl One place to get clock_t:
+AC_CHECK_HEADERS(time.h)
+dnl
+dnl Another place to get clock_t.
+AC_CHECK_HEADERS(sys/times.h)
+dnl
+dnl A place to get CLK_TCK when sysconf() is missing:
+AC_CHECK_HEADERS(limits.h)
+dnl
+dnl NEXTSTEP 3.2 doesn't have malloc.h:
+AC_CHECK_HEADERS(malloc.h)
+dnl
+dnl NEXTSTEP 3.2 keeps select(), open(), close() &tc in bsd/libc.h:
+AC_CHECK_HEADERS(libc.h)
+dnl
+dnl   Gave up and added checks for absence of everything but stdio.h:
+AC_CHECK_HEADERS(ctype.h sys/types.h arpa/inet.h errno.h)
+AC_CHECK_HEADERS(netdb.h netinet/in.h signal.h sys/file.h)
+AC_CHECK_HEADERS(sys/ioctl.h sys/socket.h sys/time.h sys/stat.h sys/wait.h)
+AC_CHECK_HEADERS(setjmp.h math.h sys/select.h)
+AC_CHECK_HEADERS(sys/param.h) dnl Something Ultrix4.2a wants for times()
+dnl
+dnl
+dnl If a program may include both `time.h' and `sys/time.h', define
+dnl `TIME_WITH_SYS_TIME'.  On some older systems, `sys/time.h'
+dnl includes `time.h', but `time.h' is not protected against multiple
+dnl inclusion, so programs should not explicitly include both files.
+dnl This macro is useful in programs that use, for example, `struct
+dnl timeval' or `struct timezone' as well as `struct tm'.  It is best
+dnl used in conjunction with `HAVE_SYS_TIME_H'.
+AC_HEADER_TIME
+dnl
+dnl Figure out how to get the current timezone.  If `struct tm' has a
+dnl `tm_zone' member, define `HAVE_TM_ZONE'.  Otherwise, if the
+dnl external array `tzname' is found, define `HAVE_TZNAME'.  This
+dnl macro calls `AC_STRUCT_TM' if it hasn't been called already.
+AC_STRUCT_TIMEZONE
+dnl
+dnl   If `vfork.h' is found, define `HAVE_VFORK_H'.  If a working
+dnl   `vfork' is not found, define `vfork' to be `fork':
+AC_FUNC_VFORK
+dnl
+dnl   If `vprintf' is found, define `HAVE_VPRINTF'.  Otherwise, if
+dnl   `_doprnt' is found, define `HAVE_DOPRNT'.  (If `vprintf' is
+dnl    available, you may assume that `vfprintf' and `vsprintf' are
+dnl    also available.)
+AC_FUNC_VPRINTF
+dnl
+dnl    Check how to get `alloca'.  Tries to get a builtin version by
+dnl    checking for `alloca.h' or the predefined C preprocessor macros
+dnl    `__GNUC__' and `_AIX'.  If that fails, it looks for a function in
+dnl    the standard C library.  If that fails, it sets the `make'
+dnl    variable `ALLOCA' to `alloca.o' and defines `C_ALLOCA' (so
+dnl    programs can periodically call `alloca(0)' to garbage collect).
+dnl Commented out 95Aug29CrT:  Causing problems on HP/UX, I
+dnl don't use it, and I don't intend to use it.
+dnl AC_FUNC_ALLOCA
+dnl
+dnl    If the system has `dirent.h', define `DIRENT'; otherwise, if it
+dnl    has `sys/ndir.h', define `SYSNDIR'; otherwise, if it has
+dnl    `sys/dir.h', define `SYSDIR'; otherwise, if it has `ndir.h',
+dnl    define `NDIR'.  Also, if the directory library header file
+dnl    contains a declaration of the `closedir' function with a `void'
+dnl    return type, define `VOID_CLOSEDIR'.
+AC_HEADER_DIRENT
+dnl
+dnl
+dnl See bottom of Need.h for genealogy of following stuff.
+dnl When using this, following 5 lines need to be sorted into acconfig.h:
+dnl #undef NEED_HOWMANY_DEF	/* Need.h stuff. */
+dnl #undef NEED_LOCKSH_DEF	/* Need.h stuff. */
+dnl #undef NEED_OPTARG		/* Need.h stuff. */
+dnl #undef NEED_OPTERR		/* Need.h stuff. */
+dnl #undef NEED_OPTIND		/* Need.h stuff. */
+dnl ------------------------ Missing Prototypes ------------------------
+dnl
+dnl $Id: proto_checks,v 1.4 1994/04/19 07:37:52 joel Exp root $
+dnl Add all or some of these to the configure.in files.
+dnl Requires actrl.m4 for TRL_PROTO_CHECK macro.
+dnl Include need.h for missing declarations.
+dnl Calls to check for some macro define checks, missing externals
+dnl and many prototype declarations.  It is definitely more efficient
+dnl to select those that are actually required for a given program.
+dnl
+dnl Missing macro definitions checks.
+dnl
+dnl SOON AC_EGREP_HEADER([^#define.*howmany],
+dnl SOON sys/types.h,,AC_DEFINE(NEED_HOWMANY_DEF))
+dnl
+dnl Missing externs checks.
+dnl
+dnl
+dnl SOON    AC_MSG_CHECKING(whether LOCKSH is defined)
+dnl SOON    AC_TRY_LINK(
+dnl SOON    [#include <sys/file.h>],[int i=LOCKSH;],
+dnl SOON    AC_MSG_RESULT(yes),
+dnl SOON    AC_MSG_RESULT(no); AC_DEFINE(NEED_LOCKSH_DEF))
+dnl SOON    dnl
+dnl SOON    AC_MSG_CHECKING(whether optarg is available)
+dnl SOON    AC_TRY_LINK(
+dnl SOON    [#include <stdlib.h>], [char* s=optarg;],
+dnl SOON    AC_MSG_RESULT(yes),
+dnl SOON    AC_MSG_RESULT(no); AC_DEFINE(NEED_OPTARG))
+dnl SOON    dnl
+dnl SOON    AC_MSG_CHECKING(whether opterr is available)
+dnl SOON    AC_TRY_LINK(opterr,
+dnl SOON    [#include <stdlib.h>], [int i=opterr;],
+dnl SOON    AC_MSG_RESULT(yes),
+dnl SOON    AC_MSG_RESULT(no); AC_DEFINE(NEED_OPTERR))
+dnl SOON    dnl
+dnl SOON    AC_MSG_CHECKING(whether optind is available)
+dnl SOON    AC_TRY_LINK(
+dnl SOON    [#include <stdlib.h>], [int i=optind;],
+dnl SOON    AC_MSG_RESULT(yes),
+dnl SOON    AC_MSG_RESULT(no); AC_DEFINE(NEED_OPTIND))
+
+dnl Missing prototypes checks.
+dnl
+dnl I've commented out most ones Muq doesn't use -- Cynbe
+dnl If you uncomment any, or add new ones, make sure that
+dnl there is
+dnl 1) a corresponding "#undef NEED_XXX" line in Config.h.top"
+dnl 2) a corresponding protoype in h/Need.h
+dnl 3) that you do a "muq-deconfigure" to force a rebuild.
+TRL_PROTO_CHECK(_filbuf, stdio.h)
+TRL_PROTO_CHECK(_flsbuf, stdio.h)
+TRL_PROTO_CHECK(accept, sys/socket.h)
+TRL_PROTO_CHECK(strcasecmp, string.h)
+dnl OSF/Alpha keeps a bcopy prototype in Xfuncs.h:
+TRL_PROTO_CHECK(bcopy, strings.h string.h memory.h bstring.h X11/Xfuncs.h)
+TRL_PROTO_CHECK(bind, sys/socket.h)
+TRL_PROTO_CHECK(bzero, strings.h string.h memory.h bstring.h)
+dnl TRL_PROTO_CHECK(cfsetispeed, termios.h sys/termios.h)
+dnl TRL_PROTO_CHECK(cfsetospeed, termios.h sys/termios.h)
+TRL_PROTO_CHECK(close, unistd.h)
+dnl TRL_PROTO_CHECK(closelog, syslog.h)
+TRL_PROTO_CHECK(connect, sys/socket.h)
+dnl TRL_PROTO_CHECK(crypt, unistd.h)
+dnl TRL_PROTO_CHECK(cuserid, stdio.h)
+dnl TRL_PROTO_CHECK(endpwent, pwd.h)
+dnl TRL_PROTO_CHECK(fchmod, unistd.h libc.h osfcn.h sys/stat.h)
+dnl TRL_PROTO_CHECK(fchown, unistd.h)
+TRL_PROTO_CHECK(fclose, stdio.h)
+TRL_PROTO_CHECK(fflush, stdio.h)
+TRL_PROTO_CHECK(fgetc, stdio.h)
+TRL_PROTO_CHECK(pclose, stdio.h)
+dnl TRL_PROTO_CHECK(flock, sys/file.h)
+dnl TRL_PROTO_CHECK(floor, math.h)
+TRL_PROTO_CHECK(fprintf, stdio.h)
+TRL_PROTO_CHECK(fputc, stdio.h)
+TRL_PROTO_CHECK(fputs, stdio.h)
+TRL_PROTO_CHECK(fread, stdio.h)
+TRL_PROTO_CHECK(free, stdlib.h)
+TRL_PROTO_CHECK(fscanf, stdio.h)
+TRL_PROTO_CHECK(fwrite, stdio.h)
+dnl TRL_PROTO_CHECK(ftruncate, unistd.h)
+TRL_PROTO_CHECK(getdtablesize, unistd.h)
+dnl TRL_PROTO_CHECK(geteuid, unistd.h)
+dnl TRL_PROTO_CHECK(gethostbyaddr, netdb.h)
+dnl TRL_PROTO_CHECK(gethostbyname, netdb.h)
+TRL_PROTO_CHECK(gethostname, unistd.h osfcn.h)
+dnl TRL_PROTO_CHECK(getopt, stdlib.h unistd.h)
+TRL_PROTO_CHECK(getpagesize, stdlib.h unistd.h)
+dnl TRL_PROTO_CHECK(getpeername, sys/socket.h)
+TRL_PROTO_CHECK(getrusage, sys/resource.h sys/rusage.h)
+dnl TRL_PROTO_CHECK(getservbyname, netdb.h)
+TRL_PROTO_CHECK(getsockname, sys/socket.h)
+TRL_PROTO_CHECK(gettimeofday, sys/time.h)
+dnl TRL_PROTO_CHECK(getuid, unistd.h)
+TRL_PROTO_CHECK(ioctl, unistd.h sys/ioctl.h)
+dnl TRL_PROTO_CHECK(isatty, stdlib.h unistd.h)
+TRL_PROTO_CHECK(listen, sys/socket.h)
+dnl TRL_PROTO_CHECK(localtime, time.h)
+TRL_PROTO_CHECK(malloc, stdlib.h)
+TRL_PROTO_CHECK(memmove, string.h)
+TRL_PROTO_CHECK(memset, memory.h string.h)
+dnl TRL_PROTO_CHECK(mkstemp, stdio.h unistd.h)
+dnl TRL_PROTO_CHECK(mktemp, stdio.h unistd.h)
+dnl TRL_PROTO_CHECK(openlog, syslog.h)
+dnl TRL_PROTO_CHECK(pclose, stdio.h)
+dnl TRL_PROTO_CHECK(popen, stdio.h)
+TRL_PROTO_CHECK(printf, stdio.h)
+TRL_PROTO_CHECK(puts, stdio.h)
+TRL_PROTO_CHECK(srand48, math.h stdlib.h)
+TRL_PROTO_CHECK(drand48, math.h stdlib.h)
+TRL_PROTO_CHECK(random, math.h stdlib.h)
+TRL_PROTO_CHECK(srandom, math.h stdlib.h)
+TRL_PROTO_CHECK(read, unistd.h)
+TRL_PROTO_CHECK(realloc, stdlib.h)
+TRL_PROTO_CHECK(recvfrom, sys/socket.h)
+TRL_PROTO_CHECK(remove, stdio.h)
+TRL_PROTO_CHECK(rename, stdio.h unistd.h)
+TRL_PROTO_CHECK(rewind, stdio.h)
+TRL_PROTO_CHECK(sbrk, unistd.h)
+TRL_PROTO_CHECK(select, unistd.h sys/select.h sys/time.h)
+TRL_PROTO_CHECK(sendto, sys/socket.h)
+dnl TRL_PROTO_CHECK(setegid, unistd.h)
+dnl TRL_PROTO_CHECK(seteuid, unistd.h)
+dnl TRL_PROTO_CHECK(setitimer, sys/time.h)
+TRL_PROTO_CHECK(setsockopt, sys/socket.h)
+TRL_PROTO_CHECK(shutdown, sys/socket.h)
+TRL_PROTO_CHECK(sigaction, signal.h)
+TRL_PROTO_CHECK(sigvec, signal.h)
+TRL_PROTO_CHECK(socket, sys/socket.h)
+TRL_PROTO_CHECK(sscanf, stdio.h)
+TRL_PROTO_CHECK(strcasecmp, string.h)
+TRL_PROTO_CHECK(strdup, string.h)
+TRL_PROTO_CHECK(strerror, string.h)
+TRL_PROTO_CHECK(strftime, time.h)
+TRL_PROTO_CHECK(strncasecmp, string.h)
+dnl TRL_PROTO_CHECK(strtoul, stdlib.h)
+TRL_PROTO_CHECK(sysconf, unistd.h)
+dnl TRL_PROTO_CHECK(syslog, syslog.h)
+TRL_PROTO_CHECK(system, stdlib.h)
+dnl TRL_PROTO_CHECK(tcdrain, termios.h sys/termios.h)
+dnl TRL_PROTO_CHECK(tcflow, termios.h sys/termios.h)
+dnl TRL_PROTO_CHECK(tcflush, termios.h sys/termios.h)
+dnl TRL_PROTO_CHECK(tcgetattr, termios.h sys/termios.h)
+dnl TRL_PROTO_CHECK(tcsendbreak, termios.h sys/termios.h)
+dnl TRL_PROTO_CHECK(tcsetattr, termios.h sys/termios.h)
+TRL_PROTO_CHECK(time, time.h)
+dnl bsd/libc.h is where NeXT puts times():
+TRL_PROTO_CHECK(times, bsd/libc.h sys/times.h)
+TRL_PROTO_CHECK(tolower, ctype.h)
+TRL_PROTO_CHECK(toupper, ctype.h)
+TRL_PROTO_CHECK(unlink, unistd.h)
+TRL_PROTO_CHECK(vsprintf, stdio.h)
+dnl TRL_PROTO_CHECK(vsyslog, syslog.h)
+dnl TRL_PROTO_CHECK(waitpid, sys/wait.h)
+dnl -------------------------- end prototypes -----------------------
+dnl
+dnl    If the C compiler is a version of GCC that supports the keyword
+dnl    `__inline' but not `inline' (such as some NeXT versions), define
+dnl    `inline' to be `__inline':
+AC_C_INLINE
+dnl
+dnl    SunOS 5.3 has a nasty bug where searching ucblib for
+dnl    rusage() gets us the wrong setjmp() -- one that uses a
+dnl    bigger jmp_buf than the one defined by <setjmp.h>, and
+dnl    consequently trashes global variables when called.  We
+dnl    can avoid this by searching libc _first_, but some systems
+dnl    (e.g., NEXTSTEP 3.2) _have_ no libc.a, so we do this only
+dnl    if it is found.  Notice we _prepend_ libc to LIBS, but we
+dnl    _append_ all the rest:
+dnl AC_HAVE_LIBRARY(c)
+AC_CHECK_LIB(c,printf)
+dnl
+dnl    If there are systems without libc.a, there are probably
+dnl    systems without libm.a, too, so search it only if found
+dnl    also:
+dnl AC_HAVE_LIBRARY(m)
+dnl AC_CHECK_LIB(m,sin,,,-lc) gives syntax error on sin() so:
+AC_MSG_CHECKING(for -lm)
+ac_save_LIBS=$LIBS
+LIBS="$LIBS -lm"
+AC_TRY_LINK([
+#include <math.h>
+],
+[sin(0.0);],
+ac_cv_lib_m=yes,
+ac_cv_lib_m=no)dnl
+LIBS=$ac_save_LIBS
+if test "$ac_cv_lib_m" = yes; then
+    AC_MSG_RESULT(present)
+    AC_DEFINE(HAVE_LIBM)
+    LIBS="-lm $LIBS"
+else
+    AC_MSG_RESULT(absent)
+fi
+dnl
+dnl	SunOS hides getrusage in /usr/ucblib/libucb.a:
+# SunOS 5.x keeps getrusage in /usr/ucblib/libucb.a:
+LIBS_old="$LIBS"
+# The following will only work for gcc under SunOS,
+# I expect. (I don't have a manpage for cc under SunOS. 94Jun25Cynbe)
+LIBS="$LIBS -L/usr/ucblib -Xlinker -R/usr/ucblib"
+AC_CHECK_LIB(ucb, getrusage, LIBS="$LIBS -lucb",LIBS="$LIBS_old",-lc)
+dnl
+AC_MSG_CHECKING(for getrusage)
+AC_TRY_LINK([
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_RUSAGE_H
+#include <sys/rusage.h> /* Sunos 5.4 manpage specs this */
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h> /* Irix 5.2 wants this instead */
+#endif
+],
+[ struct rusage r; /* = */ getrusage( RUSAGE_SELF, &r ); ],
+muq_got_rusage=yes,
+muq_got_rusage=no)dnl
+
+if test "$muq_got_rusage" = yes; then
+    AC_MSG_RESULT(present)
+    AC_DEFINE(HAVE_GETRUSAGE)
+else
+    AC_MSG_RESULT(ABSENT)
+fi
+dnl
+dnl	Sometimes we have struct rusage.ru_stime.tv_usec, and
+dnl    	sometimes we have struct rusage.ru_stime.tv_nsec, and
+dnl     sometimew we have nothing:
+AC_MSG_CHECKING(for rusage.ru_stime.tv_usec)
+AC_TRY_LINK([
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_RUSAGE_H
+#include <sys/rusage.h> /* Sunos 5.4 manpage specs this */
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h> /* Irix 5.2 wants this instead */
+#endif
+],
+[ struct rusage r; int i = (int) r.ru_stime.tv_usec; ],
+muq_got_rusage_ru_stime_tv_usec=yes,
+muq_got_rusage_ru_stime_tv_usec=no)
+if test "$muq_got_rusage_ru_stime_tv_usec" = yes; then
+    AC_MSG_RESULT(present)
+    AC_DEFINE(HAVE_RUSAGE_RU_STIME_TV_USEC)
+else
+    AC_MSG_RESULT(ABSENT)
+fi
+dnl ---
+AC_MSG_CHECKING(for rusage.ru_stime.tv_nsec)
+AC_TRY_LINK([
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_RUSAGE_H
+#include <sys/rusage.h> /* Sunos 5.4 manpage specs this */
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h> /* Irix 5.2 wants this instead */
+#endif
+],
+[ struct rusage r; int i = (int) r.ru_stime.tv_nsec; ],
+muq_got_rusage_ru_stime_tv_nsec=yes,
+muq_got_rusage_ru_stime_tv_nsec=no)
+if test "$muq_got_rusage_ru_stime_tv_nsec" = yes; then
+    AC_MSG_RESULT(present)
+    AC_DEFINE(HAVE_RUSAGE_RU_STIME_TV_NSEC)
+else
+    AC_MSG_RESULT(ABSENT)
+fi
+dnl --  Ditto:
+dnl	Sometimes we have struct rusage.ru_utime.tv_usec, and
+dnl    	sometimes we have struct rusage.ru_utime.tv_nsec, and
+dnl     sometimew we have nothing:
+AC_MSG_CHECKING(for rusage.ru_utime.tv_usec)
+AC_TRY_LINK([
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_RUSAGE_H
+#include <sys/rusage.h> /* Sunos 5.4 manpage specs this */
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h> /* Irix 5.2 wants this instead */
+#endif
+],
+[ struct rusage r; int i = (int) r.ru_utime.tv_usec; ],
+muq_got_rusage_ru_utime_tv_usec=yes,
+muq_got_rusage_ru_utime_tv_usec=no)
+if test "$muq_got_rusage_ru_utime_tv_usec" = yes; then
+    AC_MSG_RESULT(present)
+    AC_DEFINE(HAVE_RUSAGE_RU_UTIME_TV_USEC)
+else
+    AC_MSG_RESULT(ABSENT)
+fi
+dnl ---
+AC_MSG_CHECKING(for rusage.ru_utime.tv_nsec)
+AC_TRY_LINK([
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_RUSAGE_H
+#include <sys/rusage.h> /* Sunos 5.4 manpage specs this */
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h> /* Irix 5.2 wants this instead */
+#endif
+],
+[ struct rusage r; int i = (int) r.ru_utime.tv_nsec; ],
+muq_got_rusage_ru_utime_tv_nsec=yes,
+muq_got_rusage_ru_utime_tv_nsec=no)
+if test "$muq_got_rusage_ru_utime_tv_nsec" = yes; then
+    AC_MSG_RESULT(present)
+    AC_DEFINE(HAVE_RUSAGE_RU_UTIME_TV_NSEC)
+else
+    AC_MSG_RESULT(ABSENT)
+fi
+dnl
+dnl    If libcrypt.a is found, add to LIBS:
+dnl AC_CHECK_LIB(crypt,crypt,,,-lc)
+dnl
+dnl    If libsocket.a is found, add to LIBS:
+AC_CHECK_LIB(socket,select,,,-lc)
+dnl
+dnl    If libposix.a (NEXTSTEP 3.2) is found, add to LIBS:
+dnl    LATER: -lposix seems to always give a floating point exception
+dnl    at runtime on NEXTSTEP 3.2:
+dnl    % cat x.c
+dnl    #include <stdio.h>
+dnl    int main( int argc, char** argv ) {
+dnl        printf("test...\n");
+dnl    }
+dnl    % cc x.c -o x
+dnl    % ./x
+dnl    test...
+dnl    % cc x.c -o x -lposix
+dnl    % ./x
+dnl    Floating exception (core dumped)
+dnl    % gdb ./x ./core
+dnl    (gdb) bt
+dnl    #0  0x5bd8 in NXCreateZone ()
+dnl    #1  0x5728 in malloc_init ()
+dnl    #2  0x7cb4 in malloc ()
+dnl    #3  0x837c in _flsbuf ()
+dnl    #4  0x4768 in _doprnt ()
+dnl    #5  0x445c in printf ()
+dnl    #6  0x441c in main ()
+dnl    (gdb) 
+dnl    So, I gave up trying to use -lposix:
+dnl    AC_CHECK_LIB(posix)
+dnl
+dnl    If libglut is found, add to LIBS
+dnl    The messy glob here is cut and pasted from acgeneral.m4
+dnl    because I want to add -L/usr/X11R6/lib as well.  This all
+dnl    could be much improved, feel free to do it and mail me the
+dnl    patches:
+AC_CHECK_LIB(glut,glutInit,
+[changequote(, )dnl
+changequote([, ])dnl
+  AC_DEFINE_UNQUOTED(HAVE_LIBGLUT)
+  LIBS="-L/usr/X11R6/lib -lMesaGL -lglut -lMesaGLU -lXmu -lXi -lXext -lX11 $LIBS"
+],,-L/usr/X11R6/lib -lMesaGL -lMesaGLU -lglut -lXmu -lXi -lXext -lX11 -lm -lc)
+dnl
+dnl    If libgtk is found, add to LIBS:
+AC_CHECK_LIB(gdk,gtk_init,
+[changequote(, )dnl
+changequote([, ])dnl
+  AC_DEFINE_UNQUOTED(HAVE_LIBGTK)
+  LIBS="-lgtk -lgdk -lglib $LIBS"
+],,-lgtk -lgdk -lglib -lm -lc)
+dnl
+dnl    If libnsl.a is found, add to LIBS:
+AC_CHECK_LIB(nsl,select,,,-lc)
+dnl
+dnl   For each given FUNCTION-NAME in the whitespace-separated argument
+dnl   list that is not in the C library, add `FUNCTION-NAME.o' to the
+dnl   value of the `make' variable `LIBOBJS'.  If the functions might be
+dnl AC_REPLACE_FUNCS(fnmatch bcopy mkdir strdup)
+dnl
+dnl   For each given FUNCTION in the whitespace-separated argument list
+dnl   that is available, define `HAVE_FUNCTION' (in all caps):
+dnl   We want to check for crypt() AFTER we do
+dnl       AC_CHECK_LIB(crypt)
+dnl   and so forth, else they may not get found even when
+dnl   present:
+AC_CHECK_FUNCS(sysconf memset memmove drand48 srand48 random srandom)
+AC_CHECK_FUNCS(getpagesize gettimeofday strerror)
+dnl
+dnl   Random variables useful in Makefile2
+dnl
+dnl     Find 'rm'.  Pakrat moved it from /bin to /usr/bin, bless him:
+dnl   "Do not use test -x because 4.3BSD does not have it." --autoconfig docs
+AC_MSG_CHECKING(for rm)
+if test -f "/bin/rm" ; then
+    RM=/bin/rm
+else
+    if test -f "/usr/bin/rm" ; then
+        RM=/usr/bin/rm
+    else
+        if test -f "/sbin/rm" ; then
+            RM=/sbin/rm
+	else
+            RM=rm # `which` prolly isn't portable, alas.
+	fi
+    fi
+fi
+AC_MSG_RESULT($RM)
+dnl
+dnl Find 'mv'
+AC_MSG_CHECKING(for mv)
+if test -f "/bin/mv" ; then
+    MV=/bin/mv
+else
+    if test -f "/usr/bin/mv" ; then
+        MV=/usr/bin/mv
+    else
+        if test -f "/sbin/mv" ; then
+            MV=/sbin/mv
+	else
+            MV=mv
+	fi
+    fi
+fi
+AC_MSG_RESULT($MV)
+dnl
+dnl Find 'ln'
+AC_MSG_CHECKING(for ln)
+if test -f "/bin/ln" ; then
+    LN=/bin/ln
+else
+    if test -f "/usr/bin/ln" ; then
+        LN=/usr/bin/ln
+    else
+        if test -f "/sbin/ln" ; then
+            LN=/sbin/ln
+	else
+            LN=ln
+	fi
+    fi
+fi
+AC_MSG_RESULT($LN)
+dnl
+dnl Find 'sh'
+AC_MSG_CHECKING(for sh)
+if test -f "/bin/sh" ; then
+    SH=/bin/sh
+else
+    if test -f "/usr/bin/sh" ; then
+        SH=/usr/bin/sh
+    else
+        if test -f "/sbin/sh" ; then
+            SH=/sbin/sh
+	else
+            SH=sh
+	fi
+    fi
+fi
+AC_MSG_RESULT($SH)
+dnl
+dnl Find 'grep'
+AC_MSG_CHECKING(for grep)
+if test -f "/bin/egrep" ; then
+    GREP=/bin/egrep
+else
+    if test -f "/usr/bin/egrep" ; then
+        GREP=/usr/bin/egrep
+    else
+        if test -f "/sbin/egrep" ; then
+            GREP=/sbin/egrep
+	else
+            if test -f "/bin/grep" ; then
+                GREP=/bin/grep
+	    else
+                if test -f "/usr/bin/grep" ; then
+                    GREP=/usr/bin/grep
+	        else
+                    if test -f "/usr/sbin/grep" ; then
+                        GREP=/usr/bin/grep
+	            else
+                        GREP=grep
+		    fi
+		fi
+	    fi
+	fi
+    fi
+fi
+dnl
+dnl Find 'nice'
+AC_MSG_CHECKING(for nice)
+if test -f "/bin/nice" ; then
+    NICE=/bin/nice
+else
+    if test -f "/usr/bin/nice" ; then
+        NICE=/usr/bin/nice
+    else
+        if test -f "/sbin/nice" ; then
+            NICE=/sbin/nice
+	else
+            if test -f "/usr/local/bin/nice" ; then
+                NICE=/usr/local/bin/nice
+	    else
+                dnl Don't actually need nice anyhow:
+                NICE=
+	    fi
+	fi
+    fi
+fi
+AC_MSG_RESULT($NICE)
+dnl
+dnl Find 'make', trying to use GNU make if possible.
+AC_MSG_CHECKING(for make)
+if test -f "/usr/local/bin/make" ; then
+    MAKE=/usr/local/bin/make
+else
+    if test -f "/usr/local/bin/gmake" ; then
+        MAKE=/usr/local/bin/gmake
+    else
+        if test -f "/usr/local/bin/gnumake" ; then
+            MAKE=/usr/local/bin/gnumake
+	else
+            if test -f "/usr/bin/gmake" ; then
+                MAKE=/usr/bin/gmake
+	    else
+                if test -f "/usr/bin/gnumake" ; then
+                    MAKE=/usr/bin/gnumake
+	        else
+                    if test -f "/bin/gmake" ; then
+                        MAKE=/bin/gmake
+	            else
+                        if test -f "/bin/gnumake" ; then
+                            MAKE=/bin/gnumake
+	                else
+                            MAKE=make
+		        fi
+		    fi
+		fi
+	    fi
+	fi
+    fi
+fi
+AC_MSG_RESULT($MAKE)
+dnl
+dnl   WRStevens says SysV setpgrp() takes two
+dnl   args, but that BSD  setpgrp() takes none.
+dnl   Try to figure out which this system has:
+AC_MSG_CHECKING(setpgrp args)
+AC_TRY_COMPILE(,[
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+setpgrp();
+],[AC_MSG_RESULT(0);AC_DEFINE(HAVE_ZERO_SETPGRP_ARGS)],
+AC_MSG_RESULT(2))
+dnl
+dnl   If using MIPS cc, add -Wf,-XNc1000 options to CC.
+dnl   This keeps us from overflowing its string table.
+dnl   Don't be fooled by the fact that gcc using the
+dnl   MIPS cpp will still have __mips defined:
+if test -z "$GCC" ; then
+AC_MSG_CHECKING(MIPS cc)
+AC_TRY_COMPILE(,[
+/* Do NOT indent the following #ifndef: */
+/* that's an unwanted syntax error in   */
+/* K&R C, and we've not yet established */
+/* that we have ANSI C:                 */
+/* On Irix 5.2 using the MIPS/SGI cc,   */
+/* -fullwarn provides extra diagnostics,*/
+/* and is recommended during development*/
+/* The -XNc1000 avoids a table overflow.*/
+#ifndef __mips
+error error error /* Force compile error -- nothing more elegant? */
+#endif
+],[AC_MSG_RESULT(yes, adding -Wf,-XNc1000 -fullwarn compile switches);CC="$CC -Wf,-XNc1000 -fullwarn"],
+AC_MSG_RESULT(no))
+fi
+dnl
+dnl   On HP/UX, Nightmare (mkaufman@mcs.kent.edu) reports
+dnl   we need -Aa -D_HPUX_SOURCE to get ANSI C support from
+dnl   the native compiler.  It appears from the HPUX cc manpage
+dnl   that this still won't work on the vanilla HPUX cc, but requires 
+dnl   "the C compiler sold as an optional separate product".
+dnl   Still, no harm adding it:
+if test -z "$GCC" ; then
+AC_MSG_CHECKING(HPUX cc)
+AC_TRY_COMPILE(,[
+#ifndef __hpux
+error error error /* Force compile error -- nothing more elegant? */
+#endif
+],[AC_MSG_RESULT(yes, adding -As -D_HPUX_SOURCE compile switches);CC="$CC -As -D_HPUX_SOURCE"],
+AC_MSG_RESULT(no))
+fi
+dnl
+dnl   If using DEC Alpha cc (on OSF/1 v1.3a test system,
+dnl   at least), need -std switch to get ANSI C support:
+if test -z "$GCC" ; then
+AC_MSG_CHECKING(DEC Alpha cc)
+AC_TRY_COMPILE(,[
+/* Do NOT indent the following #ifndef: */
+/* that's an unwanted syntax error in   */
+/* K&R C, and we've not yet established */
+/* that we have ANSI C:                 */
+#ifndef __alpha
+error error error /* Force compile error -- nothing more elegant? */
+#endif
+],[AC_MSG_RESULT(yes, using -std to get ANSI support);CC="$CC -std"],
+AC_MSG_RESULT(no))
+fi
+dnl
+dnl   If using gcc, add -Wall -Wno-parentheses -Wno-comment -O options to CC:
+if test -n "${GCC-}" ; then
+    CC="$CC -Wall -Wno-parentheses -Wno-comment"
+fi
+dnl
+dnl Make sure MUQDIR environment variable got set,
+dnl or failing that, that the default $HOME/muq/bin
+dnl directory exists:
+if test -z "${MUQDIR-}" ; then
+    if test -d ${HOME}/muq/bin ; then
+	echo
+        echo "==============================================="
+        echo "You have not set MUQDIR, but I see"
+        echo "    $HOME/muq/bin"
+	echo "exists, so I'll go ahead and use that."
+        echo "==============================================="
+	echo
+    else
+	echo
+        echo "==============================================="
+        echo "Sorry: MUQDIR isn't set in the environment,"
+        echo "and $HOME/muq/bin does not exist, so I don't"
+        echo "know where to find my files.  Please read muq/INSTALL."
+        echo "==============================================="
+	echo
+        exit 1
+    fi
+fi
+dnl
+dnl Maybe issue warnings about needed by-hand patches:
+dnl (Putting the following in AC_OUTPUT appears to result
+dnl in it running when $DEFS is no longer defined.)
+if test "$ac_cv_struct_tm_zone" != yes ; then
+if test "$ac_cv_var_tzname"     != yes ; then
+    echo ''
+    echo '  ++++++++++++++++++++++++++++++++++++++++++'
+    echo '  + I could not figure out your timezone.  +'
+    echo '  + Please put a line like                 +'
+    echo '  +   #define LOCAL_TIME_ZONE "PST", "PDT" +'
+    echo '  + in muq/h/Site-config.h and recompile.  +'
+    echo '  ++++++++++++++++++++++++++++++++++++++++++'
+    echo ''
+fi fi
+dnl
+dnl    Create a 'Configure' that will when run
+dnl    create a Makefile2 from Makefile2.in,
+dnl    and    a Config.h  from Config.h.in (made in turn from Configure.in):
+AC_OUTPUT(Makefile Makefile2,[dnl
+#echo "x_includes $x_includes"
+#echo "x_libraries $x_libraries"
+#echo "no_x $no_x"
+#echo "X_CFLAGS $X_CFLAGS"
+#echo "X_LIBS $X_LIBS"
+#echo "X_PRE_LIBS $X_PRE_LIBS"
+#echo "X_EXTRA_LIBS $X_EXTRA_LIBS"
+mv Config.h `${MUQDIR-$HOME/muq/bin}/muq-config hdir`
+# What is config.status supposed to be good for?
+# Move it to a name that doesn't clutter up the
+# main codefile space, anyhow:
+mv config.status Config.status
+])

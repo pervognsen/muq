@@ -1,0 +1,719 @@
+--------------------
+Should think about having a package field in every
+non-immediate value:  This might make it practical
+to have the db be the primary store, and dump packages
+to flatfiles for export.  As it is, it is quite impossible
+to decide automatically which things should be saved for
+a given package.  Thought about re-using the owner field
+to do this without taking more space:  Have owner field
+point to package, and obtain owner from owner field of
+package, but this is probably over-optimizing, the garbage
+collector &tc would be constantly having to do the
+indirection.
+--------------------
+For the oldmud kit, should have says, poses and interplayer text
+generally be written to a player-owned buffer, and only info
+sufficient to ask for the message written to the other players
+via streams.  This wins on a number of levels:  It reduces the
+amount of duplicate text in the db at any given time, it removes
+stream-imposed limits on maximum message size, it reduces chances
+of stream overflow, it avoids sending long messages over the net
+if the client chooses not to read them, it makes forwarding
+messages much cheaper (since the body will go direct to the
+eventual destination) which makes it easier to let worlddaemons
+implement filtering policies.  This also makes for a sensible
+mail implementation technique, so mudpages and mudmail can
+share much more software technology, perhaps become the same
+thing.
+  To do this, we should generalize the functionality of the
+existing message streams to allow them to serve as leaky
+random-access queues of messages, where we can ask for
+bytes J-to-K of message M.  Messages should be issued
+never re-used serial numbers:  In the 64-bit implementation,
+wraparound won't be a problem.  These generalized streams
+can then be used as the above per-player buffers.  Since only
+the player is writing to the buffer, letting the writer resize
+the buffer to hold all of a message is much less problematic.
+--------------------
+Write-stream must be horribly slow right now:
+The inner char-by-char loop is in MUF.
+--------------------
+Should make all job queues have separate slots for
+each possible job priority:  This would make dumping
+any queue into the run queue an O(1) operation instead
+of an O(N) operation.  [Wasn't there some problem with
+this?  Sleep queues have to be sorted by time, at
+least...]
+--------------------
+Isn't it pathologically over-optimizing to make mss
+buffers fixed size?  The win is microscopic, and
+not being able to roam through the system tweaking
+buffer sizes is likely to be a real pain eventually.
+--------------------
+Perhaps we should have an official end-this-timeslice
+command?  Then when we do the one-to-many-writer
+thing, we can write a dollop to each output, and
+end the timeslice before proceeding, giving each
+reader a decent chance to read it.  ?
+--------------------
+I think the general read-a-packet-from-stream call
+(whatever it is!) should return a 'bytes-lost'
+result as well as the current stuff.  In addition,
+there should be a way to associate a bytes-lost field
+with each packet, and anytime we do a maybe-write to
+a stream and it fails for lack of room, the bytes-lost
+field should be incremented.
+--------------------
+Muf.t is has no entry for assemble-calla, even though
+it is in jobbuild.t and job.t.  Is there some reason
+for this?
+--------------------
+Should do a unix-string-upcase (i.e., |test6|) example
+which is fully production quality, handling arbitrary
+input strings, properly embedded in a separate package,
+and with a C-coded server.
+--------------------
+We need a "root-server?" predicate which takes a string and
+returns T/NIL according to whether a server by that name
+is installed.
+--------------------
+I think we should steal one more bit from the network words,
+and use it as a lock bit.  By setting the bit, we can gain a
+lock on any modifiable object;  We can record the fact that we
+hold the lock in a stackframe;  We can make sure that end-job
+always releases this lock.   Hrm.  The big problem here would
+be a wait-queue.  I guess we'd have to have one global wait
+queue for these kinds of locks, possibly sorted by object
+waited-on.
+ Maybe we should also have a with-locks that atomically acquires
+one or more locks, and complains if you already hold any?  For
+people who want deadlock guarantees?
+--------------------
+From pakrat@csd.uwm.edu  Fri Nov 17 02:07:19 1995
+
+Is there a 'maybe-intern' prim that will search for a symbolic
+representation of a string but not create it if it doesn't exist?  I know we
+can search the keyword package for keywords, but wasn't sure this would keep
+a symbol from being generated too.  (A new keyword wouldn't be created 
+since it already exists but there is still the symbol instance?)  I'd 
+like an easy way to do "pkg:fname" for the op prim but am not sure how 
+else we can do that.  Right now I basically do:
+
+	@%s/package%h<fname>%s/function -> cfn
+	cfn compiled-function? not if
+		/lib<"muf"><fname>%s/function -> cfn
+	fi
+
+('find-symbol?' would seem a better name...)
+--------------------
+From pakrat@csd.uwm.edu  Mon Nov 13 17:16:46 1995
+I've been having fun trying to come up with a from-scratch compiler and
+command line system, and I tried doing:
+
+muq -x puq:puq-shell
+
+but it still tried starting up with muf:muf-shell.  Could Muq be set up
+so going interactive would still load what is in the -x option?  Would it
+be possible to have some kind of a server/root settable prop as to what
+is the default pkg:shell to run upon startup too?
+
+-Andy
+--------------------
+Should probably implement unbound symbols and
+make accessing a missing property an error,
+rather than returning NIL.
+--------------------
+(From Pakrat example) foreach loop should perhaps
+protect 'key' variable against user modification.
+He had an example of absent-mindedly clobbering
+it and getting an infinite loop.  
+ Later: I don't like slowing down the loop at
+runtime to do this.  I think perhaps the compiler
+should issue a warning when the user tries to
+modify the key variable in a foreach:  This will
+almost always be a mistake, shouldn't be hard to
+detect, and a compiletime warning is much better
+than extra per-iteration runtime work.
+--------------------
+Shouldn't we have a variable_bindings -style
+linklist in the job record for finding handlers
+quickly, and another for finding restarts?
+--------------------
+Sockets need to either check read/write permissions
+constantly, or else accept as standard-out &tc
+only ones owned by socket owners.  Do we have a
+similar problem with jobs and -their- stdio
+streams?  Since net I/O is inherently slow,
+checking every time seems eminently affordable...
+--------------------
+May need a 'animation-frame' or 'script-time'
+or such field in Muq objects and/or other
+things, to provide for a per-frame-hook
+functionality to update objects automatically
+according to simulated time.  Raises interesting
+questions as to who controls the time.  Should
+the canonical "current-script-time" be on a given
+user, then?  Per job, and maybe drive poor objects
+crazy trying to be two different times to two
+different jobs?  Doesn't seem good to have
+someone who doesn't own an object able to change
+it's effective time...?
+--------------------
+Add 'author-may-include' (default t)
+and 'world-may-include' (default nil)
+bits to structure definitions, to
+reduce security problems due to spoofing
+via subclasses.  The object system will
+presumably need similar protection.
+--------------------
+Documentation string for structure slots,
+for symmetry with object slots.
+--------------------
+setuid operator should save function and
+maybe variable bindings too, to keep setuid-root
+functions from being spoofed by a maliciously
+rebound subroutine.
+--------------------
+'owls' prop on players for cash, and a 'pay' prim?
+--------------------
+Separate byte quota for host filespace
+--------------------
+Support for 26 one-bit properties on users,
+propagated to jobstate and tested by 26
+priv-a? priv-b? ... fns?  This would make
+some sysadmins happy, and costs very little.
+Later:  Maybe just make it an integer, and
+test it against another integer treated as
+a bitmask.  Simpler and more flexible.
+--------------------
+Support for "#!pkg:compiler" syntax at top of file?
+--------------------
+Add functions to the user record and each job
+record for doing the four basic kinds of queries,
+with the idea of being able to re-implement them
+for X windows interfaces or whatever, on a per-user
+customization basis.  Hrm.  Likely should also have
+two functions for providing feedback, one a "notify"
+which must be dismissed by the user before the job
+can continue, one an "update" which posts the message
+visibly without stopping for feedback, with successive
+updates preferably overwriting each other.  (To make
+sure these functions don't trip over each other in
+a multitasking context, sounds like a session should
+have a 'query-io-lock' lock, and the basic query
+functions should wait to obtain the lock before
+prompting.)
+  Then add an :interactive-function slot to 'function'
+objects which prompts a user for all functions needed
+by the function.  This will usually call the above
+query functions.  The idea is to provide a systematic
+mechanism for making functions interactively invokable.
+An invoke-function-interactively function to automate
+using this would be cool.
+  As a parallel idea, add a :commandline-function slot
+to 'function' objects, which accepts a string and
+produces from that string a valid set of input arguments
+for the function.  This is to provide a standard mechanism
+for using functions in unix-style shell contexts or such.
+Again, an invoke-function-with-commandline function to
+automate using this would be cool.
+--------------------
+Date: Wed, 23 Aug 1995 11:19:02 -0500 (CDT)
+From: "PakRat and Artie Productions Ltd." <pakrat@csd.uwm.edu>
+To: Jeff Prothero <jsp>
+Subject: feepy thoughts :)
+Message-Id: <Pine.OSF.3.91.950823111821.167A-100000@alpha2.csd.uwm.edu>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+Some feep requests... (drats, no coredumps, I'm losing my touch :)
+
+-----
+
+|for-by-n       Given a vector of size n, run through a stackblock n at a
+                time, and error if stackblock-size mod n != 0.  Ie:
+
+                nil 4 make-vector -> ivec
+                [ 'a' 'b' 'c' 'd' | |for-vec ivec ipos do{
+                        ivec foreach key val do{
+                                "Set " , ipos ,
+                                ", key " , key ,
+                                 ": " , val , "\n" ,
+                        }
+                }
+
+                Would do:
+                Set 0, key 0: a
+                Set 0, key 1: b
+                Set 0, key 2: c
+                Set 0, key 3: d
+
+                I don't know as using a vector is the most efficient way to
+                do this, but I can't think of a better way.  Maybe we should
+                come up with local vector variables as local arrays? :)
+
+-----
+
+|set            Given key and val, replace first (all?) entries in a
+                stackblock with new val or append to end of stackblock.
+                (I'm hoping to use stackblocks and vectors to replace
+                objects for faster operations.)
+
+-----
+
+|sort-ci        (obvious? :)
+
+-----
+
+Hmm, is there a way to tell how big the stack is for a job/function?
+It might be nice to have a 'stack-depth' to tell that and maybe a
+'depth-free' to tell how many objects are left before we overflow.
+(This can be nice for checking before doing a 'vec keys[' on a 30k object
+vector or somesuch. :)
+
+-----
+
+A way to abort if you do something stupid in the root: muf shell like...
+
+root:
+do{ }
+
+*blush* without doing Ctrl-C to quit Muq.  I recall you mentioning putting
+some control code to do this.  While the do loop was running once I managed
+to get it to stop and another I got it to do a 'pj', but I missed how. :)
+
+-----
+
+I'm trying to figure out which would be more efficient for both speed and
+memory.  Given something where I basically need a vector of about 26
+exit directions by say 4 vector slots per direction, so 84 slots.  Given 1
+slot for id that makes an 85 slot vector.  Would it be more efficient to use
+a vector or an object if I assume that only about 4 directions (16 slots) or
+less would generally be used and the rest wasted for each vector?  I don't
+recall the overhead of an object, and didn't know if it would be faster to
+use vector/stackblock operations or object get/set operations for this.
+
+Background info for above curiosity:
+
+I'm trying to work out the best object format for a coordinated muqk.
+(My new silly coin word for a muq based muck. :)  It works mostly like
+conventional mucks/muds but there will be info on just where in a 3d grid
+objects will be.  To make things renderable fairly fast I am planning to
+use 3 byte strings to represent the coordinates, storing 8-bit integers
+for each of 3 directions.  A scale factor (inches/feet/etc) is set on each
+region/object so we can have things larger than say 20 feet (approximate
+max size for the 8-bit inch scale.)
+
+For now I'm figuring it would be smartest to use a vector for the main
+objects, keeping important info in that vector, and holding other things
+larger in.  Ie:
+
+v<0> <sym>      Type-id (This is a Muqk object)
+v<1> <vec/str>  Name/desc text-style data (if str just name)
+v<2> <ref-vec>  Parent/Location of object (this would actually be a vec)
+v<3> <vec>      Contents (objects)
+v<4> <vec>      Exits (as mentioned above, not sure if vec or obj better)
+v<5> <vec>      Size (info on size of object, what it can hold, etc)
+v<6> <vec>      X-graphics info/pic data
+v<7> <obj>      Object to store tinymuck style props on
+v<8> <int>      Flags
+v<9> ...        Other object info like locks, etc.
+
+A lot of this probably can be consolidated down into one larger vector, and
+there is probably some important stuff missing.
+
+Being as this is about my 4th attempt at coming up with a clean manageable
+format for making a Muq muck, I want to get the planning and core object
+set/get functions working well. :)
+
+-----
+
+--------------------
+-> Implement gensym ?
+--------------------
+-> Change zil/zbl to provide 'force' arity flag?
+--------------------
+Should add a --daemon-mode switch following fat stevens 417
+--------------------
+Should add a root-syslog call following fat stevens 421
+--------------------
+Should implement Andy's 'gedt'.
+--------------------
+(Do we need a |delete-keyval to remove :job job
+from a block, &tc?)
+--------------------
+| Pakrat: "I did notice a lack of a
+| top node muq.html file in the html file distribution on glia"
+Hmm. Should we generate one as we make the tarfile, then?
+--------------------
+(See Pakrat's comments on the HTML doc indexing problem)
+--------------------
+Unix 'exec' allows arguments, and pakrat is already
+wants args for his shell:  We likely need an ]exec
+prim.
+--------------------
+'find-package' is broken, returns NIL instead of giving
+an error, and won't accept a symbol.
+--------------------
+Sleep time needs to be more accurate than
+a second.  And we don't need to support
+sleep times in excess of a year, I don't
+think.  So (seconds << 10) strikes me as
+a reasonable value to keep sleep queue
+sorted on.  I wonder if sleep queue
+shouldn't be a skiplist.
+--------------------
+Need to make sleep queue a priority queue
+or -something- O(NlogN) instead of O(N^2).
+96Feb24: I think we should have a standard
+sleep queue for considency, and then implement
+a separate time-sorted index to it.  So maybe
+jobs should have enough spare pointers to
+implement a priority queue (splaytree?).
+--------------------
+Need a generic solution to problem of
+freeing remote resources when an object
+is garbage collected.  I'm thinking of
+something like an option on a class
+definition that triggers addition of
+a struct containing:
+  Remote server name.
+  Resource typ for server.
+  Resource ID  for server.
+  Resource ID2 for server.
+When the garbage collector recycled the
+object, it would fire the above three
+fields to the indicated server process
+through the appropriate pipe, allowing
+it to free up the X window or whatever.
+The four values above should probably
+all be immediate data, to avoid screwing
+up the garbage collector in a big way.
+ Maybe we should have three name fields,
+to allow server names up to 9 chars in
+immediate form?
+--------------------
+Signals to a job need to save its current
+set of queues, and its sleep time.
+--------------------
+Need to hack auto/Configure to recognize absence of usable
+X system more effectively.
+--------------------
+Should likely go to a revised muq/Makefile arrangement:
+-> 'Makefile' invokes Configure, which rebuilds muq/bin/Muq-config to
+    know which 'make' &tc to use.
+-> 'Makefile' invokes a shellscript which then invokes
+   'Makefile2', passing it definitions for MAKE &tc,
+   obtained from bin/Muq-config
+LATER:  Configure often takes parameters nowadays, prolly
+need to give up on idea of having a simple "make" do
+everything, in favor of explicit Configure invocation.
+Also, should probably shift to having a master muq/Makefile
+instead of doing everything in muq/c/*
+--------------------
+95Jun01 PakRat:
+
+A suggestion for muq-db is to test for the existance of muq/bin/muq 
+before doing anything, and if it isn't there, print a message saying to 
+type 'make install' or 'muq-install'.  Currently it leaves a dead 'db' 
+directory one has to remove to continue if there isn't a muq in muq/bin.  
+This would just make muq work cleaner for lazy people like me. *grin*
+It would chalk one up for ease of installation so I figured it worth 
+mentioning. :)
+--------------------
+Put a diagram like
+    ------------      --------------    -------
+    | socket   |  ->  | msg-stream | -> | job |
+    |          |      --------------    |     |
+    |          |                        |     |
+    |          |      --------------    |     |
+    |          |  <-  | msg-stream | <- |     |
+    ------------      --------------    -------
+in the manual somewhere :)
+We also need to have two special processes on a socket,
+I think:
+>  An I/O filter that does control char filtering,
+   MORE functionality and suchlike;
+>  A session-leader that recieves condition-char and
+   broken-pipe signals, and reads/writes queues which
+   send/recieve out-of-band data, such as the TELNET
+   protocol stuff.
+--------------------
+Do we have a way to print out handlers in another job?
+They're -the- external interface to a job, so we
+definitely need one...
+--------------------
+Andy comments that requiring no scalars below blocks is
+a pain to practical coding.  This looks to be true.
+--------------------
+Is there yet any sort of check to prevent, e.g., accidental
+redefinition of ':' by a novice?
+--------------------
+Oh yeah, now that things are starting to work, how will site name/number 
+information be handled in Muq?  I would like to be able to let users 
+limit the sites they can log in from, but can't do that until there is a 
+way to get the site names.
+(Pakrat)
+--------------------
+Would it be possible for =-ci to also work for char types?
+
+Ie...
+
+: no? ( $ -> $ )
+  -> str
+  str<0> 'n' =-ci
+;
+--------------------
+How soon would you be able to show a basic example of using muq -x
+/new/interpreter -f file.dat to enter in data? (Pakrat)
+--------------------
+Pakrat:
+I don't see any simple way in a shell to add a '-f' between files when
+using * style file matching.  Would it be possible to use a -F or -ff or
+something like that as a switch to say everything else to the end of the
+input buffer is a file to run?  I dunno if it would be worth it to say
+everything up to another - prefixed option, that might be nice too.
+  (Prolly also good to just assume '*.muf' files are to be executed.)
+--------------------
+Also, how about a compiletime switch that says to do a root-shutdown
+after the loading of the files?  I don't know of an easy way to do the
+above trick without still needing some form of a temporary file.  If
+there was a switch (-r, -i, -s, dunno be creative :) for that we could
+get away with needing no temporary files and no shell tricks to compile
+multiple files with Muq and get line numbers listed right.
+--------------------
+Line numbers need to be reset at start of a new file, somehow...?
+--------------------
+/* buggo? Does recovery from a syntax  */
+/*error throw off our line count?
+--------------------
+Kim (?) wants popen &kin.  (So do I!)
+--------------------
+  Are there any provisions for logging in the server yet? I'd imagine you 
+know how we mu* admin-types like to have our logs. If not, care to throw 
+me a hint as to when it might make it in?
+-Wyatt
+--------------------
+Pakrat questions:
+    Is there any way to kill a ]root-listen-on-port?
+    Is there a way to tell if a socket is closed?
+    (Ie for doing an open-socket etc.)
+    Is there any mechanism for mediating if a port is already in use for 
+    ]root-listen-on-port?
+--------------------
+Need to split muf/ into
+muf/core/  muf/optional/ and muf/local/
+There should be separate Muq-config entries for each.
+--------------------
+    Oh, did I ask for some kind of a function to strip non-printable 
+    characters from a string?  I don't see any clean way to do this, but it 
+    would be nice to have some kind of function that will strip out all 
+    characters not normally printable using a standard keyboard.  (I believe 
+    that is to cut anything below ascii decimal 32 and above ascii decimal 127.)
+    Sure this can be done on a by-char basis but it seems incredibly 
+    wasteful, and can much more easily be done in C.  Even on fairly large 
+    4k-5k strings it would be a minimum of time, just 2 comparisons and 
+    either copy it or don't...
+
+    int strip-to-readable( char *dst, char *src, int len )
+    {
+	    int i;
+	    char *dstbeg;
+
+	    dstbeg=dst;
+
+	    for( i=0; i<len; i++ )
+		    if( src[i] > 31 && src[i] < 128 ) (*(dst++))=(*(src++))
+
+	    return(dst-dstbeg);
+    }
+
+(Pakrat)
+--------------------
+Need SEND-SUPER functionality. (Kim)
+Probably the cleanest approach is to just have a
+"delegate-last-message" (say) function which does exactly
+this, without further user-visible fuss.  This means
+internally storing on the loop stack (1) the last message
+selector used and (2) the object on which the method for the
+last message was found.  (We could just re-search the tree
+to find this object, starting with the recipient and the
+key, but only if we assume each method function is present
+at most once in the inheritance tree... which is probably
+not a smart assumption.)
+
+The other facility really needed is a function returning the
+object on which the current method was found:  This is needed
+for the equivalent of 'class variables':  You may want to
+store some values on the class object, such as your list of
+all children.  Your handing-the-parent-around-by-hand appears
+to be a workaround that solves this for at least some cases,
+but it's probably a considerable pain to handle that way in
+general with multiple levels of multiple inheritance.  Not
+that I'm inclined to think that things that complex are
+neccessarily a Good Idea, but one should Be Prepared, right? :)
+
+--> key for method area should be the local symbol of that name,
+not the keyword of that name:  This would help keep unrelated
+generic functions and methods from tripping over each other.
+
+--------------------
+One thing I thought that would be nice with all the checking prims is one 
+for ownership, something like this for /lib<"muf">:
+
+: owner? { $ $ -> $ } -> user -> obj
+  obj vanilla? user user? and if
+	obj%s/owner user =
+  else nil fi
+;
+("controls?" is prolly better.)
+(Pakrat)
+--------------------
+Add instructions on using "unintern" to muf1?
+--------------------
+Provide a /sys%s/... property giving the system name.  From
+fat Stevens p154, looks like we need to be prepared to use
+either uname() or gethostname(), and to live without either
+if need be.
+--------------------
+recode |mix to do N random selections -- DGilbert suggestion.
+--------------------
+CONDITION STUFF:
+
+do-signal needs to obey @%s/break-on-signal
+
+Add appropriate of following to predefined signal list:
+restart-not-found
+@example
+abrt	/* Terminate job abnormally.	 	 1 */
+alrm	/* Timeout.			 	 2 */
+chld	/* Change in child status.	 	 3 */
+fpe	/*  Floating Point Exception.	 	 5 */
+hup	/*  Hang-up; loss of netconnect.	 6 */
+ill	/*  Illegal instruction.		 7 */
+int	/*  ^C (Terminal interrupt char.)	 8 */
+pipe	/* Write to pipe with no readers. 	10 */
+quit	/* ^\ (Terminal quit char.)		11 */
+tstp	/* ^Z (Terminal stop char.)		14 */
+ttin	/* Bgrd read from control tty.		15 */
+ttou	/* Bgrd write to  control tty.		16 */
+winch	/* Terminal window size change.		19 */
+xcpu	/* CPU limit exceeded.		 	20 */
+xfsz	/* File size limit exceeded.	 	21 */
+@end example
+--------------------
+Should add a hack so if the server finds a function
+/etc/rc when starting up, it executes it after
+completing initialization. (Only in --daemon mode?)
+Later:  This sounds more like something to be
+handled by the initial process:  The existing
+switch to set the initial code to execute should
+really be the only server hack needed.
+--------------------
+Date: Mon, 4 Sep 1995 01:15:03 -0500 (CDT)
+Now that Muq is needing the various muf-libraries just to function, it
+would seem that we could use a command line option to allow creating a
+vm0/1 db set if none exists.  I just noticed how I randomly type 'muq' in
+the wrong directory and have a useless vm0 dir created.  It would be tidier
+if Muq by default would not create such a db unless specified with
+something like muq -c.  Just an idea for typo-prone people like me. :)
+-Andy
+--------------------
+Should likely have a fixed convention on security stuff:
+#define MUQ_CAN_XXX TRUE    /* compile code for XXX */
+#define MUQ_CAN_XXX FALSE   /* don't compile code for XXX -- VERY secure! */
+#define MUQ_HI_MAY_XXX TRUE /* may do XXX when --security==high */
+#define MUQ_MD_MAY_XXX TRUE /* may do XXX when --security==medium */
+#define MUQ_LO_MAY_XXX TRUE /* may do XXX when --security==low */
+--may-xxx=yes /* override default MAY setting from commandline */
+--may-xxx=no  /* override default MAY setting from commandline */
+/muq/may-xxx  /* NIL or T according to whether it is allowed.  */
+--------------------
+Lets do root-fork-server and let it invoke anything
+in muq/srv
+ Have a ]make-shared-string for shared memory.
+--------------------
+Should implement ]keysvals-make and ]keysvals-set.
+--------------------
+Maybe implement o<:1.2> and forbid o/1.2 ?
+--------------------
+Review testsubject comments on Elementary tutorial, and
+rewrite it a bit.  E.g., move magical creation of generic
+functions to Intermediate tutorial, and spend some time in
+the Elementary tutorial introducing the technical meaning of
+"message" in this context.  It would probably also help to
+give examples of more varied mechanism for getting functions
+to pointers, specifically #'xyzzy --> obj/:/msg
+--------------------
+Should write a path-get in muf.
+--------------------
+Prolly should have a pgs (package-set) class to control
+insertion of packages in /lib and such, guaranteeing
+control of nickname clashes and such.
+Possibly need a more general hack than above?
+--------------------
+The 58 Common-Lisp global variables in CLtL2: Index of Variables
+need to be dealt with.
+--------------------
+Wyatt+Pakrat are both keen to see a good compiler
+tutorial and example.
+--------------------
+Probably should have
+no-forking{ ... }
+no-db{ ... }
+no-nothing{ ... }
+constructs for calling untrusted code.
+--------------------
+Should calling nonsystem, nonowned code require special
+permission, to protect novices from jerks?
+--------------------
+Type-out code should be hacked to insert \ where needed/appropriate.
+And I'd like to see '\n' printing instead of '
+' (for example).
+--------------------
+-> Should add "module:" to each mufref manual defun entry.
+--------------------
+-> Create wrap-string[ that takes a 'lines' arg too, and
+   chops result into pieces of no more than that.
+--------------------
+Pakrat points out %s/xx props need proper protection.
+----------------
+Complete and shake out group support.
+--------------------
+I would recommend putting a disclaimer not to compile Muq with the X 
+libraries without at least 16mb of Ram.  With 8mb the linking process 
+gronked the hard drives hard for quite a while, but with 24mb (and almost 
+8mb free, most the rest dedicated to disk buffers during the linking) 
+there was minimal disk access besides writing out the executables, which 
+happened quickly and easily.  I recall in the XFree documentation 
+somewhere that 16mb is recommended for building any given XFree server, 
+and may be a good idea for Muq too (at least for Linux boxes.)
+-Andy
+--------------------
+Should our 'signal' calls be 'sigaction' these days?
+--------------------
+Fix #:xxx syntax support.
+--------------------
+        Just so you know.  Also, I figured out about the odd placement
+of X on this machine.  The include files are under /usr/include/X11R5/X11/*.h
+and the libs are under /usr/lib/X11R5.  Not the normal places, so I
+add the corresponding correct -I and -L lines to x_ldflags (I believe)
+and it worked.  NOTE however, that those two additions _must_ appear on the
+command line _BEFORE_ the '-lXaw -lXmu ...' stuff.  For some strange reason,
+it's very picky about that.  I had to read the man pages on ld to find this
+out.
+ (Nightmare, HP/UX)
+--------------------
+Pakrat points out that the current configure script
+test for a .h file seems to not complain if a
+header file is present but unreadable.  Possibly
+we should switch to testing for actual expected
+contents of the header file in question, instead
+of using the AC_CHECK_HEADERS() macro?
+--------------------
+--------------------
+--------------------
+--------------------
+--------------------
+--------------------
+

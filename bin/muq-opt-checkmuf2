@@ -1,0 +1,46 @@
+#! /bin/sh
+
+if [ "$#" -ne 1 ]
+then
+    echo "Usage: muq-opt-checkmuf2 logfile"
+    echo "(Runs optional muq selfcheck code.)"
+    exit 1
+fi
+checklog=$1
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+# Re-initialize db:
+rm -rf check*db*
+$bindir/muq-copy-db `pwd`/#check.tmp# Clean check
+
+# Over all directories of optional muq selfcheck code:
+cd #check.tmp#
+for i in `$cdir/muq -M` ;
+{
+  # Check that $moddir/$i exists:
+  if [ -d $moddir/$i ]
+  then
+
+    # Over all muq selfcheck code files in directory:
+    for j in $moddir/$i/*muf ;
+    {
+      echo ""	# Unportable is:   echo "\n\n..."
+      echo ""
+      echo "Running testfile $j..."
+      $cdir/muq check			\
+	-x muq:compileMufFile		\
+	-f $pkgdir/Check/begin.muf	\
+	-f $j				\
+	-f $pkgdir/Check/end.muf	\
+	--logfile=muq.log		\
+      | tee -a $checklog
+    }
+  else
+    echo "No $moddir/$i exists!"
+  fi
+}
+
+
+exit 0

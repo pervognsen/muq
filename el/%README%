@@ -1,0 +1,300 @@
+                   muq/el/#README#      last update: 94Sep08
+
+This directory contains Muq-specific emacs elisp code.
+
+At the moment (94Jan23), this mostly consists of a token
+muf-mode.el which exists primarily so folding-mode.el can
+key on it to select the correct fold marks.
+
+If you're keeping muq in ~/muq (meaning that this directory is
+~/muq/el) you can add this directory to your emacs load-path by
+inserting
+
+  (setq load-path (append (list (concat (getenv "HOME") "/muq/el")) load-path))
+  (require 'muf-mode)
+  ;; Tell emacs to edit *.muf files in muf-mode:
+  (setq auto-mode-alist (cons '("\\.muf$" . muf-mode) auto-mode-alist))
+
+in your ~/.emacs file.  My ~/.emacs invokes folding.el like so:
+
+  ;; Folding mode support, copied from folding.el comments:
+  (require 'folding)
+  (defun folding-mode-find-file-hook ()
+    "One of the hooks called whenever a `find-file' is successful."
+    (and (assq 'folded-file (buffer-local-variables))
+	 folded-file
+	 (folding-mode 1)
+	 (kill-local-variable 'folded-file)))
+
+  (or (memq 'folding-mode-find-file-hook find-file-hooks)
+      (setq find-file-hooks (append find-file-hooks
+				    '(folding-mode-find-file-hook))))
+
+  (setq inhibit-local-variables nil)
+  (setq fold-inhibit-startup-message t)
+  (folding-mode-add-find-file-hook)
+  (fold-add-to-marks-list 'lisp-mode ";;{{{ " ";;}}}" nil t)
+  (fold-add-to-marks-list 'muf-mode "( {{{ " "( }}} )" " )" t)
+
+I've also included a copy of folding.el, since all Muq source is
+formatted for it, and since I consider it essential to civilized life
+:).  Note that the way to get folding-mode help, when online, is to
+ask for help on function folding-mode; if you haven't rebound help
+that is "C-hffolding-mode<RET>".
+
+(I rebind help to ^Ch so I can use ^H to delete chars.)
+
+
+
+  -------------------------------------------------------------
+
+
+
+This is getting into personal configuration stuff, but here is some
+.emacs code I use to quickly open the buffers I tend to use a lot when
+working on Muq.  I just type control-C and then 'm' (for "muq") in
+Dired, and I'm all set.
+
+    (All key sequences consisting of control-C followed by an
+    alphabetic character are reserved by emacs for this sort of
+    local customization.)
+
+It starts with a convenience fn to start up a shell:
+
+    ;;
+    (defun jsp-start-shell (directory name &optional commands to-insert)
+	(find-file directory)
+	(shell)
+	(rename-buffer name)
+	(if commands
+	    (process-send-string (process-name (get-buffer-process name)) commands)
+	)
+	(if to-insert (insert to-insert))
+    )
+
+
+Then a little function which opens my usual buffers and
+shells.  The last buffer/shell created is the one you wind
+up in, so I put the one I spend the most time in last.  My
+convention is that buffers running shells have names
+starting with "s.":
+
+    ;;
+    (defun jsp-start-muq-stuff ()
+      "Start up usual /jsp/muq buffers."
+      (interactive)
+      (visit-tags-table "/jsp/muq")
+      (find-file "/jsp/muq")
+      (find-file "/jsp/muq/info")
+      (find-file "/jsp/muq/c")
+      (find-file "/jsp/muq/h")
+      (find-file "/jsp/muq/muf")
+      (jsp-start-shell "/jsp/muq" "s.muq"     "")
+      (jsp-start-shell "/jsp/muq/h" "s.h"     "")
+      (jsp-start-shell "/jsp/muq/info" "s.info"   "")
+      (jsp-start-shell "/jsp/muq/muf" "s.muf"    "")
+      (jsp-start-shell "/jsp/muq/c" "s.c"     "")
+    )
+
+
+Finally, hook above up to dired.  This is an abbreviated
+version of the dired-mode-hook I actually use, which also
+sets up gif viewers and stuff for single-keystroke access
+from dired:
+
+    ;;
+    (setq dired-mode-hook
+      (function (lambda ()
+	  (local-set-key "\C-cm" 'jsp-start-muq-stuff)
+    ) ) )
+
+
+
+  -------------------------------------------------------------
+
+
+
+Wandering totally away from anything directly Muq related,
+here's roughly the code I use to rebind ^H to be delete
+and ^C h to be help:
+
+    ;;
+    ;;.Set ^H to mimick DEL and bind help to ^Ch
+    ;; A year of trying it rms' way just
+    ;; drove me up the wall.  ^H is easier to type than DEL!!!! ...
+    ;; and doesn't move around on my keyboard all the time.
+    ;; ^H is normally set to help-command in the global map.
+    ;; DEL is normally bound in local maps:
+    (global-unset-key "\C-H")
+    (global-set-key "\C-H" (function delete-backward-char))
+    (global-set-key "\C-Ch" (function help-command))
+
+    ;;
+    (defun jsp-move-local-DEL-binding-to-backspace nil
+      "JSP hack to make ^H same as DEL everywhere. Used in mode-hooks."
+      (let (
+	  (del-binding (local-key-binding "\C-?")))
+	(if del-binding
+	  (local-set-key "\C-h" del-binding)
+    ) ) )
+
+
+    ;; Standard help-for-help has ^H hardwired, so we replicate:
+    (defun help-for-help ()
+      "You have typed C-Ch, the help key.  Type a Help option:
+
+    A  command-apropos.   Give a substring, and see a list of commands
+		  (functions interactively callable) that contain
+		  that substring.  See also the  apropos  command.
+    B  describe-bindings.  Display table of all key bindings.
+    C  describe-key-briefly.  Type a command key sequence;
+		  it prints the function name that sequence runs.
+    F  describe-function.  Type a function name and get documentation of it.
+    I  info. The  info  documentation reader.
+    K  describe-key.  Type a command key sequence;
+		  it displays the full documentation.
+    L  view-lossage.  Shows last 100 characters you typed.
+    M  describe-mode.  Print documentation of current major mode,
+		  which describes the commands peculiar to it.
+    N  view-emacs-news.  Shows emacs news file.
+    S  describe-syntax.  Display contents of syntax table, plus explanations
+    T  help-with-tutorial.  Select the Emacs learn-by-doing tutorial.
+    V  describe-variable.  Type name of a variable;
+		  it displays the variable's documentation and value.
+    W  where-is.  Type command name; it prints which keystrokes
+		  invoke that command.
+    C-c print Emacs copying permission (General Public License).
+    C-d print Emacs ordering information.
+    C-n print news of recent Emacs changes.
+    C-w print information on absence of warranty for GNU Emacs."
+      (interactive)
+      (message
+     "A B C F I K L M N S T V W C-c C-d C-n C-w.  Type ? again for more help: ")
+      (let ((char (read-char)))
+	(if (or (= char ?\C-?) (= char ??))
+	    (save-window-excursion
+	      (switch-to-buffer "*Help*")
+	      (erase-buffer)
+	      (insert (documentation 'help-for-help))
+	      (goto-char (point-min))
+	      (while (memq char '(?\C-h ?? ?\C-v ?\ ?\177 ?\M-v))
+		(if (memq char '(?\C-v ?\ ))
+		    (scroll-up))
+		(if (memq char '(?\C-h ?\M-v))
+		    (scroll-down))
+		(message "A B C F I K L M N S T V W C-c C-d C-n C-w%s: "
+			 (if (pos-visible-in-window-p (point-max))
+			     "" " or Space to scroll"))
+		(let ((cursor-in-echo-area t))
+		  (setq char (read-char))))))
+	(let ((defn (cdr (assq (downcase char) (cdr help-map)))))
+	  (if defn (call-interactively defn) (ding)))))
+
+
+    ;;
+    (defun jsp-std-mode-hax ()
+      (jsp-move-local-DEL-binding-to-backspace)
+    )
+    (defun jsp-std-lisp-mode-hax ()
+      (jsp-std-mode-hax)
+    )
+
+    ;;
+    (progn ;; Set all trivial mode hooks
+      ;; All the mode hooks, gathered in one spot to reduce maintainance headaches:
+      (setq ada-mode-hook (function jsp-std-mode-hax))
+      (setq bibtex-mode-hook (function jsp-std-mode-hax))
+      (setq buffer-menu-mode-hook (function jsp-std-mode-hax))
+      ;; c-mode-hook is below
+      (setq dbx-mode-hook (function jsp-std-mode-hax))
+      ;; Dired-mode-hook is below
+      (setq electric-buffer-menu-mode-hook (function jsp-std-mode-hax))
+      (setq electric-help-mode-hook (function jsp-std-mode-hax))
+      (setq emacs-lisp-mode-hook (function jsp-std-lisp-mode-hax))
+      (setq fortran-mode-hook (function jsp-std-mode-hax))
+      (setq gdb-mode-hook (function jsp-std-mode-hax))
+      (setq hide-ifdef-mode-hook (function jsp-std-mode-hax))
+      (setq icon-mode-hook (function jsp-std-mode-hax))
+      (setq LaTeX-mode-hook (function jsp-std-mode-hax))
+      (setq ledit-mode-hook (function jsp-std-mode-hax))
+      (setq lisp-interaction-mode-hook (function jsp-std-lisp-mode-hax))
+      (setq lisp-mode-hook (function jsp-std-lisp-mode-hax))
+      (setq m2-mode-hook (function jsp-std-mode-hax))
+      (setq mail-mode-hook (function jsp-std-mode-hax))
+      (setq medit-mode-hook (function jsp-std-mode-hax))
+      (setq mh-folder-mode-hook (function jsp-std-mode-hax))
+      (setq mh-letter-mode-hook (function jsp-std-mode-hax))
+      (setq mim-mode-hook (function jsp-std-mode-hax))
+      (setq news-mode-hook (function jsp-std-mode-hax))
+      (setq news-reply-mode-hook (function jsp-std-mode-hax))
+      (setq nroff-mode-hook (function jsp-std-mode-hax))
+      ;; Outline-mode-hook is below
+      (setq plain-TeX-mode-hook (function jsp-std-mode-hax))
+      (setq prolog-mode-hook (function jsp-std-mode-hax))
+      (setq rmail-mode-hook (function jsp-std-mode-hax))
+      (setq rmail-edit-mode-hook (function jsp-std-mode-hax))
+      (setq rmail-summary-mode-hook (function jsp-std-mode-hax))
+      (setq scheme-mode-hook (function jsp-std-mode-hax))
+      (setq scheme-interaction-mode-hook (function jsp-std-mode-hax))
+      (setq scribe-mode-hook (function jsp-std-mode-hax))
+      (setq shell-mode-hook (function jsp-std-mode-hax))
+      (setq simula-mode-hook (function jsp-std-mode-hax))
+      (setq terminal-mode-hook (function jsp-std-mode-hax))
+      ;; texinfo-mode-hook is below
+      ;; text-mode-hook is below
+      (setq TeX-mode-hook (function jsp-std-mode-hax))
+      (setq vi-mode-hook (function jsp-std-mode-hax))
+    )
+
+    ;;
+    (setq c-mode-hook (function (lambda ()
+	  (jsp-std-mode-hax)
+	  (setq c-indent-level 4)
+	  (setq c-continued-statement-offset 4)
+	  (setq c-argdecl-indent 0)
+	  (setq c-label-offset -4)
+    ) ) )
+
+
+
+  -------------------------------------------------------------
+
+
+
+I touch-type and don't like leaving the home row to use the
+cursor keys, but other folks like to use them, and I've
+found the following useful for keeping them happy:
+
+    ;; Peter Torkelson's shotgun capture-the-cursor-keys bindings.
+    ;; Rather than sweat figuring out what sequences the current
+    ;; terminal sends for the cursor keys, he just binds all the
+    ;; common possibilities:
+    (defvar cursor-map-2 (make-keymap)
+      "for ESC-[")
+    (fset 'Cursor-Map-2 cursor-map-2)
+    (define-key esc-map "[" 'Cursor-Map-2)
+    ;;
+    (define-key esc-map "[A" 'previous-line)
+    (define-key esc-map "OA" 'previous-line)
+    (define-key esc-map "[B" 'next-line)
+    (define-key esc-map "OB" 'next-line)
+    (define-key esc-map "[C" 'forward-char)
+    (define-key esc-map "OC" 'forward-char)
+    (define-key esc-map "[D" 'backward-char)
+    (define-key esc-map "OD" 'backward-char)
+    (define-key esc-map "[H" 'beginning-of-line)
+    (define-key esc-map "[Y" 'end-of-line)
+    (define-key esc-map "[5~" 'scroll-down)
+    (define-key esc-map "[6~" 'scroll-up)
+    (define-key esc-map "[[A" 'help-for-help)
+    (define-key esc-map "[[B" 'byte-compile-file)
+    (define-key esc-map "[[C" 'isearch-forward)
+    (define-key esc-map "[[D" 'query-replace-regexp)
+    (define-key esc-map "[[E" 'eval-defun)
+    (define-key esc-map "[[F" 'eval-current-buffer)
+    (define-key esc-map "[[G" 'buffer-menu)
+    (define-key esc-map "[[H" 'global-set-key)
+    (define-key esc-map "[[I" 'save-buffer)
+    (define-key esc-map "[[J" 'save-buffers-kill-emacs)
+    (define-key esc-map "[1~" 'beginning-of-line)
+    (define-key esc-map "[4~" 'end-of-line)

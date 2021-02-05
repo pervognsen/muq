@@ -1,0 +1,170 @@
+<! This file starts as muq/doc/html.muq, and gets copied to >
+<! public_html/muq/muq.html. The name-half swap is so we    >
+<! can do "rm muq/doc/*.html" to eliminate all the mechan-  >
+<! ically generated html files without clobbering this one. >
+<! Since public_html/muq/* get clobbered each time the      >
+<! public_html/muq/* docs are updated, any edits should be  >
+<! made to muq/doc/html.muq. 95Mar09 CrT                    >
+<!DOCTYPE HTML SYSTEM "html.dtd">
+<HTML>
+<HEAD>
+<title>Muq Manuals</title>
+</HEAD>
+<BODY background="whymuq/pix.gif/spacback.gif" BGCOLOR=#000000 TEXT="FFCC99"
+ LINK="#FF0000"
+ALINK="#000000" VLINK="0000FF">
+<TABLE><TR><TD>
+<IMG SRC="whymuq/pix.gif/muq.gif">
+</TR>
+<TD>
+<FONT COLOR= "#FFB000" SIZE=7><B>The Next Generation Server
+for Virtual World Builders</B>
+</FONT>
+</TD></TR></TABLE>
+<br>
+<IMG SRC="whymuq/pix.gif/linerainbow.gif">
+<BR>
+<FONT COLOR= "#FF6600" SIZE=6>Pre-release description</b></FONT>
+<BR>
+<IMG SRC="whymuq/pix.gif/linerainbow.gif">
+<br>
+
+<center><h1>Muq Synopsis</h1></center>
+
+<p>
+Muq is a new netserver platform currently in late alpha test.
+Muq's first beta release will be on December 29, 1999.
+See <a href="whymuq/whymuq.html">"Why Muq?"</a> for
+an overview of what Muq is good for.
+
+<BR>
+<IMG SRC="whymuq/pix.gif/linerainbow.gif">
+<p>
+<center><h1>Muq Availability</h1></center>
+
+<p>
+Due to US export controls, 
+Muq source code is currently available only from
+<a href="ftp://ftp.cistron.nl/pub/people/cynbe/">
+ftp.cistron.nl/pub/people/cynbe/</a>:  As of 1999Oct30,
+the most recent alpha release is
+<a href="ftp://ftp.cistron.nl/pub/people/cynbe/muq.-1.45.0-src.tar.gz">
+ftp.cistron.nl/pub/people/cynbe/muq.-1.45.0-src.tar.gz</a>.  (If you
+would like to mirror this at another crypto Free World site, by all
+means do so!  And let me know at <b>cynbe@muq.org</b>.)
+
+<p>The most recent Muq manuals are always available on the
+Web at
+<a href="http://muq.org/~cynbe/muq/muq.html">
+http://muq.org/~cynbe/muq/muq.html</a>
+and often mirrored at
+<a href="http://www.eskimo.com/~cynbe/muq/muq.html">
+http://www.eskimo.com/~cynbe/muq/muq.html</a>.
+Preformatted tarball versions of
+these manuals are normally available in <b>ascii</b>, <b>html</b>, <b>info</b>,
+<b>dvi</b> and <b>ps</b> from <a href="ftp://muq.org/pub/muq/">ftp://muq.org/pub/muq</a>
+and usually mirrored at <a href="ftp://ftp.eskimo.com:/u/c/cynbe/muq/">
+ftp.eskimo.com:/u/c/cynbe/muq/</a>.  (Let me know if you set up an additional mirror!)
+
+<p>There are currently no publicly available Muq servers on the Internet.
+
+<br>
+<IMG SRC="whymuq/pix.gif/linerainbow.gif">
+<p>
+<center><h1>Muq Mailing Lists and Projects</h1></center>
+
+<p>
+I maintain six Muq mailing lists, which I expect to remain
+very quiet until the 1999Dec29 beta release:
+
+<ul>
+<li>
+muq-announce@muq.org  Carries the roughly monthly annoucements of new releases.
+<li>
+muq-admin@muq.org  For people administering Muq systems.
+<li>
+muq-bugs@muq.org  For reporting or discussing Muq bugs.
+<li>
+muf-coder@muq.org  For people writing code in Muq MUF.
+<li>
+muq-coder@muq.org  For people hacking the Muq server C code.
+<li>
+muq-user@muq.org For end-users using Muq systems.
+</ul>
+
+To subscribe to one of these, send email to one of
+
+<ul>
+<li>
+muq-announce-request@muq.org
+<li>
+muq-admin-request@muq.org
+<li>
+muq-bugs-request@muq.org
+<li>
+muf-coder-request@muq.org
+<li>
+muq-coder-request@muq.org
+<li>
+muq-user-request@muq.org
+</ul>
+
+with the word "subscribe" as the body.  (Use "unsubscribe" to
+remove yourself from the list.)
+
+<BR>
+<IMG SRC="whymuq/pix.gif/linerainbow.gif">
+<p>
+<center><h1>Contributing to the Muq Community</h1></center>
+
+<p>
+Muq is animated (among other things) by a desire to
+construct secure, cooperative, democratic, egalitarian,
+distributed online communities based on free software
+and user-owned hardware instead of on proprietary
+commercial hardware and software.
+
+<p> If you like the vision of online communities
+not controlled by the likes of Microsoft or
+America Online, you can contribute to making it
+happen.  You don't need to be a hacker to
+contribute: If you want to contribute, you have
+something we need, be it the ability to provide
+novice-eye feedback on our manuals and tutorials,
+art of any kind for our manuals, web pages and
+virtual worlds, technical writing or proofreading
+for our documentation, coordination of volunteer
+efforts, donation of hardware access to run
+testbeds, or whatever email cynbe@muq.org and see
+where you can fit in!
+
+<BR>
+<IMG SRC="whymuq/pix.gif/linerainbow.gif">
+<p>
+<center><h1>Muq Manuals</h1></center>
+
+<p>
+The current Muq manual set consists of:
+
+<ul>
+<li>The <a href="faq_toc.html">Muq FAQ</a>.
+<li>The <a href="admin_toc.html">Administrator's</a> Manual.
+<li>The <a href="muchack_toc.html">MUC for Hackers Tutorial</a>.
+<li>The <a href="mufhack_toc.html">MUF for Hackers Tutorial</a>.
+<li>The <a href="muf1_toc.html">Elementary MUF Tutorial</a>.  (MUF
+is currently Muq's primary end-user programming language.)
+<li>The <a href="muf2_toc.html">Intermediate MUF Tutorial</a>.
+<li>The <a href="muf3_toc.html">Advanced MUF Tutorial</a>.
+<li>The <a href="muqnet_toc.html">Muqnet manual</a>.
+<li>The <a href="micronesia_toc.html">Micronesia manual</a>.
+<li>The <a href="mufref_toc.html">MUF reference manual</a>.
+<li>The <a href="lspref_toc.html">Lisp reference manual</a>.
+<li>Selected <a href="src_toc.html">source code</a> in HTML
+form.  (This manual is just getting properly started.)
+<li>The <a href="muqsoon_toc.html">Future Directions roadplan</a>.
+</ul>
+
+<p>
+Back to 
+<a href="../index.html">top node</a>.
+

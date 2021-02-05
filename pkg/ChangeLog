@@ -1,0 +1,918 @@
+Wed Jan 27 01:42:31 1999    <cynbe@laurel.muq.org>
+
+	* 190-C-muqnet.t: Updated 
+	   *_GET_MUQNET_USER_INFO
+	   *_GET_USER_INFO
+	   *_SET_USER_INFO
+	to propagate the new user%s fields
+	   doing
+	   doNotDisturb
+	   email
+	   homepage
+	   pgpKeyprint
+	as part of the automatically mirrored per-user info.
+	Main point is to allow fast @who hacks which user only
+	information on the local server, and to propagate
+	globally information needed for contact via alternate
+	media -- so that, e.g., if a muqnet node crashes, one
+	has access to an email address.
+	
+Sun Jan 10 12:03:39 1999    <cynbe@laurel.muq.org>
+
+	* 190-C-muqnet.t: userVersion information added to
+	User+Guest objects and to muqnet packets, and muqnet
+	daemon requests information when it sees an incoming
+	userverion greater than its cached one:  Should get
+	us most of the way to supporting dynnamic IP addresses.
+
+Fri Nov 13 23:22:15 1998    <cynbe@laurel.muq.org>
+
+	* 190-C-muqnet.t: Discovered several places in 'run'
+	where error handling 'if' clauses failed to pop the
+	packet off the stack, leading to eventual datastack
+	overflow.
+  	  The error recovery logic mostly masked this.  :-/
+  	  The arity checking didn't catch it because it can't
+	handle daemon functions which never return.
+
+Sun Oct  4 08:00:52 1998  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 385-W-oldhas-been-ejected.t: Created.
+
+	* 330-W-oldmud: Added HAS_BEEN_EJECTED message.
+
+Sun Sep  6 09:56:42 1998  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 475-W-oldmsh-look.t:  The REQ_VIEW invocation in
+	lookAtSomething had been correctly changed to expect
+	'err strId strLen short' return values, but the
+	invocation in lookAtCurrentRoom was still expecting
+	only 'strId strLen' in that zone.
+  	   This resulted in the NIL 'err' return value being
+	read as a nil strId (no such description available),
+	and in the short description being used instead (which
+	resulted in the results looking reasonable).
+	   This bug must date to the addition of the extra
+	'err' and 'short' return values sometime earlier this
+	year;  It escaped this long due in part to the fallback
+	code making results look reasonable.
+	   More care in making sure I'd updated all REQ_VIEW
+	invocations might have prevented it.
+	   A language with stronger argument checking than Muq
+ 	MUF could have caught the bug at compile time.
+	   This could be a warning that as we make software more
+	fault-tolerant, it becomes easier for faults to evade
+	detection.  :(
+
+	* 475-W-oldmsh-short.t:  Hacked to call
+	    updateShortDescInRoomCache
+	when changing short description.
+	
+	* 402-W-oldroom-cache2.t: Added a new function
+	    updateShortDescInRoomCache
+ 	to help update at least the local cache after updating
+	a short description -- it was really disconcerting to
+	change the short description on a local object and then
+	do a look and see it unchanged due to the local room
+ 	cache being unaware of the update.
+
+	* 347-W-oldrequest.t: Verified that all '*TimeoutFn'
+	re-use old taskId rather than assigning a new one,
+	when submitting new continuation.  This is important
+	because otherwise any request with a round-trip delay
+	exceeding the retry time might never succeed -- the
+	returning taskId wouldn't be recognized.
+
+	* 190-C-muqnet.t: For clarity, renamed
+ 	    REQ_MUQNET_USER_INFO -> REQ_GET_MUQNET_USER_INFO
+	    ACK_MUQNET_USER_INFO -> ACK_GET_MUQNET_USER_INFO
+	    doReqMuqnetUserInfo  -> doReqGetMuqnetUserInfo
+	    doAckMuqnetUserInfo  -> doAckGetMuqnetUserInfo
+	    sendMuqnetUserInfo   -> sendGetMuqnetUserInfo
+	(I thought "sendMuqnetUserInfo" was particularly misleading,
+	since it in fact requests information rather than sending it.)
+	
+Sat Sep  5 07:06:54 1998  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 190-C-muqnet.t: Went through the doReq* and doAck*
+	functions changing '|writeStreamPacket's to
+	'|maybeWriteStreamPacket's.
+  	  I believe the change is needed in the doReq's to prevent
+ 	possible deadlock when the muqnet daemon is writing to its
+ 	own input queue	and the queue is full.
+	  I believe the change is needed in the doAck's to prevent
+	the muqnet daemon from locking up if some user daemon crashes
+	and its messate stream fills up.
+	  I didn't make the change in the send* functions, because
+	having user daemons block until they can write the muqnet
+	queue shouldn't be a problem -- I'm assuming the muqnet daemon
+	is reliable and rarely takes long to process a packet.
+	  I didn't make the change in the muqnet:]run writes to the
+	network because I'm similarly presuming the host kernel is
+	reliable and will send (or drop) UDP packets out promptly,
+	hence that a write to a UDP socket will never block for long.
+	  I've seen an occasional apparent lockup during x[xy]-oldmud2
+	test runs, I'm hoping one of the above fix it.  Or else to avoid
+	having to track down and fix the above problems the hard way! :)
+
+	* 190-C-muqnet.t: This might possibly be an over-optimization:
+	Stopped storing sharedSecret except on local users. (Since one
+	participant in every muqnet communication must be a local user,
+	seems no reason to store shared secrets on guest user records.)
+
+	* Changed 'password' to 'passphrase' everywhere.
+
+	* (100-C-utils, 490-W-root-oldmud.t):  Changed (useless)
+	old "zz" password encryption salt to lowercase name of
+	user.
+
+	* 345-W-oldtask.t (defclass home): Changed initial value
+	of taskNextId to be a negative trulyRandomFixnum instead
+	of 1:  This is intended to help with eventual checking
+	for duplicate requests in non-idempotent muqnet request
+	handlers.
+
+Thu Aug 20 21:22:47 1998  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Changed 'compiledFunction?' to 'callable?' almost everywhere.
+	
+	* Changed #'fn to 'fn most places to improve maintainability.
+
+Thu Jul 30 17:44:26 1998  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Continuation functions passed to ]request now get
+	passed another argument when called:  A 'from' value
+	which is the authenticated identity of the respondent.
+	This will be clutter most of the time, but it is good
+	information to make readily available, I think.
+
+	* 347-W-oldrequest.t: Various nice tweaks to the
+ 	task/request machinery:
+	  'why' field can be specified, giving text name to task.
+	  'who' field can be specified, in which case any replies
+	        from anyone else (as established by the new public-
+	        key based authentication logic) are ignored.
+	  ]request now automatically specifies 'who' (== 'to').
+	This basically completes the job of automatically authenticating
+	most Micronesia interactions between users.
+	
+Mon Jul 27 22:19:52 1998  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 345-W-oldtask.t: Discovered taskDelay still had a
+	default initial value of 1, reasonable when the time
+	currency was seconds, silly now that it is microseconds.
+	Another bug dating back to the time currency change-over
+	half a year ago.
+
+Sat Jul 18 12:08:33 1998  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 190-C-muqnet.t: Discovered getVal and getValP were
+	still using a retry timeout in seconds (2) instead of
+	milliseconds.  This bug dated back to the secs -> millisecs
+	change-over in Jan/Feb.
+
+Thu Jun 11 19:55:17 1998  Jeff Prothero  <jsp@chee.muq.org>
+
+	* 175-C-rex.t: Matched substrings were being returned in reverse
+	order.  Traced this to the fact that paren-pair numbering was being
+	done during the compile treewalk rather than during the parse, and
+	the treewalk happened to be going in reverse order.
+
+  	The compiletreewalk should be free to process in any order, so
+ 	doing numbering during it is simply wrong:  It happened due to
+ 	my laziness in not wanting to pass a special state record around
+	during parsing (to contain the number of paren-pairs seen so
+	far).  It survived due to my testing individual cases but no test
+	cases complex enough to contain two paren-pairs.
+
+Wed Jun 10 19:55:17 1998  Jeff Prothero  <jsp@chee.muq.org>
+
+	* Muq v -1.42.0 release.
+	
+1998-04-16    <cynbe@al.muq.org>
+
+	* x-skt was failing test 34 in x-skt (open datagram socket) for
+	some reason under Red Hat 5.0 on Nec 6000H laptop: switched from
+	port 62121 to 60127 and things worked fine.  Something on 62121?
+	(Rebooting made no difference.)
+
+Fri Jan 23 21:01:45 1998  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Changed MUF compiler to be case-sensitive.  My semantic
+	base reference, CommonLisp, frowns on this, but Perl, C,
+	Java and most contemporary programmers like case-sensitive
+	identifiers, so having MUF follow suit should ease inter-
+	operation. (If not with Perl/C/Java/... proper, then with
+	emulations of them written for Muq.)
+	
+Tue Dec 30 06:17:35 1997    <cynbe@xx>
+
+	* 370-W-oldisle.t:  quay-janitor-task wasn't checking for
+	special case of no known isles, leading to an attempt to
+	read stack<-1>, which aint kosher...
+
+Sun Dec  7 13:36:29 1997  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 370-W-oldisle.t: Added quay-janitor-task to automatically remove
+	proas headed to currently offline worlds.
+
+	* 370-W-oldisle-list.t: Proa construction more robust and extensive.
+
+Sun Nov 30 23:57:50 1997  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 475-W-oldmsh-quit.t: Added hack so on @quit, avatar leaves room
+	for limbo instead of cluttering up the place.
+
+Sun Nov 30 06:42:35 1997  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* -1.40.0 release.
+
+Mon Nov 10 18:55:21 1997  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Heh, walked back and forth between two Muq oldworlds on
+ 	different machines. :)
+
+Sun Sep 28 14:59:13 1997  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 337-W-oldpub.t Created.  Task/request functionality finally
+	seems beaten into shape, moving on to string publication support.
+
+Sat Jul 12 03:47:24 1997  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Switched from two-digit to three-digit numeric prefixes --
+	oldmud was getting crowded.  More fun than renumbering old
+	BASIC programs, even :).
+
+Sun Jul  6 01:13:26 1997  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Added 'debug-on' and 'debug-off' convenience
+	functions to set/clear @%s/break-enable, just because I can
+	remember 'debug-on' and 'debug-off' but not '@%s/break-enabe' :)
+
+Fri Jul  4 13:08:40 1997  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 12-C-muf.t: Pass line numbers to assembler for use by debugger.
+
+	* 14-C-init-shell.t:  Moved rc2 code here from 10-C-utils.t
+
+	* 14-C-init-shell.t:  Create, moved init-shell code here from 12-C-muf.t
+
+	* 14-C-muf-shell.t:  Created, moved muf-shell code here from 12-C-muf.t
+
+	* Changed cynbe@eskimo.com &tc to cynbe@muq.org everywhere I
+	caught them.
+
+Thu Jan  2 00:03:03 1997  Cynbe ru Taren  <cynbe@chee.muq.org>
+
+	* 30-X-nanomud.t: Hacked 'start' to ignore attempts
+	to start the nanomud login daemon if it is already
+	running.  (Pakrat pointed out that this was too easy
+	to do, and resulted in confusing behavior.)
+
+Wed Jan  1 22:15:14 1997  Cynbe ru Taren  <cynbe@chee.muq.org>
+
+	* 13-C-muf-syntax.t: 'compile-(' had
+	    |length 0 = if ]pop loop-next fi ( Don't crash on empty lines )
+	where it really needed
+	    |length 0 = if ]pop return fi    ( Don't crash on empty lines )
+	which was resulting in ')' not being recognized
+	as an end-of-comment if it was at the start of a line.
+	(Thanks to Andrew Bolt for pointing out this one.)
+
+	* 12-C-muf.t: Fixed: 'compile-path' had
+	    c '%' = if
+		[ ctx/mss '/' | |scan-token-to-char
+	where it needed
+	    c '%' = if
+		[ ctx/mss "/<" | |scan-token-to-chars
+	which resulted in it not understanding
+	stuff like "~%s/login-hints%h<1>".  (Kudos to
+	Pakrat for catching out that bug!)
+	
+	
+Tue Dec 31 20:26:38 1996  Cynbe ru Taren  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Introduced variables
+	    muf:*telnet-port-offset*
+	    muf:*nanomud-port-offset*
+	to bring a little more rationality to Muq internal
+	daemon port assignment configuration by replacing
+	the previously hardwired integer constants.  These
+	are intended to be used as integer offsets from
+	/sys%s/muq-port.
+
+	* 19-C-muqnet.t: Created.
+
+Sat Dec 21 20:39:50 1996    <cynbe@chee.muq.org>
+
+	* Moved to attic:
+	      26752 Oct 21 22:10 28-W-cl.t
+	       4754 Oct 21 22:11 28-W-elisp.t
+	       6332 Oct 21 22:11 28-W-scene.t
+	      15914 Oct 21 22:12 28-W-xlib.t
+
+Wed Dec 18 23:28:11 1996    <cynbe@chee.muq.org>
+
+	* 12-C-muf.t: Added 'init-shell' fn for daemon mode startup.
+
+	* 10-C-utils.t: Added 'rc2' fn for daemon mode startup.
+
+Sun Dec 15 12:39:22 1996    <cynbe@muq.org>
+
+	* 35-W-oldmsh.t: Added reporting of last backup.
+
+	* 12-C-muf.t:    Added reporting of last backup.
+
+Sun Dec 15 11:41:19 1996    <cynbe@muq.org>
+
+	* 35-W-oldmsh.t: Added reporting of last garbage collect.
+
+	* 12-C-muf.t:    Added reporting of last garbage collect.
+
+Sat Dec 14 20:48:04 1996    <cynbe@muq.org>
+
+	* Rewrote oldmud to use switch-job rather than
+	"1 sleep-job" on login and logout, eliminating
+	the irritating 1-sec delays.  There is still
+	probably a race condition there which should
+	be fixed someday, ideally.  But failure on the
+	logout race condition just results in logoff
+	message not being seen, and failure on the input
+	one just results in echoing being off after
+	login.
+
+	* 10-C-utils.t: Damn! -- Just wasted a day and a
+	half of prime programming time discovering in the
+	hardest possible way that the reason there was a
+	one-second delay on login to the oldmud is because...
+	there's a "1 sleep-job" in root-login-user. *BLUSH*!!
+
+Sun Dec  8 18:05:32 1996    <cynbe@muq.org>
+
+	* 15-C-defclass.t: Added
+	    :prot "rw----"
+	option to defclass -- got sick of seeing stuff like
+	    :user-may-read  t	:user-may-write  t
+	    :class-may-read nil	:class-may-write nil
+	    :world-may-read nil	:world-may-write nil
+	littering all my class declarations.
+
+Thu Nov 21 01:35:50 1996    <cynbe@muq.org>
+
+	* 10-C-utils.t: Added function
+	    ]root-exec-user-daemon
+	as a convenience function for
+	root-oldmud:root-start-world-daemons.
+	
+Tue Nov 19 22:06:52 1996    <cynbe@muq.org>
+
+	* 34-W-oldmsh.t ]shell: Wyatt pointed out that
+	a crash within REQUEST-WAKE was leaving us in
+	the debugger with no valid restarts.  Rewrote
+	the code to put the REQUEST-WAKE call inside
+	the shell boilerplate.
+
+	* 33-W-oldmud.t: Introduced class CONTAINER and
+	switched to linking avatars to container
+	room/ears instead of directly to room, opening
+	the way for rooms to contain more than one list
+	of objects, and for rooms and avatars to contain
+	each other if desired.
+
+Mon Nov 18 01:02:19 1996    <cynbe@muq.org>
+
+	* 10-C-utils.t: Wyatt pointed out that
+	    root-login-user
+	was crashing into the root prompt when given
+	a null password.  Most unpleasant!  Added a
+	special check for null passwords, and in
+	addition converted root-login-user to a dumb
+	shell, to avoid future bugs crashing it into
+	a root-privileged mufshell prompt.
+
+Sun Nov 17 19:18:20 1996    <cynbe@muq.org>
+
+	* 07-C-telnet.t: Added
+	    maybe-will-echo
+	    maybe-wont-echo
+	which work on telnet connections and
+	at least don't generate errors from console.
+	
+	* 10-C-utils.t: Added
+ 	    change-password
+ 	    root-change-password
+ 	functions, and root-config-menu entries calling them.
+	
+	* 10-C-utils.t: PakRat pointed out usernames with
+	capital letters weren't working.  Added a string-
+	downcase or two to root-login-user and also to
+	root-add-user and root-oldmud:root-add-user.
+
+	* 12-C-muf.t: ]shell was showing hints after each
+	error as well as at login.  Moved show-login-hints
+	call above the abrt tag.
+
+	* 10-C-utils.t: config functions now "Hrm?" when
+	they don't understand input. (Pakrat pointed out
+	the lack of a NAK was confusing.)
+
+Sat Nov 16 13:54:04 1996    <cynbe@muq.org>
+
+	* 10-C-utils.t: Added two convenience functions
+	    add-config-fn
+	    config
+	by way of establishing a standard mechanism for
+	packages to make configuration menus available
+	to the user.
+
+	* 10-C-utils.t: Added two convenience functions
+	    show-login-hints
+	    add-login-hints
+	by way of establishing a standard mechanism for
+	packages to post helpful reminders.
+
+Wed Nov  6 23:04:05 1996    <cynbe@muq.org>
+
+	* 25-C-debugger.t: Changed to silenly ignore
+	empty lines, which it tends to inherit from
+	mufshell.
+
+Fri Nov  1 02:48:38 1996    <cynbe@muq.org>
+
+	* 25-C-debugger.t: SHOW-STACKFRAME was trying to
+	interpret numbered entries in handler frames as local
+	variable slots in normal frames, and consequently
+	crashing.
+
+Tue Oct 22 00:38:18 1996    <cynbe@muq.org>
+
+	* 10-C-utils.t: Added root-accept-logins and
+	root-accept-logins-on functions, trivially
+	adapted from nanomud.
+	
+	* 10-C-utils.t: Added root-add-user function.
+
+Mon Oct 21 22:31:16 1996    <cynbe@muq.org>
+
+	* 32-W-oldmud.t:  Created, from nanomud.
+	* 33-W-oldmsh.t:  Created, from nanomsh.
+
+	* Did some file renumbering.
+
+Sat Oct  5 13:46:37 1996    <cynbe@muq.org>
+
+	* 41-X-nanomsh.t: Renamed packages
+	    mud  to   nanomud
+	    msh  to   nanomsh
+	to make room for eventual production mud
+	and mudshell packages.
+
+Thu Jul 25 23:49:34 1996    <cynbe@chee.muq.org>
+
+	* 12-C-muf.t: Fixed: compile-file had no 'abort handler,
+	leading to disaster after any compile error.
+	
+Thu Jul 18 22:24:25 1996    <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Fixed: root-become-user failed to
+	change ownership of both of the main message streams:
+	This bug dates back to introduction of mss%s/twin prop.
+	(Thanks to Loki for reporting this and previous bug.)
+	
+	* 10-C-utils.t: Fixed: root-make-a-user was still
+	referencing the (long-dead) /etc/lib/zil shell.
+
+Wed Jun  5 02:46:32 1996    <cynbe@chee.muq.org>
+
+	* 12-C-muf.t: Baby's first words -- Compiles 2 2 + for first time :)
+
+Fri Nov 10 01:28:33 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Various changes like 
+	    ~%s/lib<"muf"><"fork-jobset"> not if
+	->
+	    ~%s/lib<"muf"> "fork-jobset" get? pop not if
+	to accomodate changed 'get' semantics.
+
+Sun Nov  5 17:29:30 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* -1.26.0 release
+
+Sun Nov  5 00:52:21 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 40-mud.t: Hacked find-avatar to suppress password echoing.
+
+Sat Nov  4 22:40:44 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 41-mudshell.t: Hacked run-shell to call maybe-start-telnet-daemon.
+
+	* 10-C-utils.t: Created maybe-start-telnet-daemon, hacked
+	muf-shell to call it.
+
+Sun Oct 29 01:14:54 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 07-C-telnet.t: Created, to hold in-db telnet protocol code.
+
+Thu Oct 12 00:11:17 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 40-mud.t start-mud: Updated ]root-listen-for-sockets
+	to use new :socket parameter instead of discontinued
+	:message-stream parameter.
+
+Sun Sep 17 16:54:03 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Various minor edits implementing the
+	    job%s/terminal-input + job%s/terminal-output -> job%s/terminal-io
+	    job%s/debug-input    + job%s/debug-output    -> job%s/debug-io
+	    job%s/query-input    + job%s/query-output    -> job%s/query-io
+	change-over.  40-mud.t and 15-C-debugger.t had a few edits too.
+
+	* 10-C-utils.t: Added 'make-bidirectional-message-stream'.
+
+Fri Sep 15 21:50:02 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Phased out write-stream-by-chunks in favor of
+	]write-stream-by-lines
+
+Sat Sep  2 15:02:38 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 15-C-debugger.t show-stacktrace:  Added line number display
+	per request from Pakrat.
+
+Sat Sep  2 00:02:30 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 15-C-debugger.t: Added 'show-disassembly' driven by "Unassemble" cmd.
+
+	* 15-C-debugger.t: Added 'disassemble-compiled-function'.
+
+Fri Sep  1 21:32:38 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t root-become-user: Pakrat pointed out that
+	it wasn't doing a "user cd", which is clearly called for. Fixed.
+
+Fri Sep  1 00:23:57 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t ]query-for-choice: Pakrat pointed out it had
+	    result 0 <= if
+	where
+	    result 0 <  if
+	was needed.
+
+	* 10-C-utils.t ]query-for-choice: Added a
+	    prompt is-a-string
+	check on Pakrat's suggestion.
+
+Fri Aug 18 11:56:46 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 01-C-condition.t child-of2?:  Added
+	    parents not if nil n return fi
+	to keep it from pointlessly looping 512 times before
+	returning NIL.
+
+	* -1.18.1 release
+
+Thu Aug 17 11:30:57 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t muf-shell:  Added
+	    muf --> @%s/compiler
+	line for benefit of users who want to inspect/modify
+	the compiler.
+
+Wed Aug 16 15:10:20 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t muf-shell:  Added 'muf reset-muf-line-number'
+	calls, since having line numbers reported relative to
+	beginning of interactive session isn't very helpful.
+
+Tue Aug 15 12:21:53 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 41-mudshell.t: Copied ^G ^T ^Y support from muf-shell into
+	the mudshell.
+
+	* 10-C-utils.t: Switched "abort" keyboard char from ^A to ^G,
+	since ^G is the general lisp-world convention, including that
+	of emacs, whereas ^A doesn't follow any existing convention,
+	I just picked it as "A-for-abort".
+
+Sun Aug  6 00:22:45 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t root-become-user: Fixed:  It
+	wasn't copying user%s/debugger into @%s/debugger.
+
+Sat Aug  5 11:10:12 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t muf-shell: Added
+
+	    ( Establish a handler that will print )
+	    ( active jobs on /etc/print-jobs:     )
+	    [ /err/print-jobs :: { [] -> [] ! } print-jobs ;
+	    | ]with-handler-do{               ( 7 )
+
+	    ( Configure socket to generate an     )
+	    ( /err/print-jobs signal on ^T:       )
+	    @%s/job-set%s/session%s/socket -> sock
+	    sock 20 /err/print-jobs set-socket-char-condition
+
+	to implement a ^T handler like TOPS-20 used to have...
+	Also added 
+
+	    ( Configure socket to generate an )
+	    ( /err/abort signalmuq.org on ^A:        )
+	    sock 1 /err/abort set-socket-char-condition
+
+	and
+
+	 muq.org   ( Establish a handler that will dump )
+	   muq.org ( us into debugger on /etc/debug:    )
+	    [ /err/debug :: { [] -> [] ! }muq.org "" break ;
+	    | ]with-handler-do{              ( 8 )
+
+	    ( Configure socket to generate an    )
+	    ( /err/debug signal on ^Y:           )
+	    sock 25 /err/debug set-socket-char-condition
+
+
+	* 41-mudshell.t 'run-shell: Added
+	    ( Establish a handler that will kill  )
+	    ( us if we lose the net link:         )
+	    [ /err/broken-pipe-warning :: { [] -> [] ! } nil end-job ;
+	    | ]with-handler-do{               ( 5 )
+	to the boilerplate section.
+
+	* 10-C-utils.t 'muf-shell: Added
+	    ( Establish a handler that will kill  )
+	    ( us if we lose the net link:         )
+	    [ /err/broken-pipe-warning :: { [] -> [] ! } nil end-job ;
+	    | ]with-handler-do{               ( 5 )
+	to the boilerplate section.
+
+	* 10-C-utils.t: Added to root-become-user:
+	    user%s/do-signal compiled-function? if
+		user%s/do-signal   -> @%s/do-signal
+	    fi
+
+Thu Aug  3 21:11:23 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 41-mudshell.t: Added boilerplate handlers/restarts
+	section to run-shell.
+
+	* 01-C-condition.t: Added 'cerror' and 'error' functions.
+	Prettied/completed boilerplate handers/restarts section
+	in muf-shell.
+
+	* 10-C-utils.t: Nuked test-shell, since there's now a full
+	muf-shell in the file.
+
+Wed Aug  2 22:22:42 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 01-C-condition.t: child-of2? child-of? ]do-signal moved in
+	from cdt.t, where they used to be hand-assembled.
+
+Tue Aug  1 18:17:28 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Added 'muf-shell' (used tcheeo be hand-assembled
+	in muf.t)
+
+	* 10-C-utils.t: Added 'abort-job' and 'kill-job' functions.
+
+	* 41-mudshell.t: Added 'end-job rcheeestart to do-muf function.
+
+Sun Jul 30 21:51:36 1995  Jeff Prothero  <cynbe@ccheehee.muq.org>
+
+	* 41-mudshell.t (do-muf):  This cheehad
+	    [ :function :: 'abrt goto ;
+	      :name 'muf:abort
+	      :report-function "Return to main mud-shell prompt."
+	    | ]with-restart-do{
+	where it needed
+	    [ :function :: { -> ! } 'abrt goto ;
+	      :name 'muf:abort
+	      :report-function "Return to main mud-shell prompt."
+	    | ]with-restart-do{
+	to wind up with needed arity.
+
+
+Sat Jul 29 11:28:23 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 41-mudshell.t: MUF code evaluation had been broken in
+	the nanomud shell for awhile: Traced it to an obsolete
+	'make-muf' in 05-C-mufcompile.t shadowing the working
+	in-server one.
+
+	* 10-C-utils.t: Changed root-become-user to copy
+	break-disable break-enable and break-on-signal
+	from user to new job.
+
+	* 10-C-utils.t: Added 'pause-job'.
+
+	* 10-C-utils.t: Added:
+	    fork-job
+	    fork-jobset
+	    fork-session
+
+	* 10-C-utils.t: Added 'run-job'.
+
+Sun Jul 23 10:43:39 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 40-mud.t: Changed %s/skt to %s/socket everywhere.  Thanks
+	to Pakrat for pointing this problem out!
+
+Fri Jul 21 00:12:22 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* -1.14.6 release.
+
+Thu Jul 20 23:18:42 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Changed root-become-user to
+	exec shell instead of calling it.
+
+	* 10-C-utils.t: Changed root-become-user to do
+	'callable?' test on shell before attempting to
+	run it.
+
+Sun Jul 16 11:19:48 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Added 'print-handlers' function.
+
+	* Check/begin.muf: Converted from catch-errors{ to
+	with-restart-do{ with-tag do{
+
+	* 05-C-mufcompile.t: Converted from ]throw-error to simple-error
+
+	* 41-mudshell.t: Converted mudshell from catch-errors{ to
+	with-restart-do{ with-tag do{
+
+	* 10-C-utils.t: Converted test-shell from catch-errors{ to
+	with-restart-do{ with-tag do{
+
+	* 10-C-utils.t: Added 'print-restarts' function.
+
+Tue Jul  4 17:47:47 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 39-vt100.t: Created.
+
+Sat Jul  1 15:49:01 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-C-utils.t: Added 'pid-to-job' function.
+
+	* 10-C-utils.t: Added 'pj' function similar to unix' 'ps'.
+	Also 'root-pj'.
+
+Wed May 17 23:49:13 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 41-mudshell.t: Converted do-muf from old catch-errors{}
+	to new with-tag abrt do{} layout.
+
+Tue May  9 00:07:34 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 14-C-edit.t: Created.
+
+Fri Apr 28 18:30:19 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Created 15-C-debugger.t.
+
+	* Switched from -Core- to -C- naming convention for core
+	muf files, to keep ...-condition.t from getting obnoxiously long.
+
+Wed Apr 26 01:48:03 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-utils.t: added:
+	query-for-float
+	query-for-int
+	query-for-string
+
+Thu Apr  6 20:03:22 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 05-Core-condit.t: Created, with:
+	restart-name
+	find-restart
+	compute-restarts[
+
+Fri Mar 31 14:12:29 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Minor hacks due to catch-errors{ } now always returning a block.
+
+Sun Mar 26 01:42:16 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-utils.t: Added |dup[.  (Pakrat request.)
+
+Sun Jan  1 03:10:16 1995  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-utils.t: Added root-make-a-user.
+
+Sat Dec 31 02:30:21 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-utils.t: Added root-become-user.
+
+Tue Dec 20 21:26:30 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Changed muf compiler to be 01 and added a 00 file checking
+	that server and library versions match.
+
+	* Changed all my file numbers to be in range 00-49, to reserve
+	the 50-99 range for local customization files.
+
+Mon Dec  5 20:07:55 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 90-mud.muf: Switched to new ]root-*-socket* syntax.
+
+Sat Dec  3 18:41:30 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 90-mud.muf: Wow!  Someone already wrote mud:quit :).
+
+	* 91-msh.muf: Added do-quit.
+
+Wed Nov 23 11:58:39 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-utils.muf: Added ,, and changed ls* to use it,
+	per a Pakrat suggestion.
+
+Sat Nov 19 05:15:16 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-lists.muf: Implemented 'subseq'.
+	* 10-Core-lists.muf: Implemented 'nsublis'.
+	* 10-Core-lists.muf: Implemented 'sublis'.
+	* 10-Core-lists.muf: Implemented 'nsubst-if-not'.
+	* 10-Core-lists.muf: Implemented 'nsubst-if'.
+	* 10-Core-lists.muf: Implemented 'nsubst'.
+	* 10-Core-lists.muf: Implemented 'subst-if-not'.
+	* 10-Core-lists.muf: Implemented 'subst-if'.
+	* 10-Core-lists.muf: Implemented 'subst'.
+	* 10-Core-lists.muf: Implemented 'copy-tree'.
+	* 10-Core-lists.muf: Implemented 'copy-alist'.
+	* 10-Core-lists.muf: Implemented 'copy-list'.
+	* 10-Core-lists.muf: Implemented 'print-list'.
+
+Fri Nov 18 12:10:49 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-lists.muf: Implemented 'nreverse'.
+	* 10-Core-lists.muf: Implemented 'reverse'.
+	* 10-Core-lists.muf: Implemented 'remprop'.
+	* 10-Core-lists.muf: Implemented 'getprop'.
+	* 10-Core-lists.muf: Implemented 'putprop'.
+	* 10-Core-lists.muf: Implemented 'mapcon'.
+	* 10-Core-lists.muf: Implemented 'maplist'.
+	* 10-Core-lists.muf: Implemented 'mapl'.
+	* 10-Core-lists.muf: Implemented 'mapcar'.
+	* 10-Core-lists.muf: Implemented 'mapcan'.
+	* 10-Core-lists.muf: Implemented 'member?'.
+	* 10-Core-lists.muf: Implemented 'nconc'.
+	* 10-Core-lists.muf: Implemented 'mapc'.
+
+Thu Nov 17 07:24:02 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-lists.muf: Added 'equal' per CommonLisp.
+
+Wed Nov 16 08:15:02 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-lists.muf: Added [delete|remove]-if[-not] functions.
+
+Sun Nov 13 04:29:09 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-utils.muf: Added one-line 'date' and 'time' fns.
+
+Sun Nov  6 20:10:25 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-lists.muf: Added 'length' and 'list-length' functions.
+
+Sat Nov  5 15:44:37 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* 10-Core-lists.muf: Added 'nth' and 'nthcdr' functions.
+
+	* 10-Core-lists.muf: Added 'second' 'third' ... 'tenth'.
+
+	* 10-Core-lists.muf: Added 'delete' and 'remove' functions.
+
+	* 10-Core-lists.muf: Added 'caar' ... 'cddddr' functions.
+
+	* 10-Core-lists.muf: Added 'assoc' and 'rassoc' functions.
+
+	* 10-Core-lists.muf: Added 'append' function.
+
+	* 10-Core-lists.muf: Added ] function.
+
+	* Created 10-Core-lists.muf.
+
+	* Converted *.muf from folding-mode to outline-minor-mode.
+
+Sat Oct 29 22:03:10 1994  Jeff Prothero  <cynbe@chee.muq.org>
+
+	* Added @q (quit) command to nanomud.
+
+Sat Oct 15 21:42:21 1994  Jeff Prothero  (cynbe@chee.muq.org)
+
+	* Added 10-Core-utils.muf fn 'explode-arity'.
+
+Wed Oct  5 08:47:46 1994  Jeff Prothero  (cynbe@chee.muq.org)
+
+	* 90-mud.muf now dispatches to user shell in avatar/#/shell
+	instead of hardwiring msh:run-shell as the shell to use.
+
+	* Added arrive, depart and connect notification to nanomud.
+
+Sun Sep 18 22:05:12 1994  Jeff Prothero  (cynbe@chee.muq.org)
+
+	* Split 90-mud.muf into 90-mud.muf + 91-msh.muf, and
+	expanded them into a recognisable little nanomud.
+
+

@@ -1,0 +1,25 @@
+#! /bin/sh
+
+# Copy a complete Muq db, which is to say,
+#   check-*muq.gz to czech-*muq.gz
+# This is pretty trivial now that the db
+# is down to one file, but it may go back
+# to multiple files in the future...
+
+if [ "$#" -eq 3 ]
+then
+    dst=$3
+    src=$2
+    dir=$1
+else
+    echo "Usage: muq-copy-db dir src-prefix dst-prefix"
+    exit 1
+fi
+
+cd $dir
+for i in ${src}-*.muq* ; do
+    cp $i `echo $i | sed -e "s/^${src}-/${dst}-/"`
+done
+
+exit 0
+

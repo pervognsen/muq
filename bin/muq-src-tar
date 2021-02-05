@@ -1,0 +1,137 @@
+#! /bin/sh
+echo "\"Every release brings us closer to God...\" -- Tielhard de Gates :)"
+echo "Creating a distribution tarfile..."
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+
+# Temporary tinyMuq directory in which to build distribution image:
+# muqroot=muq.`cat $muqhome/h/VERSION`
+muqroot=muq
+muqdir=$muqhome/$muqroot
+
+# Resulting tarfile:
+muqfile=$muqhome/muq.`cat $muqhome/h/VERSION`-src.tar
+
+# Who says you can't go home again? :)
+cd $muqhome
+
+# Test we can create our distribution hierarchy where we think:
+if [ -f $muqdir -o -d $muqdir ]
+then
+   echo "A $muqdir already exists, please rm/mv and retry."
+   exit 1
+fi
+
+# Test we can create our tarfile where we think:
+if [ -f $muqfile -o -d $muqfile ] # Okie, the latter is a bit unlikely.
+then
+   echo "A $muqfile already exists, please rm/mv and retry."
+   exit 1
+fi
+
+# Test we can create our muqfile.gz where we think:
+if [ -f $muqfile.gz -o -d $muqfile.gz ]
+then
+   echo "A $muqfile.gz already exists, please rm/mv and retry."
+   exit 1
+fi
+
+echo "Creating $muqdir ..."
+mkdir $muqdir
+
+echo "Copying $muqhome/[%A-Z]* into $muqdir ..."
+cp $muqhome/[%A-Z]*       $muqdir
+
+echo "Copying $muqhome/install-sh into $muqdir ..."
+cp $muqhome/install-sh   $muqdir
+
+echo "Making $muqdir/el, copying $muqhome/el/[%A-Z]*, $muqhome/el/*.el* into it..."
+mkdir                  $muqdir/el
+cp $muqhome/el/[%A-Z]* $muqdir/el
+cp $muqhome/el/*.el*   $muqdir/el
+
+echo "Making $muqdir/pub, copying $muqhome/pub/[%A-Z]* into it..."
+mkdir                   $muqdir/pub
+cp $muqhome/pub/[%A-Z]* $muqdir/pub
+
+echo "Making $muqdir/pkg, copying $pkgdir/[%A-Z]*, $pkgdir/*.t, $pkgdir/*.y into it..."
+mkdir              $muqdir/pkg
+cp $pkgdir/[%A-Z]* $muqdir/pkg
+cp $pkgdir/*.t     $muqdir/pkg
+cp $pkgdir/*.y     $muqdir/pkg
+
+echo "Making $pkgdir/pkg/Check, copying $pkgdir/Check/[%A-Z]*, pkgdir/Check/*.mu[cfl] into it..."
+mkdir                      $muqdir/pkg/Check
+cp $pkgdir/Check/[%A-Z]*   $muqdir/pkg/Check
+cp $pkgdir/Check/*.mu[cfl] $muqdir/pkg/Check
+
+if [ -f $hdir/jobpass.h ]
+then
+    echo "Removing $hdir/jobpass.h ..."
+    rm $hdir/jobpass.h
+fi
+echo "/* This file is a placeholder for that built */"  >$hdir/jobpass.h
+echo "/* by jobpass.t during installation.         */" >>$hdir/jobpass.h
+echo "#ifndef   INCLUDED_JOBPASS_H"                    >>$hdir/jobpass.h
+echo "#define   INCLUDED_JOBPASS_H"                    >>$hdir/jobpass.h
+echo "#endif /* INCLUDED_JOBPASS_H */"                 >>$hdir/jobpass.h
+
+echo "Making $muqdir/h, copying $hdir/[%A-Z]*, $hdir/*.h into it..."
+mkdir             $muqdir/h
+cp $hdir/[%A-Z]*  $muqdir/h
+cp $hdir/*.h      $muqdir/h
+
+echo "Making $muqdir/srv, copying $srv/[%A-Z]* into it..."
+mkdir               $muqdir/srv
+cp $srvdir/[%A-Z]*  $muqdir/srv
+
+echo "Making $muqdir/c, copying $cdir/* into it."
+mkdir                   $muqdir/c
+cd $cdir
+tar -cBf - . | (cd $muqdir/c; tar -xBf -)
+cd $muqhome
+
+echo "Making $muqdir/bin and copying $bindir/* into it..."
+mkdir         $muqdir/bin
+cp $bindir/*  $muqdir/bin
+# Don't distribute executable images!
+if [ -r $muqdir/bin/muq ]
+then
+    rm  $muqdir/bin/muq
+fi
+if [ -r $muqdir/bin/muq.old ]
+then
+    rm  $muqdir/bin/muq.old
+fi
+
+echo "Making $muqdir/contrib and copying $muqhome/contrib/%README% into it..."
+mkdir                         $muqdir/contrib
+cp $muqhome/contrib/%README%  $muqdir/contrib
+
+echo "Making $muqdir/doc and copying $muqhome/doc/* into it..."
+mkdir                                $muqdir/doc
+cp $muqhome/doc/*                    $muqdir/doc
+mkdir                                $muqdir/doc/whymuq
+cp $muqhome/doc/whymuq/*.html        $muqdir/doc/whymuq
+mkdir                                $muqdir/doc/whymuq/pix.gif
+cp $muqhome/doc/whymuq/pix.gif/*.gif $muqdir/doc/whymuq/pix.gif
+
+echo "Creating $muqfile ..."
+cd $muqdir/..
+tar -cf $muqfile $muqroot
+
+echo "Zipping $muqfile ..."
+gzip -9 $muqfile
+
+echo "Removing $muqdir ..."
+rm -rf $muqdir
+
+echo "Done constructing $muqfile.gz"
+echo ""
+echo 'Hope you did a "make distclean" or at least a "make clean" first!'
+echo "Don't forget to update h/VERSION and pkg/00-version.t..."
+
+exit 0

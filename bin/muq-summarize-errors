@@ -1,0 +1,33 @@
+#! /bin/sh
+
+if [ "$#" -ne 1 ]
+then
+    echo "Usage: muq-summarize-errors check.lst"
+    exit 1
+fi
+
+if egrep -s '\*\*\*\*' $1 >/dev/null
+then
+    echo
+    echo "------------------------------"
+    echo "---        ERROR  RECAP    ---"
+    echo "---`egrep '\+\+\+\+' $1 | wc -l` TESTS  PASSED   ---"
+    echo "---`egrep '\*\*\*\*' $1 | wc -l` ERRORS FOUND    ---"
+    echo "------------------------------"
+    egrep '\*\*\*\*' $1
+echo " -- NOTE! -- Tests 28 and 29 SHOULD fail, at present."
+    echo
+else
+    echo
+    echo "---`egrep '\+\+\+\+' $1 | wc -l` TESTS  PASSED   ---"
+    echo "--- ALL MUQ SELFTESTS COMPLETE NO ERRORS FOUND  ---"
+    if [ -f ${CHECKLOG} ] ; then
+        rm ${CHECKLOG}
+    fi
+    echo "('make install' will install ./muq as bin/muq)"
+fi
+
+echo "'muq-db-c' will create+init ./muq*CURRENT*db* db."
+echo "('./muq' runs test server on ./muq*CURRENT*db*.)"
+
+exit 0

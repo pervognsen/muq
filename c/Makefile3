@@ -1,0 +1,12 @@
+#!/bin/make -f
+
+# These are not needed in a normal install, just by
+# down-and-dirty hackers regenerating the 'Configure'
+# script:
+
+Configure:   Configure.in
+	autoconf   --macrodir=${AUTOCONFIG} Configure.in >Configure
+
+Config.h.in: Configure.in
+	autoheader --macrodir=${AUTOCONFIG} Configure.in >Config.h.in
+

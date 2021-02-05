@@ -1,0 +1,6 @@
+	muq/c/Check/#README#	Last update 95Aug26 CrT
+
+This directory contains various files used to selftest very
+low-level code in Muq (code we want to check out before we
+assume the interpreter is runnable).  The code is kept here
+mostly to reduce clutter in the main c/ directory.

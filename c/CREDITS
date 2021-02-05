@@ -1,0 +1,198 @@
+/* {{{ CREDITS -- Influences on Muq.				*/
+
+
+
+Muq's immediate genealogy includes a number of my previous projects,
+most notably Tetra, an RPN, byte-coded, message-passing, object
+oriented, text-windowing, virtual memory system I implemented in BDS C
+for CP/M circa 1981.  The 48Kbyte ram limit killed it in the end.
+Paging off SSSD floppies wasn't too fast either *wrygrin*.  I
+named it "Tetra" in honor of a little school of Neon Tetras I
+once hosted:  May I someday have software tools so individually
+elegant that work together so effortlessly!
+
+
+
+Thanks to:
+
+Andy/Artie/Pakrat for unflagging support and
+enthusiasm through my long years of solitary
+coding of the initial Muq kernel.  Healso wrote
+the first unixy user shell for Muq (psh) and the
+first third-party assembler for Muq, in the
+process reporting more bugs than everyone else
+combined early on, along with contributing many
+good suggestions.
+
+Bookwyrm/Kim for being a leading early tester,
+writing the first worldkit for Muq, providing much
+encouragement, and genially suffering through
+early incompatible server changes, and reporting
+any number of early bugs, not to mention providing
+a number of design ideas.
+
+Codrus, for suggesting thunks and being endlessly
+supportive and patient with me while Muq was being
+written.
+
+CaveMUCK, collectively and Jingoro especially:
+good friends and a bottomless well of technical
+expertise at need.
+
+Cessna, for various alpha-testing contributions including
+bug reports and documentation suggestions.
+
+Dyjkstra, for (e.g.,) the three-color garbage
+collection algorithm which Muq adapts.
+
+Explorer_Bob, for useful discussions and ideas
+centering on coldmud.
+
+Evil Geniuses for a Better Tomorrow, ResearchMUCK,
+and the UCSD Secret Islandia Club, like the
+related CaveMUCK crowd, good friends and technical
+resources alike.
+
+Firiss, who more than anyone shaped my understanding of
+mud administration ethics and praxis, and who is possibly
+the finest person I've ever met.  I fondly remember endless
+companionable hours shared online.
+
+Foxen, for being implacably genial, and for her
+work on fuzzball, which has contributed to both
+the presence and absence of various design
+features in Muq.
+
+The FurryMuck community for demonstrating the
+requirements and problems of a large, long-lived
+online community.
+
+Gcc, the program and the team:  It's superb diagnostics
+saved untold hours of debugging time, its "long long"
+support allowed an early transition to 64-bit operation,
+avoiding a painful 32-to-64-bit transition on an installed
+base, and its portability brough Muq to machines Muq would
+otherwise never have run on.
+
+Islandia, unknown and unforgotten: Someday someone
+will write your story!  Meanwhile, I sit on the
+ledge below Unicorn Point, gazing out to sea,
+thinking wistfully of that which was, and dreaming
+of that which might yet be...
+
+Jin (Stan Lim) for MicroMUSE, my very first mud
+and another paradigm case of a large, long-lived
+mud, courtesy in part of MIT sponsorship: Too
+few universities show such courage.
+
+Alan Kay, whose ideas and creations have been a
+longtime inspiration to me, from the Reactive
+Engine to, for example, his design principle
+"Simple things should be simple; Complex things
+should be possible.", with a particular nod to
+Smalltalk and the entire Xerox PARC crew who
+contributed to it... "The implementor must cheat,
+but not get caught".
+
+Donald Knuth, for contributing so ridiculously
+much that I take for granted, from the LR parsing
+which compiles all my code to the O() notation in
+which I think about my code, from the Art Of
+Computer Programming from which I learned much of
+what I know about programming one summer
+(including the B-trees Muq uses for propdirs) --
+I'm still awaiting Volume Four *Grin* -- to the
+"literate programming" philosophy and examples
+which inform my source code style to the TeX
+package that prints my documentation, including
+the informal correctness reasoning internal to
+TeX, which I've yet to properly master...
+
+OliverJones, for knowing everything I need to, and
+being willing to explain any of it to me as many
+times as I asked... :) Also for generously sharing
+tinyMuck2.3 code with me.  And for one of the best
+retrospective tours of Islandia I've yet had!
+
+Jerry Prothero, my brother, for consistent support
+and encouragement over years of Muq development,
+and providing a genial and responsive sounding
+board for megabytes of related rants and musings.
+
+Robert Recorde, for introducing the '=' sign.  Muq
+couldn't have been written without it.  It's handy
+in math, too. *grin*
+
+Dan Root, for the Muq logo, for the entire
+Protomuq project, and for hosting the Muq mailing
+lists.
+
+Richard M Stallman who, despite his cc having
+eclipsed mine *grin*, I admire as a visionary in
+an age not equipped to appreciate him.  When I get
+email from him, I feel like Moses recieving stone
+tablets *giggle*.  Beyond more obvious rms/FSF
+debts, Muq's design has been deeply influenced by
+the design and implementation of emacs.
+
+Guy L Steele, Gerald Sussman, and the other
+contributors to Scheme, which I have used as one
+reference model for Muq semantics... I've been a
+fan of Steele for many years now; Our paths seem
+to keep crossing, from Lambda to Lisp to Loglan.
+
+Sandy Stone, my flipside, for too many things to
+list: The snazzy rewrite of the Muq sales brochure
+will have to serve as sole sample.
+
+TimeTraveller and Qwest (in particular), for
+providing my formative mudding experiences.  Is it
+really possible to love ten thousand people? :)
+Thousands of online hours with hundreds of online
+friends left me with both fond memories and a
+conviction that online communities are worthwhile
+now and can grow into something even more so: Muq
+is my attempt to contribute to that growth.
+
+Unix and its progenitors.  Just having 'core' dumps
+saved untold hours relative to debugging on (say)
+MS-DOS.
+
+Whitedove, most directly for being one of the
+first test victims of the MUF tutorial, providing
+much welcome feedback.
+
+Whitefire, for many thought-provoking discussions
+and suggestions on mud design, not a few of which
+have directly inspired parts of Muq, such as the
+distinction of user from avatar objects.  It often
+takes me a month to see why he's right and I'm
+wrong :).
+
+Zarisky, for telling me much of what I know about
+Islandia, and giving me perhaps a better sense of
+its ambience than anyone else.  We'll disregard
+the incident of the doctored wine... :)
+
+
+
+Generally, to the various preceding
+mud/muck/moo/... server hackers whose ideas I have
+shamelessly stolen, and even more generally to the
+larger community which has created such exemplars
+as unix, lisp and smalltalk from which to steal.
+I hope Muq will return a little to the communal
+pot from which I've fed these many years.
+
+
+
+All design and coding flaws in Muq are purely my
+fault.  So far :).
+
+       Cynbe ru Taren
+       94Jan22
+       last rev: 96Jul25
+
+
+
+/* }}} */

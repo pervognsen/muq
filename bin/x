@@ -1,0 +1,6 @@
+#! /bin/sh
+m="x y z"
+for a in $m ;
+{
+  echo "She loves you, $a"
+}

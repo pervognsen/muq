@@ -1,0 +1,158 @@
+From crosby@qwes.math.cmu.edu Sat Nov  6 02:10:51 1999
+
+    Bugs, none of these are detected by your testsuite, and I don't think they
+    CAN be detected.. They will also grind any producion MUQ server to a halt
+    within a couple of hours...
+
+    The general problem is that there doesn't seem to be a way to logout
+    fully, and/or handle remote disconnects cleanly.. So two things happen.
+    First, logged-out users have sleeping jobs that never go away. (~2 jobs
+    per every user who's ever logged in) and what's far far worse: You don't
+    close off sockets on your end.
+
+    Here: there is exactly one person logged in; muqnet and the isle have been
+    started. The server has had a few sequential login's of crosby (to a muf
+    shell) and root and test* to the isle who then logged out.
+
+
+     owner    jobPid   jobSet   session  # stacksiz opsDone  queues
+     -------- -------- -------- -------- - -------- -------- --------
+     root     119      118      118      1 256      512      i/o
+     root     120      120      118      1 256      240      i/o i/o
+     root     122      122      121      1 256      683      i/o
+     crosby   124      124      123      1 256      132      i/o
+     root     126      126      125      1 256      551      i/o
+     root     128      128      127      1 256      132      i/o
+     root     130      130      129      1 256      615      i/o
+     crosby   132      132      131      1 256      264      i/o
+     root     134      134      133      1 256      615      i/o
+     crosby   136      136      135      1 256      200      i/o
+     root     138      138      137      1 256      747      i/o
+     crosby   140      140      139      1 256      132      i/o
+     root     142      142      141      1 256      551      i/o
+    *root     143      143      143      1 2560     236273   run
+     root     144      144      143      1 256      132      i/o
+     root     152      152      152      1 768      628921   i/o sleep(49217)
+     root     155      155      155      1 768      512      i/o
+     muqnet   156      156      156      1 768      485      i/o
+     root     158      158      157      1 256      690      i/o
+     test1    160      160      160      1 512      30259    i/o
+     root     163      163      162      1 256      796      i/o
+     test2    165      165      165      1 512      17011    i/o
+     test2    167      167      166      1 2304     196      i/o
+
+
+
+    And here is the result of a netstat.
+
+    [crosby@hypercube Check]$ netstat
+    Active Internet connections (w/o servers)
+    Proto Recv-Q Send-Q Local Address           Foreign Address         State
+    tcp        0      0 localhost:30023         localhost:2143          ESTABLISHED
+    tcp        0      0 localhost:2143          localhost:30023         ESTABLISHED
+    tcp        0      0 localhost:30023         localhost:2142          CLOSE
+    tcp        0      0 localhost:30023         localhost:2141          CLOSE
+    tcp        0      0 localhost:30023         localhost:2140          CLOSE
+    tcp        0      0 localhost:30023         localhost:2139          CLOSE
+    tcp        0      0 localhost:30023         localhost:2138          CLOSE
+
+    This is not a good thing. :)
+
+
+
+
+*swears* Ok, that does it.. I'm feeding you a few more bugs on my
+internal bug list.  :)
+
+Bitrot is hitting MUQ... Here's a list of 3 bugs on my internal bug
+maintance form:
+
+******************** Bitrot:
+
+#10  `` [ 1.0 1.0 1.0 ]f64 ''  deadlocks on the old muf shell and
+				in-server compiler.
+
+#11  `` *: "hi mom" , 2 3 + ; '' goes into an infinite loop on error logic 
+        when using the in-server compiler.
+
+#12  `` *: '' doesn't exist on the in-db compiler.
+
+
+The first one is of course annoying, given the way I use MUQ by telnetting
+in and trying the opengl graphics stuff You might have a beefy machine
+to restart MUQ a lot, but I don't. :) I'd almost prefer to leave it as a
+daemon. :)
+
+Can I suggest you put a big note that yells if the in-server compiler is
+used after bootstrapping and just depreciate its use after that point?
+
+**** Big favor ***
+
+Also, and this is something I would like to know: How do I get normal
+users to switch to the new MUF shell and use the in-db compiler 
+exclusively. I don't want to have to switch between two different
+compilers concurrently. I've tried setting the default compiler over,
+but I don't understand all the conventions to know the right way to do
+it.
+
+
+
+Now, here's the rest of my list of outstanding issues or notes. Some of
+theses we discussed, some are important, some are not important. Some are
+opinions.
+
+******************* Unsubmitted patches/other by me.              
+                                                      
+#7 no rootPidToJob function. I have an implementation.
+
+********************* Outstanding bugs: Serious (pre-beta)
+
+#4 Not closing off sockets at the end of a connection. (run a netstat)
+   log in and off a bit as other users, then run 'netstat' on the unix
+shell
+
+#5 Not shutting down all of a user's jobs when they logoff.
+   log in and off a bit as other users, then run 'rootPj'
+
+******************** Annoyances 
+
+#3 root cannot list hidden attributes of other users. 
+
+  .u["muqnet"]$s.defaultPackage lsh
+
+********************* Outstanding bugs: Deadlocks&Infinite loops
+
+#6 Sending a non-object over a messagestream going to a socket deadlocks.
+        (IE: Make an internet socket in one job, with a listener, then 
+         connect to it and setup the message streams, try to send a
+         non-string over the socket.)
+
+********************* Holes in the API
+
+#9 No way to kill all jobs by a certain user
+
+#13 A inserver way of creating heaps would be very nice. 
+     :: < ;  makeHeap    (Pass it a comparsion function)
+
+******************** Bitrot:
+
+#10  `` [ 1.0 1.0 1.0 ]f64 ''    deadlocks on the old muf shell and
+				in-server compiler.
+
+#11  `` *: "hi mom" , 2 3 + ; '' goes into an infinite loop on error logic 
+        when using the in-server compiler.
+
+#12  `` *: '' doesn't exist on the in-db compiler.
+
+
+
+********************* Questions/FAQ:
+
+#8 How to linearize an arbitrary object? Sometimes a proxy isn't what you
+want. You want to send the whole thing over. Can I make a socket that's
+identical to a messagestream in practice? (IE, any object which doesn't
+make sense to send over is sent by proxy, everything else I chose if its
+sent in actuality or by proxy.)
+
+
+

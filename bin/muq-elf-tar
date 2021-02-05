@@ -1,0 +1,142 @@
+#! /bin/sh
+echo "Creating a linux elf distribution tarfile..."
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+
+# Temporary tinyMuq directory in which to build distribution image:
+# muqroot=muq.`cat $muqhome/h/VERSION`
+muqroot=muq
+muqdir=$muqhome/$muqroot
+
+# Resulting tarfile:
+tarfile=muq.`cat $muqhome/h/VERSION`-linux-elf.tar
+muqfile=$muqhome/$tarfile
+
+# Who says you can't go home again? :)
+cd $muqhome
+
+# Test we can create our distribution hierarchy where we think:
+if [ -f $muqdir -o -d $muqdir ]
+then
+   echo "A $muqdir already exists, please rm/mv and retry."
+   exit 1
+fi
+
+# Test we can create our tarfile where we think:
+if [ -f $muqfile -o -d $muqfile ] # Okie, the latter is a bit unlikely.
+then
+   echo "A $muqfile already exists, please rm/mv and retry."
+   exit 1
+fi
+
+# Test we can create our muqfile.gz where we think:
+if [ -f $muqfile.gz -o -d $muqfile.gz ]
+then
+   echo "A $muqfile.gz already exists, please rm/mv and retry."
+   exit 1
+fi
+
+# Test muq/db exists:
+if [ ! -d $dbdir ]
+then
+   echo "No -d $dbdir exists, you prolly need to do 'muq-db' and retry."
+   exit 1
+fi
+
+echo "Creating $muqdir ..."
+mkdir $muqdir
+
+echo "Creating a README in $muqdir ..."
+cat >$muqdir/README <<end-of-readme
+This is a binary distribution of Muq.  To run it:
+
+1) Unpack it in your home directory:
+     tar -xzvf $tarfile
+
+2) Go to the db directory:
+     cd muq/db
+
+3) Run the Muq server interactively and initialize your db:
+     ../bin/muq
+     config
+     0
+     i
+     SomeIsleName
+     32000		         (Or just <RETURN>.)
+     n			         (Optional.)
+     q
+     1
+     p			         (Optional,     )
+     somerootpassword	         (but suggested.)
+     samerootpassword	         (repeat.       )
+     q
+     q
+     rootShutdown
+
+4) Run the Muq server as a daemon:
+    ../bin/muq -d -b 4M          (For a 4Meg ram buffer)
+
+5) You may now telnet to your server as a user to use the mud:
+     telnet localhost 30023
+     NEW
+     Someusername
+     Somepassword
+     ...
+     @quit
+
+6) Alternatively, you may now telnet to your server as root
+   to do maintainance and configuration.  For example, to
+   shut it down:
+     telnet localhost 30023
+     root
+     somerootpassword
+     ...
+     rootShutdown	( To shut down the server. )
+   (Just "kill -HUP <pid>" is another way to shut down the server.)
+
+ See http://muq.org/~cynbe/muq/muq.html for online documentation.
+end-of-readme
+
+echo "Making $muqdir/db, copying $dbdir/*CURRENT*db* recursively into it..."
+mkdir              $muqdir/db
+cd $dbdir
+tar -cBf - *CURRENT*db* | (cd $muqdir/db; tar -xBf -)
+cd $muqhome
+
+# echo "Making $muqdir/srv, copying $srv/[%A-Z]* into it..."
+# mkdir               $muqdir/srv
+# cp $srvdir/[%A-Z]*  $muqdir/srv
+
+echo "Making $muqdir/bin and copying $bindir/muq into it..."
+mkdir          $muqdir/bin
+cp $bindir/muq $muqdir/bin
+
+# DO distribute executable images
+if [ ! -r $muqdir/bin/muq ]
+then
+    echo "No bin/muq executable!?"
+    echo "You prolly need to do a 'make' and 'make install' and try again."
+    exit 1
+fi
+if [ -r $muqdir/bin/muq.old ]
+then
+    rm  $muqdir/bin/muq.old
+fi
+
+echo "Creating $muqfile ..."
+cd $muqdir/..
+tar -cf $muqfile $muqroot
+
+echo "Zipping $muqfile ..."
+gzip -9 $muqfile
+
+echo "Removing $muqdir ..."
+rm -rf $muqdir
+
+echo "Done constructing $muqfile.gz"
+echo ""
+
+exit 0

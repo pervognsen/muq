@@ -1,0 +1,20 @@
+#! /bin/sh
+
+if [ "$#" -ne 1 ] ; then
+    if [ "$#" -ne 0 ] ; then
+        echo "Usage: muq-std-checkmuf-xxx logfile"
+        echo "(Runs standard muq triple-server selfcheck code.)"
+        exit 1
+    else
+        checklog=/dev/null
+    fi
+else
+    checklog=$1
+fi
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+$bindir/muq-std-checkmuf-xxxb "" $checklog
+exit $?
+

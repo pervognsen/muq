@@ -1,0 +1,171 @@
+#! /bin/sh
+
+# Take executable from commandline if given, else default to $bindir/muq:
+if [ "$#" -eq 3 ]
+then
+    our_muq_executable=$3
+    our_db_name=$2
+else
+    our_muq_executable=$bindir/muq
+    if [ "$#" -eq 2 ]
+    then
+	our_db_name=$2
+    else
+	our_db_name=muq
+
+	if [ "$#" -ne 1 ]
+	then
+	    echo "Usage: muq-libs directory [db-name] [muq-executable]"
+	    echo "(where 'directory'/*.muf.t are muf libraries to install,"
+	    echo "'db-name' defaults to 'muq'.)"
+	    echo "and 'muq-executable' defaults to $bindir/muq.)"
+	    exit 1
+	fi
+    fi
+fi
+our_muq_libs=$1
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+# Check that $our_muq_libs/ exists:
+if [ -d $our_muq_libs ]
+then
+    # Install $our_muq_libs muq libraries:
+    if [  -f $our_muq_libs/tmp.muf.t ] ; then
+       rm -f $our_muq_libs/tmp.muf.t
+    fi
+    
+    # We do this in two slugs, because we need to switch
+    # from the built-in to the in-db compiler once the
+    # latter has been bootstrapped
+
+    # Do first slug of files with the built-in bootstrap compiler:
+    seen_muf_syntax=false
+    for m in $our_muq_libs/*.muf.t ;
+    {
+        if [ $seen_muf_syntax = "false" ] ; then
+	    echo "@example  @c"                   >>$our_muq_libs/tmp.muf.t 
+            echo '"Installing library #n" ,'      >$our_muq_libs/y
+	    sed -e "s|#|$m\\\\|" <$our_muq_libs/y   >>$our_muq_libs/tmp.muf.t
+	    /bin/rm -f                              $our_muq_libs/y
+	    echo "@end example"                   >>$our_muq_libs/tmp.muf.t
+	    echo "\010"                           >>$our_muq_libs/tmp.muf.t
+	    cat $m >>$our_muq_libs/tmp.muf.t
+	fi
+        if [ $m = "$our_muq_libs/130-C-muf-syntax.muf.t" ] ; then
+	    seen_muf_syntax=true
+	fi
+    }
+    if [ $seen_muf_syntax = "true" ] ; then
+        echo "[ Library Group 1: ]"
+    fi
+    $bindir/muq-lib $our_muq_libs/tmp.muf.t $our_db_name $our_muq_executable
+    if [ $? -ne 0 ]
+    then
+        rm -f $our_muq_libs/tmp.muf.t
+        echo "Install failed, aborting library installations."
+	exit 1
+    fi
+
+    # Do second slug of files with the in-db compiler:
+    rm -f $our_muq_libs/tmp.muf.t
+    seen_muf_syntax=false
+    seen_std_events=false
+    for m in $our_muq_libs/*.muf.t ;
+    {
+        if [ $seen_muf_syntax = "true" -a $seen_std_events = "false" ] ; then
+	    echo "@example  @c"                     >>$our_muq_libs/tmp.muf.t 
+            echo '"Installing library #n" ,'         >$our_muq_libs/y
+	    sed -e "s|#|$m\\\\|" <$our_muq_libs/y       >>$our_muq_libs/tmp.muf.t
+	    /bin/rm -f                                $our_muq_libs/y
+	    # Reset compiler line count, so error messages
+	    # come out relative to start of original file
+	    # instead of relatie to start of tmp.muf.t:
+	    echo '-1 --> @$s.standardInput$s.twin$s.line' >>$our_muq_libs/tmp.muf.t
+	    echo "@end example"                     >>$our_muq_libs/tmp.muf.t
+	    cat $m >>$our_muq_libs/tmp.muf.t
+	fi
+        if [ $m = "$our_muq_libs/130-C-muf-syntax.muf.t" ] ; then
+	    seen_muf_syntax=true
+	fi
+        if [ $m = "$our_muq_libs/155-C-stdevents.muf.t" ] ; then
+	    seen_std_events=true
+	fi
+    }
+    if [ $seen_muf_syntax = "true" ] ; then
+        echo "[ Library Group 2: ]"
+    fi
+    $bindir/muq-lib $our_muq_libs/tmp.muf.t $our_db_name $our_muq_executable
+
+    if [ $? -ne 0 ]
+    then
+        rm -f $our_muq_libs/tmp.muf.t
+        echo "Install failed, aborting library installations."
+	exit 1
+    else
+       rm -f $our_muq_libs/tmp.muf.t
+    fi
+
+    # Do third slug of files with the in-db compiler --
+    # this slug should have decent error reporting,
+    # since the event system is now operational.
+    rm -f $our_muq_libs/tmp.muf.t
+    seen_std_events=false
+    for m in $our_muq_libs/*.muf.t ;
+    {
+        if [ $seen_std_events = "true" ] ; then
+	    echo "@example  @c"                     >>$our_muq_libs/tmp.muf.t 
+	    # If the next three lines look squirrelly,
+	    # it is because 'echo' is squirrelly:
+	    # There's no portable way to suppress
+	    # the terminal newline, '\"' isn't
+	    # portable, \0136 isn't portable...
+            echo '"Installing library #n" ,'        >$our_muq_libs/y
+	    sed -e "s|#|$m\\\\|" <$our_muq_libs/y       >>$our_muq_libs/tmp.muf.t
+	    /bin/rm -f                                $our_muq_libs/y
+	    # Reset compiler line count, so error messages
+	    # come out relative to start of original file
+	    # instead of relatie to start of tmp.muf.t:
+	    echo '-1 --> @$s.standardInput$s.twin$s.line' >>$our_muq_libs/tmp.muf.t
+	    echo "@end example"                     >>$our_muq_libs/tmp.muf.t
+	    cat $m >>$our_muq_libs/tmp.muf.t
+	fi
+        if [ $m = "$our_muq_libs/155-C-stdevents.muf.t" ] ; then
+	    seen_std_events=true
+	fi
+    }
+    if [ $seen_std_events = "true" ] ; then
+        echo "[ Library Group 3: ]"
+    fi
+    $bindir/muq-lib $our_muq_libs/tmp.muf.t $our_db_name $our_muq_executable
+
+    if [ $? -ne 0 ]
+    then
+        rm -f $our_muq_libs/tmp.muf.t
+        echo "Install failed, aborting library installations."
+	exit 1
+    else
+       rm -f $our_muq_libs/tmp.muf.t
+    fi
+
+#    This older code will issue better diagnostics but
+#    takes 3x longer to run due to running restarting
+#    the server for every library file:
+#    for m in $our_muq_libs/*.t ;
+#    {
+#      echo "Installing library $m..."	;
+#      $bindir/muq-lib $m $our_db_name $our_muq_executable
+#      if [ $? -ne 0 ]
+#      then
+#        echo "Install failed, aborting library installations."
+#	exit 1
+#      fi
+#    }
+else
+   echo "No $our_muq_libs exists!"
+   exit 1
+fi
+
+exit 0

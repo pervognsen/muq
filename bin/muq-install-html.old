@@ -1,0 +1,75 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+# Make sure the html directory exists:
+if [ ! -d $htmldir ]
+then
+   echo "No $htmldir exists!  Check muq/Muq-config.sh"
+   exit 1
+fi
+
+# Make sure the html docs in this directory are up to date:
+echo "Making all html docs..."
+make html
+
+# If an ${htmldir}/muq/ already exists, nuke it, to
+# avoid accumulating useless stuff:
+if [ -d $htmldir/muq ]
+then
+   echo "Removing old $htmldir/muq..."
+   rm -rf $htmldir/muq
+   if [ -d $htmldir/muq ]
+   then
+       echo "Couldn't remove $htmldir/muq?!"
+       echo "Please resolve the problem and try again."
+       exit 1
+   fi
+fi
+
+# If an ${htmldir}/muq file exists, complain
+# and stop:
+if [ -f $htmldir/muq ]
+then
+   echo "A normal file $htmldir/muq exists?!"
+   echo "Remove or rename it and try again."
+   exit 1
+fi
+
+# Create a directory to hold the Muq html docs:
+echo "Creating new $htmldir/muq..."
+mkdir $htmldir/muq
+if [ ! -d $htmldir/muq ]
+then
+   echo "Couldn't create $htmldir/muq ?!"
+   echo "Please resolve the problem and try again."
+   exit 1
+fi
+
+# Copy all html docs to destination directory:
+for f in *\.html;
+{
+  echo "Copying $f to be $htmldir/muq/$f..."
+  cp $f $htmldir/muq/$f
+}
+
+# Copy all WHY-MUQ.TXT over in lieu of something more
+# nicely formatted:
+echo "Copying $muqhome/WHY-MUQ.TXT into $htmldir/muq..."
+cp $muqhome/WHY-MUQ.TXT $htmldir/muq
+	
+# Copy html.muq, our central index of available manuals,
+# over to be public_html/muq/muq.html:
+echo "Copying html.muq to $htmldir/muq/muq.html..."
+cp html.muq $htmldir/muq/muq.html
+	
+echo ""
+echo "Done installing html docs."
+echo "You can 'make clean' or 'rm *.html' here if you want."
+echo ""
+echo "You may need to add an <a href=\"muq/muq.html\">Muq</a> pointer to"
+echo "your $htmldir/index.html file so folks can find the Muq docs."
+echo ""
+
+exit 0

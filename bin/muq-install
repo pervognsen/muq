@@ -1,0 +1,33 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+
+# Install all updated applications:
+for a in `muq-config apps` ;
+{
+    if [ -f $cdir/$a ]
+    then
+	if [ -f $bindir/$a ]
+	then
+	    # There is a pre-existing version of app.
+	    # Do nothing unless c/app is newer than bin/app,
+	    # in which case we want to save bin/app as bin/oldapp,
+	    # then copy c/app to bin/app.
+	    # I wish 'test' would compare ages of two files,
+	    # as it is we must use 'find':
+	    find $cdir						\
+		-name $a					\
+		-newer $bindir/$a				\
+		-exec	muq-install2 $bindir $cdir $a \;
+	else
+	    # No existing version of app:
+	    echo "Copying $cdir/$a to $bindir/$a..."
+	    cp $cdir/$a $bindir/$a
+	fi
+    fi
+}
+
+exit 0

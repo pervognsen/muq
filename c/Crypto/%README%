@@ -1,0 +1,28 @@
+This directory contains Muq's crypto stuff.
+
+Use muq/bin/muq-exportable to remove all crypto stuff from Muq before
+exporting it from the US or Canada or such.
+
+You can then download muq-crypto-src.tar.gz from a Free World site
+such as ftp://ftp.cistron.nl/pub/people/cynbe to restore security
+to the exported version.
+
+The copy of jobd.t in this directory is the NON-crypto version.
+(muq-exportable uses it to replace the crypto-enabled muq/c/jobd.t).
+
+The remaining files in this directory are currently a stock
+distribution of Bruce Schneier's mid-98 twofish implementation
+submitted to NIST in the AES competition to pick a successor
+to DES (the US Data Encryption Standard).
+
+Currently (98Oct) twofish may be obtained from
+
+  http://www.counterpane.com
+
+if you are inside the United States, otherwise from the Free
+World sites
+
+  http://www.healey.com.au/~reason/twofish/
+  ftp://ftp.funet.fi/pub/crypt/cryptography/symmetric/twofish/
+  http://www.terravista.pt/ilhadomel/2014/tf.html
+

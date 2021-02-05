@@ -1,0 +1,36 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+thisdir=`pwd`
+
+# Create #check.tmp# dir if it doesn't exist:
+if [ ! -d ${thisdir}/#check.tmp# ]
+then
+    ${bindir}/muq-db ${thisdir}/#check.tmp# Clean ${cdir}/muq
+    if [ $? -ne 0 ]
+    then
+      exit 1
+    fi
+fi
+
+# Handle standard individual regression-test files:
+if [ -r ${pkgdir}/Check/x-$1.muc ]
+then
+    cd ${thisdir}/#check.tmp#
+
+    # Re-initialize db:
+    rm -rf check*db*
+    $bindir/muq-copy-db `pwd` Clean check
+
+    ${cdir}/muq check			\
+	-x muc:compileMucFile		\
+	-f ${pkgdir}/Check/x-$1.muc	\
+	-f ${pkgdir}/Check/end.muc	\
+	--logfile=muq.log
+else
+    echo "Cannot find a selfcheck file x-$1.muc"
+fi	
+
+exit 0

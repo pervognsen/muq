@@ -1,0 +1,1086 @@
+Wed Oct 12 01:06:33 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Released as -1.0.0
+
+Mon Oct 10 00:10:51 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Tested -1.0.0 on Linux1.1.51/gcc2.5.8:
+	Turned up a missing '"' in Makefile2.in.
+	Was unable to reproduce reported problem with 'random'.
+	Getting PATH set right was the usual hassle.
+	Otherwise selftested cleanly.
+
+	* As part of continuing switch to CommonLisp, changed:
+	  and-bits   -> logand
+	  or-bits    -> logior
+	  xor-bits   -> logxor
+	  shift-bits -> ash
+	I still like my names better, but owell.
+
+Sun Oct  9 02:09:55 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Fixed: txt.c:txt_to_buf() was missing the
+	OBJ_TYPE_BYT0 case, resulting in coredumps
+	when concatenating zero-length strings. 2pts
+	Andy (Pakrat) for spotting that one.
+
+	* Fixed: asm.c:lookup_slow_opcode() was
+	assuming there is only one prefix opcode
+	byte (which was true until two weeks ago).
+
+	* Added "define-word:" as a synonym for ":",
+	mostly to make the muf tutorial smoother.
+
+Sat Oct  8 15:12:37 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Switched to having tarfiles unpack into
+	muq/ instead of (e.g.) muq.-1.0.0/ on the
+	grounds that novicefolk would sooner not
+	have to "mv muq.-1.0.0 muq" right after
+	unpacking, and folk sophisticated enough
+	to be maintaining multiple versions can
+	fend for themselves.  (Unpacking over an
+	existing muq/ directory shouldn't in general
+	wipe out much local stuff, really.)
+
+	* Kim asked about sqrt():  Added
+	exp expt log log10 sqrt abs ffloor fceiling
+	acos asin atan atan2 cos sin tan cosh sinh tanh
+	(Curiously, my draft ANSI C standard doesn't
+	list acosh, asinh or atanh, so I didn't do them.
+	My Irix <math.h> declares them, however.)
+
+	* Fixed: job.c was using jS.j.loop_stack as the
+	catch/throw tag for catch-errors{} and kin, a
+	crufty hack to generate a value inaccessable
+	to user code (to avoid confusion with regular
+	catch{}) that predated OBJ_SPECIAL and multi-
+	tasking... and which was crashing us after a
+	clone-job operation, since jS.j.loop_stack
+	would then differ in the child.  Created
+	OBJ_ERROR_TAG to use as this special value.
+
+Fri Oct  7 23:01:34 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Fixed: muf.c:scan_char() was parsing
+	    ' '
+	as two instances of a symbol with null name,
+	rather than as the character constant for blank.
+
+Thu Oct  6 00:26:15 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Fixed: job_VARS_______1() wasn't updating l
+	(local copy of jS.l) after calling
+	job_Guarantee_Loop_Headroom();
+
+	* Fixed: job_Guarantee_Loop_Headroom() wasn't
+	updating jS.v (pointer to local variables in
+	loop stack) when expanding loop stack.
+
+Mon Oct  3 22:22:33 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Fixed: job_P_Sleep_Job() needed to increment jS.pc
+	due to below changes, but wasn't.  Fixed job_P_Pause_Job()
+	also, while I was at it.
+
+Sun Oct  2 20:27:34 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* job_run() had apparently never acquired the
+	requisite code to prevent data stack overflow:
+	Inserted an appropriate check and call.
+
+	* Bitrot appeared to have gotten to the timeslicing
+	logic in job_run():  Rewrote it to make more sense.
+
+	* Fixed: job_Guarantee_Headroom had
+	    len =             s->length   ;
+	where it needed
+	    len = OBJ_TO_INT( s->length  );
+	Yes, *blush* this is exactly the same bug fixed
+	in the function textually above it on Wed Sep 21.
+
+	* Wow!  Passed complete selftest perfectly as soon
+	as below compiled.  This is a bit too good to be
+	true, makes me nervous... :)
+
+Sat Oct  1 00:33:31 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Hacked jobbuild.c:fast_prim_write() to respect
+	jS.instruction_len value on instructions with
+	ilen_valid set TRUE.  This way task-switch logic
+	and CALL and RETURN implementation &tc can bypass
+	normal end-of-instruction pc increment logic by
+	zeroing	jS.instruction_len.
+
+	* Added ilen_valid field to jobbuild.c:Fast_Rec so
+	code generator knows whether to trut jS.instruction_len
+	contents.
+
+	* Added jS.instruction_len to hold length of current
+	instruction, as support for context-switching and
+	error-handling code.  I'm not sure it is needed, but
+	it isn't too expensive.
+
+	* There are a few functions the below convention
+	cannot be followed for, because they are dispatched
+	directly from job_Fast_Table.  Switched these to all
+	use same uppercase name convention that the automatically
+	generated functions use:
+	  job_Unimplemented_Fast_Opcode() -> job_UNIMPLEMENTED_OPCODE()
+	  job_Timeslice_Over() -> job_TIMESLICE_OVER()
+	  job_Thunk0() -> job_THUNK0()
+	  job_Thunk1() -> job_THUNK1()
+	  job_Fast_Bad_Var() nuked. (Unused.)
+	  job_Fast_Overflow() nuked. (Unused.)
+	  job_Slow_Underflow() -> job_Underflow()
+	  job_Slow_Loop_Overflow() -> job_Loop_Overflow()
+
+	* Trying to impose some sanity on fast vs slow
+	prims, adopted the convention of (nearly) always doing
+	  JOB_CACHE_ARGS;x();JOB_UNCACHE_ARGS;
+	for out-of-line code, never doing the old
+	  x( JOB_PRIM_ARGS );
+	-> Converted job_Divide_By_Zero() to this convention.
+
+Sun Sep 25 21:37:03 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Fixed: muf.c:update_muf_propdirs() had
+	    if (!sym ||  OBJ_IS_SYMBOL(sym)) {
+	where
+	    if (!sym || !OBJ_IS_SYMBOL(sym)) {
+	was intended, resulting in redundant re-creation
+	of all primitives at each startup -- harmless
+	except for slowing startup.
+
+	* Fixed: vec_SizedDup() wasn't zeroing new slots,
+	leaving garbage to crash the garbage collector.
+
+Sat Sep 24 14:38:59 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Changed interpreter to increment pc at end of
+	each virtual instruction, instead of doing *pc++ as
+	we eat each instruction byte.  Latter arrangement
+	was intended to be fast on CISCs with autoincrement
+	addressing modes;  Former arrangement is probably
+	faster on today's riscs and superscalars, and also
+	makes instruction restarts much less of a nightmare.
+
+	* Expanded to four slow prefix bytes and opcode
+        tables, allowing up to 1024 slow bytecodes.
+	That should hold us for awhile...
+
+	* Fixed: obj_Init didn't initialize extra slots
+	allocated for subclasses, and msq.c:for_new()
+	wasn't initializing the buffer slots, resulting
+	in garbage collector crashing when it tried to
+	follow the resulting garbage pointers.  Changed
+	obj_Init() to zero out all extra slots.
+
+Sat Sep 24 00:00:36 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Added second slow prefix byte, since we were
+	pushing the 256-slow-opcode limit.  Maybe 512
+	slow opcodes will last us awhile? :)
+
+	* Removed macro field from struct Slow_Rec[]:
+	job_Slow_Table[] now dispatches slow ops directly
+	to the appropriate job.c fn, saving one call/return
+	per slow bytecode. Also reversed arity and a_name fields.
+
+Fri Sep 23 23:01:38 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Removed SP and checkarg fields from struct Slow_Rec[].
+
+	* Changed three remaining slow[] prims with nonzero
+	SP specs to adjust SP by hand like the rest.
+
+Fri Sep 23 00:05:09 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* More work on handling loop stack overflows nicely.
+	Propagating instruction length around is looking
+	tricky and a pain;  May wind up just publishing a
+	pointer to the start of the current instruction.
+
+Wed Sep 21 00:06:15 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Fixed: stk.c:stk_grow_p() had
+	  if (   new_len >= STK_SIZE_MAX)   return FALSE;
+	where
+	  if (   new_len >  STK_SIZE_MAX)   return FALSE;
+	implements the intended semantics better.
+	": x { -> } x ; x" now maxes out at 1022 calls.
+
+	* Fixed: job_Guarantee_Slow_Loop_Headroom had
+	    len =             s->length   ;
+	where it needed
+	    len = OBJ_TO_INT( s->length  );
+	": x { -> } x ; x" now maxes out at 254 calls
+	to itself and then cleanly reports 
+	  **** Sorry: Recursion stack overflow
+	instead of crashing the server.  Once the assembler
+	handles tail recursion properly, that will be just
+	an infinite loop, of course... :)
+
+	* Code is getting big enough that automatic stack
+	growth is being triggered, along with its bugs.
+
+Sun Sep 18 22:04:17 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Fixed: Was getting typecheck errors on
+	: x 5 seq[ |for a do{ } ]pop ;
+	due to the '|for' code doing DUP instead of BLOCK_LENGTH
+	to get the size of the block.
+
+	* Implemented write-pipe and god-write-pipe.
+
+Sat Sep 17 18:24:32 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* WHEE! :)
+	    cynbe@muq.com people/jsp> !!
+	    telnet muq.com 9876
+	    Trying 128.95.44.22...
+	    Connected to muq.com.
+	    Escape character is '^]'.
+	    SPAWN-USER CALLED/E...
+	    SPAWN-USER CALLED/F...
+	    Welcome to Muq!
+	    SPAWN-USER CALLED/L...
+	    Hello!
+	    I didn't understand that!
+	(Muq's first via-network session.)
+
+Sat Sep 17 12:25:48 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Implemented 'read-pipe' operator.
+
+	* Fixed ioq_do_selected_sockets() to FD_CLR listener's
+	socket after accepting a new connection, to prevent
+	ioq_read_socket() getting called on that fd (and crashing).
+
+	* Decided it was excessively clumsy to have a new
+	session+jobset+job+msqs automatically created each
+	time an ioq is created, and switched to initializing
+	ioq->session, ioq->dst_msq and ioq->src_msq to zero,
+	leaving initialization of them to external logic.
+	Altered I/O logic to ignore ioqs without valid
+	values for these properties.
+
+	* Fixed: ioq_accept_connect_request() wasn't checking
+	to make sure that listener message queue was nonfull
+	before attempting to accept a new network connection.
+
+	* Fixed: loop{ } was putting asm.c:compute_basic_block_arity
+	into an infinite loop.
+
+Thu Sep 15 21:46:07 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Implemented make-pipe.
+
+	* Implemented and documented listen-on-port.
+	WHEE! -- Worked first try!
+
+Sun Sep 11 13:38:05 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Changed job_run() to do garbage collection automatically
+	every now and then, controlled by below props and vars.
+
+	* Added /sys/bytes-between-garbage-collections property.
+
+	* Added /sys/bytes-since-last-garbage-collection property.
+
+	* Added obj_Bytes_Between_Garbage_Collections            variable.
+
+	* Added vm_Bytes_Allocated_Since_Last_Garbage_Collection variable.
+
+	* Fixed: vec_SizedDup() wasn't setting tagbits on return val.
+
+Sat Sep 10 15:23:04 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Added gc garbage-collection operator.
+
+	* Removed inserver .l .ps .ls .v flush-job operators.
+
+Fri Sep  9 16:36:50 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Switched from four tagbits to five tagbits, folding
+	vectors plus strings into same tagfield was getting too
+	hairy and slow for my taste.
+
+Thu Sep  8 10:02:01 1994  Jeff Prothero  (cynbe@muq.com)
+
+	* Changed vm.c to be kinder to dbs:
+	At shutdown, the most recent db is now left in vm1, not vm0.
+	At startup, a working copy of vm1 is made in vm0.
+	This leaves us with the usual mud arrangement of leaving
+	the most recent on-disk db untouched while the server runs,
+	for fallback if the server crashes. (Whee! Worked first try!)
+
+	* Extended muf.c to support 'sym/#/value and
+	exp --> 'sym/#/value (i.e., allowing first element
+	of a path to be a quoted symbol).
+
+	* Fixed sym.c so symbol prints out as proper one of
+	'sym 'pkg:sym 'pkg::sym or #:sym
+
+	* Changed z-muq.c so prompt is package name, not "boot: ".
+
+	* Fixed muf.c bug that kept 'muf:\< from parsing correctly.
+
+	* Updated selfcheck mufcode to new syntax: Muq selftests again.
+
+Sun Aug 21 21:16:55 1994  Cynbe  (cynbe@muq.com)
+
+	* Wrote preliminary docs for MUF regular expressions.
+
+Sun Aug 21 19:59:37 1994  Cynbe  (cynbe@muq.com)
+
+	* Added following new package functions, closely modelled
+	on CommonLisp: 
+	 ]in-package { [names] -> }
+	 ]make-package { [names] -> }
+	 ]rename-package { [names] pkg -> }
+	 delete-package { name -> }
+	 export { symbol -> }
+	 find-package { name -> pkg }
+	 import { symbol -> }
+	 in-package { name -> }
+	 intern { name -> }
+	 unexport { symbol -> }
+	 unintern { symbol -> }
+	 unuse-package { name -> }
+	 use-package { name -> }
+
+Sun Aug 21 19:23:19 1994  Cynbe  (cynbe@muq.com)
+
+	* Redefined make-package to take a text (name) argument,
+	and to insert new package in @/#/lib, for convenience and
+	increased CommonLisp compatability.
+
+Sun Aug 21 13:01:07 1994  Cynbe  (cynbe@muq.com)
+
+	* Centralized global pointers to frequently used objects
+	in obj.c, and moved some of the initialization of them
+	there too, from other modules.
+
+Thu Aug 18 22:35:06 1994  Cynbe  (cynbe@muq.com)
+
+	* Added a "make quickcheck" that omits the slowest
+	pound-propdirs tests, since Kuranes complains that
+	the full "make check" takes 2.5 hours on his machine. ;^}
+
+	* Added ignore_fpe_signal() to job_Startup(), which
+	sets Muq to ignore SIGFPE (floating point exceptions).
+	This appears to be the default behavior on Irix, but
+	not on Linux, where Kuranes reported that floating
+	point overflows were crashing the server.  Hope this
+	fixes the problem acceptably.
+
+Tue Aug 16 12:50:57 1994  Cynbe  (cynbe@muq.com)
+
+	* trim-text was leaving trailing whitespace. (Thanks, Kuranes!)
+
+Mon Aug 15 18:54:41 1994  Cynbe  (cynbe@muq.com)
+
+	* Re Kurane's bug report of 'kitchen-sink' returning incorrect
+	values, renamed it to 'kitchen-sinks' and added job.c support
+	for Site-config.h MUQ_KITCHEN_SINKS #define specifying correct
+	value.
+
+Sun Aug 14 23:56:18 1994  Cynbe  (cynbe@muq.com)
+
+	* Changed initialization logic so /u/god/#/lib (and jb0/#/lib)
+        is a package private to god, which uses the /lib/muf package.
+	This way god is by default playing in a private spot, not
+	clobbering the universe.
+
+Sun Aug 14 01:21:56 1994  Cynbe  (cynbe@muq.com)
+
+	* Got rid of '/.' (pointer in / to /) since it was mostly
+	a hack for naming '/' when the '/' name was pre-empted by
+	integer division.
+
+	* Changed startup code to set /lib's name to /lib instead
+	of letting it default to '_'.  Similarly with /lib/muf,
+	jb0, /ps, /who, /sys, /env, /etc, /u, /
+
+	* Again to avoid conflicts with a<i> path notation, changed
+	ci-= ci-< ci-<= ci-> ci->= over to the less troublesome
+	=-ci <-ci <=-ci >-ci >=-ci ... a '<' at the start of an
+	identifier is not much of a problem, specialcasing ones
+	deeper in the identifier is likely to confuse humans and
+	programs alike.  The loss of symmetry with the other ci-*
+	identifiers is a pity, however.
+
+	* With a<x> path notation now implemented, using << and >>
+	for read-input-pipe and write-output-pipe seems needlessly
+	confusing:  Got rid of them.  (In any event, ',' seems a
+	better notation for '>>', and '<<' doesn't seem to get
+	heavily enough used to need so short a name.)
+
+Sat Aug 13 10:16:51 1994  Cynbe  (cynbe@muq.com)
+
+	* Defined "/" as an operator returning @/#/root.
+
+	* Changed name of divide  operator from "/" to "div".
+	  Changed name of modulus operator from "%" to "mod".
+	(This frees "/" to represent the root object as in unix,
+	lending greater self-consistency to the path expression
+	syntax.  Muq MUF programmers likely do more db stuff than
+	arithmetic anyhow, so giving path expressions the shorter
+	syntax should be Zipfean too.)
+
+Sat Aug 13 00:32:44 1994  Cynbe  (cynbe@muq.com)
+
+	* Finished debugging and documenting new print-time prim.
+
+Fri Aug 12 22:33:52 1994  Cynbe  (cynbe@muq.com)
+
+	* Added AC_TIME_WITH_SYS_TIME and AC_TIMEZONE invocations to
+	Configure.in, changed h/Hax.h to #include time.h vs sys/time.h
+	per gnu autoconfig recommendations, changed job.c job_print_time()
+	to get timezone from struct tm.tm_zone, failing that tzname[],
+	failing that a hardwired guess overridable from Site-config.h.
+
+Wed Aug 10 00:48:18 1994  Cynbe  (cynbe@muq.com)
+
+	* Reimplemented muf.c path support from scratch, to support new
+	a<b> path syntax and also CommonLisp package:symbol notation.
+
+Sat Aug  6 17:48:45 1994  Cynbe  (cynbe@muq.com)
+
+	* Added print-time function giving strftime() functionality.
+
+	* Added public secs-since-1970 property to /sys.
+
+	* Added "   &   -d $HOME/muq/bin" to INSTALLATION Step 3
+	to avoid having .cshrc give err msgs when muq isn't installed.
+
+Sat Jul 30 13:23:15 1994  Cynbe  (cynbe@muq.com)
+
+	* Took a peek at just how bad rand() is documented to be,
+	and switched |mix over to use random() instead.
+
+	* Added a 'random' prim driven from drand48().
+
+	* Continuing switchover to CommonLisp symbol/package model:
+	Changed sym.c sym_Alloc[_Asciz]() to look for, and create,
+	symbols in hidden area of object, instead of public area.
+	Ditto sym_Find_Asciz().
+	Added a sym_Find_Exported_Asciz() to search public area.
+	muf.c:update_muf_propdirs() now makes prims both public and hidden.
+	muf.c:update_muf_constant() now makes const both public and hidden.
+
+Wed Jul 27 22:37:38 1994  Cynbe  (cynbe@muq.com)
+
+	* Continuing switchover to CommonLisp symbol/package model:
+	Added 'lib' prop to usr objs to hold list of known packages.
+	Changed 'path' prop on jobs to 'lib' prop matching previous.
+	Fixed muf.c:is_user_library() to expect object 'lib' not vector 'path'.
+	Added "nicknames", "shadowing-symbols" and "used-packages"
+	system properties to package objects.
+
+Wed Jul 27 00:01:37 1994  Cynbe  (cynbe@muq.com)
+
+	* With below changes, muq.-2.12 passes selftest suite
+	again under bootstrap compiler.  Whee!
+
+	* Added an ugly little hack to muf.c:is_user_library_check()
+	to keep compile-time functions defined by 00-muf.muf from
+	fatally confusing the bootstrap muf compiler.
+
+	* Eliminated /lib/MUF aka job_Lib_MUF, which has been merged
+	into /lib/muf -- functions that used to be in /lib/MUF are now
+	distinguished by the compile-time? flag.
+
+Tue Jul 26 00:33:16 1994  Cynbe  (cynbe@muq.com)
+
+	* Generalized job.c:job_path_set_rooted() to allow paths
+	to pass through arbitrary datatypes, not just objects.
+
+	* Changed /lib/muf from a generic object to a package
+	as part of continuing changeover to using CommonLisp
+	symbol/package semantics for global variable spaces.
+
+	* Implemented public props on compiled-functions:
+	compile-time? const-count inline? kept-promise? owner
+	prim? promise-or-thunk? promise? thunk?
+
+	* muf.c:update_muf_propdirs() wasn't setting cfn->src.
+
+	* Prim fns weren't getting names.
+
+Mon Jul 25 21:23:28 1994  Cynbe  (cynbe@muq.com)
+
+	* Changed various printouts to read, for example,
+	<c-fn job>    instead of <c-fn>,
+	<package muf> instead of <package>, etc.
+
+	* Changed path syntax for system area of object
+	from obj/~/key to obj/#/key, to avoid confusion
+	with '~' used to mean 'acting-user'.
+
+	* Added 'ls'-clones lss lsw lsh lsm to list the
+	other four sections of an object.
+
+	* Augmented 'for-each' loop with matching loops named
+	for-each-hidden, for-each-system, for-each-wizard and
+	for-each-method.
+
+	* Renamed 'secret' to 'hidden' everywhere.  This way, the
+	public, hidden, system, wizard and method areas not only
+	have names the same length, but all names are unique in
+	the first character.  Ha! :)
+
+	* Eliminated "ls" and renamed ",ls" to "ls".
+
+Sun Jul 24 20:30:57 1994  Cynbe  (cynbe@muq.com)
+
+	* Added g_asciz entries to Obj_Hardcoded_Class_Rec and
+	Obj_Type_Summary_Rec to efficiently support below.  Added
+	corresponding entries to all Muq types and classes.
+
+	* Generalized job.c:job_path_get_rooted() to allow paths
+	to pass through non-objects, to support 00-muf.muf storing
+	'function --> /lib/muf/symbol/function.
+
+	* As part of continuing Scheme -> CommonLisp changeover:
+	Changed job_Call() to look for function on sym->function,
+	not sym->value.  Changed muf.c:is_usr_global() similarly.
+	Ditto muf.c:is_prim(), is_user_library*().  Changed
+	muf.c:do_semi() to save fns in sym->function not sym->value.
+	Changed muf.c:update_muf_propdirs() to puts prims in
+	sym->function not sym->value.
+	Ditto asm.c:compute_basic_block_arity().
+
+Sat Jul 23 22:43:10 1994  Cynbe  (cynbe@muq.com)
+
+	* As part of continuing Scheme -> CommonLisp changeover:
+	Added "package" "function" "proplist" properties to symbols.
+	Renamed "symbol-get" to "symbol-value" and
+        renamed "symbol-set" to "set-symbol-value".
+	Created "symbol-function" and "set-symbol-function" prims.
+	Created separate "symbol functions" mufprims section.
+	Renamed "text->symbol" to "intern".
+	Renamed "symbol->text" to "symbol-name".
+	Added   "symbol-package" prim.
+	Added   "symbol-plist" and "set-symbol-plist" prims.
+
+Fri Jul 22 00:33:58 1994  Cynbe  (cynbe@muq.com)
+
+	* As one of Andy's questions pointed out, there was no
+	prim provided to delete a key from an object.  Added
+	(*for_del)() to struct Obj_Hardcoded_Class_Rec, and
+        then also to struct Obj_Type_Summary_Rec, then added
+        [PUBLIC|SECRET|SYSTEM|WIZARD|METHOD]_DEL_KEY[_P] prims
+	in jobbuild.c, added in muf.c matching muf primitives
+        [|secret-|system-|wizard-|method-]del-key[?] prims, and
+	wired up appropriate job.c+obj.c support for it all,
+	plus dummy fns in qqq.c/stk/c, which don't support this.
+
+Tue Jul 19 21:29:41 1994  Cynbe  (cynbe@muq.com)
+
+	* Couldn't resist compiling -O2 and checking interpretation
+	speed.  "0 5000000 for i do{ }" compiles into a 9-instruction
+	loop which executes in 45 seconds.  Thats 45 million interpreted
+	instructions in 45 seconds for an even 1 MIPS interpreted.  That's
+	a bit disappointing but not bad for a multitasking interpreter
+	hobbled by lack of tail recursion and stopping every 32
+	instructions to see if it is time to run another task :).
+	(This is on my 150MHz R4400, so that is only about 1/3 the
+	integer speed I think Muq should be capable of.)
+
+	* Gnu Makeinfo 1.55 has a bug that leaves stuff like
+	@dots{} in info node names.  Wrote muq/info/Clean-manual
+	as a workaround.
+
+	* Switched default vm.c bigbuf[] size from 256 bytes to
+	two megabytes for better interactive performance, set
+	virtual memory selftest code to override this with the
+	old value of 256 bytes, and added "muq -b 12M" option
+	to allow commandline control of this in addition to
+	existing /sys/db-buf-size control.
+	  Muf regression tests run about 2.5x faster now :) .
+
+Tue Jul 19 00:24:40 1994  Cynbe  (cynbe@muq.com)
+
+	* Released version -2.11.0.
+
+	* Now passes selftest cleanly on SunOS 4.1.3 w gcc 2.5.8.
+
+	* echo "\n\nxxx" on SunOS 4.1.3 echos literally \n\nxxx
+	instead of doing newlines;  Changed various scriptfiles
+	to do multiple echo calls instead of using the \n escape.
+
+Mon Jul 18 00:24:58 1994  Cynbe  (cynbe@muq.com)
+
+	* Added fflush() and _flsbuf() prototypes for SunOS 4.1.3.
+
+	* Two minor errors were keeping fputs() and toupper()
+	prototypes from being delivered to SunOS 4.1.3.
+
+	* SunOS 4.1.3 doesn't have memmove();  It may be non-POSIX.
+	Created Hax.c and wrote a  memmove() implementation in it.
+
+	* Another switchover: Scheme calls executables "procedures",
+	CommonLisp calls them "compiled-functions".  In this case, I
+	find the Scheme nomenclature confusing.  Renamed prc.c -> cfn.c,
+	added compiled-function? predicate.
+
+	* Added the main remaining C character predicates:
+	hex-digit-char?
+	control-char?
+	punctuation?
+
+	* More renaming due to Scheme -> CommonLisp switchover:
+	alphabetic? -> alpha-char?
+                       graphic-char?    (new prim)
+	numeric?    -> digit-char?
+                       alphanumeric?    (new prim)
+        pair?       -> cons?
+                       list?            (new prim)
+	int?        -> integer?
+                       number?          (new prim)
+	
+	* Switched from "#true#" and "#false#" to "t" and "nil" as
+	part of the continuing switch from Scheme to CommonLisp as
+	our primary standard.  (The Scheme nomenclature is better in
+	this case, but not enough to so justify the confusion that
+	would result from retaining it.)
+
+	* In support of system transparency, security, and debugging
+	support, split stk.c internally into three classes stk lst dst
+	for generic, loop and data stacks, repectively.  Added
+	"data-stack?" and "loop-stack?" predicates for new types.
+
+	* Renamed vtr.c (avatar) back to pup.c (puppet).
+
+Sat Jul 16 00:53:48 1994  Cynbe  (cynbe@muq.com)
+
+	* Compiles and selftests cleanly on Dec OSF/1 v1.3a w native cc.
+
+	* Just for fun, here's comparison of configure+compile times
+        on a new Alpha (native C) vs a new MIPS R4400/150Mhz(gcc):
+        Alpha: 126.81u 57.06s 5:46 53% 0+0k 27+5911io 0pf+0w 
+        Mips:  106.1u  80.6s  7:28 41%
+        My R4400 is a hot little box :).  The longer wallclock time
+	may have been due to the MIPS running two big muds at the
+	same time, while the Alpha was unloaded.  Those of you taking
+	six hours to compile Muq might find either box acceptable!
+
+Fri Jul 15 23:41:19 1994  Cynbe  (cynbe@muq.com)
+
+	* On DEC Alpha OSF/1 v1.3a, cc defaults to K&R: need
+	-std flag to accept full ANSI C syntax.
+
+	* On DEC Alpha OSF/1 v1.3a, LOCK_SH and such do not
+	appear to be #defined anywhere under /usr/include, but
+	defining them in Need.h still generates a "redefinition"
+	warning.  Wrapped #ifndefs around the Need.h #defines.
+
+Thu Jul 14 01:12:06 1994  Cynbe  (cynbe@muq.com)
+
+	* Released version -2.10.0.
+
+	* Muq -2.10.0 selftests clean under Ultrix 4.2a now.
+
+	* For some reason Ultrix 4.2a 'make' just shits bricks
+	at the very thought of doing an 'if' in a makefile clause.
+	Finally gave up and moved everything nontrivial out of
+	Makefile2 and into scripts in muq/bin/
+
+	* Muq -2.10.0 selftests clean under Linux 1.1.16 still.
+
+	* Muq -2.10.0 selftests clean under NextStep 3.2 again.
+
+	* NeXTStep 3.2 defines bcopy as a macro, which makes
+	supplying a prototype for it a fatal compile error.
+	Wrapped Need.h prototype for it in a "#ifndef bcopy".
+
+	* From: Tom R.Hageman <tom@basil.icce.rug.nl> pointed
+	out that NeXTStep searches /usr/include/ansi and such
+	automatically, I don't need to add -I/usr/include/ansi
+	&tc to compile switches.  *blush*.  Removed them.
+
+	* Passes selftest cleanly on SunOS 5.3.
+
+	* Passes selftest cleanly on AIX 3.2.
+
+	* Refiddled Hax.h until sys.c compiles under SunOS 5.3 again.
+
+Mon Jul 11 15:06:51 1994  Cynbe  (cynbe@muq.com)
+
+	* Got sick of warnings about system header files with "/*"
+	inside a comment: added -Wno-comment to gcc switchstring.
+
+	* Quit hoping, and put in checks for absence of every system
+	header file but <stdio.h>.
+
+	* It is inelegant to include every system .h file needed by
+	  any .c file in every .c file, but centralizing the header
+          portability headaches in one place sure makes maintainance
+	  easier.  Moved all system header file includes into Hax.h.
+
+Mon Jul 11 00:19:44 1994  Cynbe  (cynbe@muq.com)
+
+	* Selftests correctly on Irix 4.05H again now.
+
+	* Sam's code was evidently based on a very early,
+	unhygenic autoconfig version. Renamed $compile to
+	$ac_compile and such.  Appears to work correctly now.
+
+	* Multiple reports of Config.h not getting copied
+	from c/ to h/.  No idea why, but moved the cp from
+	c/Makefile into c/Configure, in hopes of curing it.
+
+	* Added default prototypes for various functions that keep
+	  coming up short in that department:
+	  _filbuf accept bcopy bind bzero fclose fgetc
+	  fprintf fputc fputs fread fscanf fwrite
+	  getpagesize listen memmove memset printf puts
+	  remove rename rewind setsockopt shutdown sscanf
+	  system time tolower toupper vsprintf
+
+	* Changed
+            name=NEED_`echo [$1] | tr '[a-z]' '[A-Z]'`_PROTO
+          to
+	    changequote(,)dnl
+	    name=NEED_`echo [$1] | tr '[a-z]' '[A-Z]'`_PROTO
+	    changequote([,])dnl
+	  to keep the []s from vanishing -- they're essential on SysV.
+
+	* Below code had "sys/systypes" where "sys/types.h" was
+	  clearly intended.
+
+Sun Jul 10 00:06:14 1994  Cynbe  (cynbe@muq.com)
+
+	* Added Joel Rosi-Schwartz's (joel@filomena.co.uk)
+          adaptation of Sam Leffler's fill-in-missing-prototypes
+          hack for autoconfig to Muq, kindly forwarded by
+          Francois Pinard (pinard@iro.umontreal.ca).
+
+	* Um, files which are to be 'source'd must _not_ end with
+	  "exit 0" *blush*.  Split "Muq-config" into Muq-config.sh
+	  (configuration information, always sourced) and "muq-config"
+          (a shell script, never sourced.  ALL ".login" AND ".profile"
+	  FILES NEED TO CHANGE "Muq-config" REFERENCES TO "muf-config".
+
+        * Ultrix likes scriptfiles to end with explicit "exit 0";
+	  Otherwise it defaults to return value '1' and aborts.
+	  Added "exit 0" at end of every script in muq/bin/.
+
+	* z-muq.c was including <sys/stat.h>, which seemed unneeded,
+	  and caused problems on Ultrix.  Commented it out, and also
+	  <sys/types.h>, which seems equally unneeded.
+
+	* Wrote obj.c:create_env(), which copies unix environment
+	  into keyvals on /env.  Removed HOME etc from /sys.
+
+Sat Jul  9 23:20:23 1994  Cynbe  (cynbe@muq.com)
+
+	* Plugged in auto-config recommended treatment for
+	  memcpy/memcmp/strchr/strrchr/memset.
+
+Sat Jul  9 14:02:28 1994  Cynbe  (cynbe@muq.com)
+
+	* Released as version -2.9.0.
+
+	* Added "muq -V" and /etc/version giving server version number.
+
+	* Updated/added READ.ME files in muq/* directories.
+
+	* Added first-draft info docs: ~5Kline/175K.
+
+Thu Jul  7 18:50:38 1994  Cynbe  (cynbe@muq.com)
+
+	* Changed '~' from actual_user to acting_user.
+
+	* Got rid of "me".
+
+Wed Jul  6 21:12:45 1994  Cynbe  (cynbe@muq.com)
+
+	* Reversed order of args to get-*-key? ops,
+	  for consistency with other operators.
+
+	* Reversed order of return vals from get-first-*-key ops,
+	  for convenience and consistency with other operators.
+
+Tue Jul  5 01:22:05 1994  Cynbe  (cynbe@muq.com)
+
+	* Renamed clone-job-set to clone-jobset.
+
+	* Renamed ]make-from-keysvals-block to ]keysvals-make.
+
+	* Renamed text-to-ints[ to text->ints[ for consistency.
+
+	* "o" was symbol o in current package, but
+	  "o/a" was property "a" on property "o" on current object:
+	  The inconsistency was confusing.  Changed so that in both
+	  cases "o" refers to value of symbol "o" in current package.
+
+Mon Jul  4 14:25:25 1994  Cynbe  (cynbe@muq.com)
+
+	* Renamed caseless-* to ci-*, following Scheme's lead.
+
+	* Renamed sort-keysvals to keysvals-sort, for consistency.
+
+	* words[ was dropping last word in text.
+
+	* Uniformly renamed 'string' to 'text' in muf prims.
+
+	* Moved ]print format text from top to bottom of argblock.
+
+	* Changed "[[ ... ]" muf syntax to "[ ... |".
+
+Sat Jul  2 23:25:43 1994  Cynbe  (cynbe@muq.com)
+
+	* Added infodir support to bin/Muq-config
+
+Thu Jun 30 01:42:37 1994  Cynbe  (cynbe@muq.com)
+
+	* RELEASE -2.8, for portability testing and vm.c distribution.
+
+	* Ran full test suite on Irix4.05H and Linux 1.1.19 w/o problems.
+
+	* vm.c:dbfileSet() was writing a full diskslot-length record, but
+	wasn't usually being given a record this long;  this wasn't a
+	problem except that under Linux it resulted in write() trying to
+	read past the end not just of bigbuf[], but of the process address
+	space, resulting in a SEGV.
+	  Changed dbfileSet() to write only as much data as is actually
+	present;  to keep dbfileGet() from dying trying to read more data
+	than dbfileSet() actually wrote, added dbfileZero() to zero out
+	the full size of a diskslot first time it is written, and changed
+	bitmapSlotValidate() to call dbfileZero as needed.  Added a
+	PARANOID-mode check to catch this problem if it re-appears.
+
+Mon Jun 27 01:00:36 1994  Cynbe  (cynbe@muq.com)
+
+	* AIX 3.2 cc 1.02 compiled Muq and ran the 'make check' suite
+	flawlessly on first try.  I'm amazed, given the history of grief
+	I and others have had with it.  Hats off to Team AIX :).
+
+	* AIX 3.2 cc 1.02 is the first compiler yet to pass my little
+	tail recursion test.  :)
+
+	* AIX 3.2 lacks a bsd-compliant 'install'.  Added the X-derived,
+	autoconfig-supplied 'install.sh' to the Muq distribution.
+
+	* Muq now selftests clean as a whistle under NEXTSTEP 3.2.
+	An outstanding defensive effort by the NeXT team!  I wish
+	them luck in their semifinal challenger's match vs AUX,
+	but I'll still be betting on defending champs Team AIX
+	in the title game :).
+
+Sun Jun 26 15:31:07 1994  Cynbe  (cynbe@muq.com)
+
+	* NEXTSTEP 3.2's libc.h defines a 'shutdown' conflicting
+	with z-muq's.  Added 'muq_' prefix to ours.
+
+	* NEXTSTEP 3.2 is amazing. libc.h manages to define a value
+	for TRUE which produces parse errors any time it is used.
+	Fixed by defining TRUE and FALSE before it can.
+
+	* NEXTSTEP 3.2's libc.h is buggy: it does "#import <stdio.h>"
+	which forces stdio.h to be read even if it already has been,
+	apparently: stuff like struct _iobuf comes up multiply defined,
+	and is mentioned nowhere but in stdio.h.  Workaround is to make
+	make sure to #include <libc.h> _first_.
+	
+	* NEXTSTEP 3.2 "tar -xf" for some reason dates the files
+	as of time of extraction, instead of preserving the
+	original times.  This was resulting in Makefile trying to
+	rebuilt Configure and Config.h.in from Configure.in, which
+	isn't good if autoconfig isn't locally configured, as will
+	normally be the case.
+	  As a kludgy fix, I removed the c/Makefile dependencies of
+	Configure and Config.h.in on Configure.in: if you change
+	Configure.in, do 'muq-deconfigure' and then 'make'. (Which
+	is what I habitually do anyhow.)
+
+	* NEXTSTEP 3.2 version of gcc complained of chr.c's
+	"'\%02x'" that \% is undefined: changed to "'%02x'".
+
+	* For some reason, NEXTSTEP 3.2 barfs on a '#' comment
+	in the body of a makefile clause:  removed the one
+	instance of that from Makefile2.in
+
+	* NEXTSTEP 3.2 hides select(), open(), times(), unlink() and
+	just about everything else in /usr/include/bsd/libc.h:
+	added it to our list of libraries to grab when available.
+
+	* NEXTSTEP 3.2 appears to always crash with a floating
+	point exception with -lposix: gave up on it, and rewrote
+	jobpass.c to work without sysconf(), if missing.
+
+	* If libc.a is sometimes missing, libm.a likely is too:
+	Made searching it conditional on it being found.
+
+	* Makefile2.in (still!) wasn't linking the jobpass and jobbuild
+	executables with LINKFLAGS.  Fixed.
+
+	* NEXTSTEP 3.2 doesn't _have_ libc.a ?!  Changed to only search
+	it explicitly if present.
+
+	* NEXTSTEP 3.2 comes up with _sysconf as undefined symbol after
+	below. Changed c/Configure.in to search libposix.a if present.
+
+	* NEXTSTEP 3.2 defines time_t instead of clock_t in bsd/sys/times.h
+	Unless _POSIX_SOURCE is defined.  Found nothing defining
+	_POSIX_SOURCE under /usr/include, so changed below hack to
+	#define _POSIX_SOURCE if it finds /usr/include/bsd on a system.
+
+	* NEXTSTEP 3.2 keeps _no_ .h files in /usr/include -- all are hidden
+	in /usr/include/ansi, /usr/include/bsd, and such.  Hacked
+	Configure.in to look for them there.
+
+Sun Jun 26 02:45:50 1994  Cynbe  (cynbe@muq.com)
+
+	* RELEASE -2.7, for portability testing and vm.c distribution.
+
+	* Now passes test suite under Solaris2.3/gcc2.5.8
+
+	* Added a "-lc" at start of Makefile2.in:LINKFLAGS to fix below
+	bug.  (This way we search libc before ucblib and get the right setjmp().)
+
+	* On gcc 2.5.8 under Solaris 2.3, setjmp() was clobbering globals
+	when called, presumably due to the setjmp() actually linked in
+	implementing a larger jmp_buf than that defined by <setjmp.h>.
+	Wrote job.c:job_check_for_setjmp_bug() to diagnose this bug cleanly
+	when present.
+
+
+Sat Jun 25 04:03:28 1994  Cynbe  (cynbe@muq.com)
+
+	* Added various '@'s to c/Makefile to compensate for deleted .SILENT:
+
+	* Rewrote jobpass.c:test_tail_recursion() to catch compilers
+	which only do tail recursion when a fn calls itself. (E.g., gcc.)
+	Still trying to convince FSF to support tail recursion better.
+	May eventually distribute a homebrew patch to gcc if they won't.
+
+	* Fixed joq.c:joq_Desleep() bug identified by Andy's script:
+	had { VmObj this,next; for (...;...;this=next) { VmObj next;...}}
+	meaning that inner next was incorrectly shadowing outer next,
+	and 'this' getting set to an undefined value.  *BLUSH*.
+	Skimmed joq.c and job.c, and grepped *.c, looking for
+	clones of this bug, without finding any.
+
+	* Made various edits to suppress compiler warnings supplied
+	by Andy Nelson (thanks!) from some unidentified system.
+
+	* Merged c/RELEASE.HISTORY into ChangeLog.
+
+	* Magic selecting correct nonblocking fcntl() opcode
+	really belongs in autoconfig, not ioq.c: suggested
+	it to FSF, and in meantime moved it to c/Config.h.top.
+
+	* Makefile2:check_db needed a dependence on 'muq'.
+
+	* From Solaris porting problems, it appears likely that rusage()
+	will be a frequent focus of porting problems.  Created a
+	h/Site-config.h and h/Defaults.h, and added a MUQ_USE_RUSAGE
+	switch to suppress rusage() if desired, substituting dummy
+	values (1) for what rusage() would normally return in sys.c.
+
+	* Solaris 2.3 seems to insist on using shared object libraries
+	(at least, trying "-static" and such in gcc merely produced
+	an intractable set of link errors, for me), and needs -R/usr/ucblib
+	link option to find them when adding -L/usr/ucblib.  Fixed
+	aclocal.m4 to handle this; The code will almost certainly break
+	if not under Solaris or not using cc, I'm trusting /usr/ucblib
+	only exists under Solaris, and I have no cc manpage for Solaris.
+	I now (finally!) appear to have a runnable Solaris executable,
+	albeit one producing no output.
+
+Fri Jun 24 01:06:07 1994  Cynbe  (cynbe@muq.com)
+
+	* The .SILENT: in Makefile gets inherited by Makefile2 for
+	some reason under Solaris, although not Irix.  Resulted in
+	no output for many minutes at a stretch during a full compile,
+	boring at best and confusing during debugging:  Removed it.
+
+	* LINKFLAGS was missing half a dozen places in Makefile2.in
+
+	* Solaris hids getrusage() in /usr/ucblib/libucb.a.
+	Created aclocal.m4, wrote macro to add it to
+	LIBS if present.
+
+	* Makefile2.in wasn't adding ${LIBS} to LINKFLAGS, so
+	-lsocket wasn't being searched on Solaris.  Fixed.
+
+	* Solaris 2.3 has no getrusage() prototype anywhere
+	under /usr/include.  Hardwired one at top of sys.c.
+
+	* Solaris 2.3 defines struct rusage in <sys/rusage.h>, but
+	Irix    4.x defines struct rusage in <sys/resource.h>.
+	Added autoconfig tests and sys.c #ifdefs to use either.
+
+	* Changed job.c:sig_int() from void to RETSIGTYPE to
+	take advantage of autoconfig deducing whether signal
+	handlers should be int() or void() on a given system.
+
+	* Set up to #include fcntl.h only if autoconfig
+	finds it.  Same with unistd.h.
+
+	* Set up to include Config.h, renamed muq.h to Muq.h
+
+	* err.c #included <strings.h>, which was needlessly system-
+	dependent and missing on Solaris: changed to #include <string.h>,
+	if gnu autoconfig finds it to be present.
+
+Thu Jun 23 15:23:09 1994  Cynbe  (cynbe@muq.com)
+
+	* Discovered that under Solaris 2.3 (at least) $0 in
+	'sh' scripts can be stuff like /dev/fd/3 instead
+	of the pathname of the script running.  Ick. :(
+	Threw in the towel and rewrote to require the
+	user to define MUQDIR in the environment.
+
+	* Makefile now passes BINDIR to Makefile2, which
+	uses it for invoking muq-*, instead of presuming
+	that PATH is correct and will find them.
+
+	* Changed muq-tar to use gzip instead of compress:
+	not only has no patent claims against it, but
+	produces 550K archive file instead of 850K.
+
+	* On some systems, the 'sh' spawned by 'make' does
+	not have the current csh path.  I have no idea
+	why. This was breaking our makes due Muq-config
+	not b eing found.  As an ugly fix, I hardwired the
+	makefiles to run ./Muq-config and created a
+	c/Muq-config that calls ../bin/Muq-config.
+
+	* Renamed muq-config to Muq-config.
+
+	* Merged muq-apps, muq-cdir, muq-hdir, muq-moddir,
+	muq-autoconfigdir into muq-config, for tidiness.
+
+	* Fixed vm.c:dbfileReadOrWrite() to suppress
+	"possible uninitialized var: i" warning and
+	 to be slightly more bombproof.
+
+Wed Jun 22 14:42:33 1994  Cynbe  (cynbe@muq.com)
+
+	* Makefile2.in had sgi-specific "libmalloc" library hardwired.
+
+	* sys.c had return type of getpagesize() as int, not size_t.
+
+	* z-muq.c had sgi-specific mallopt() calls.
+
+	* ioq.c wasn't (struct sock_addr*)-casting accept() and bind() args.
+
+	* jobbuild.c was missing fields in both end-of-array sentinels.
+
+... May 22 ..:..:.. 1994  Cynbe  (cynbe@muq.com)
+
+	* RELEASE -2.6, for portability testing and vm.c distribution.
+
+	* Added first-cut autoconfig support.
+
+	* Fixed enougs nits to get clean gcc -Wall -W-no-parenthesis compiles
+	  on Irix 4.0.5H.
+
+... Jan .. ..:..:.. 1994  Cynbe  (cynbe@muq.com)
+
+	* RELEASE -2.5, for portability testing and vm.c distribution.

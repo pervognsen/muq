@@ -1,0 +1,30 @@
+#! /bin/sh
+# Simple hack to find which library contains a given fn.
+#
+# On MIPS, at least, the 'nm' utility may be helpful too --
+# >       $cd /usr/lang
+# >       $foreach i (*.a)
+# >       foreach? echo $i
+# >       foreach? nm $i | fgrep start_libm
+# >       foreach? end
+# or such
+
+if [ "$#" -ne 1 ]
+then
+    echo "Usage: find-lib fnname"
+    echo "(Searches all libraries in /usr/lib for fn.)"
+    exit 1
+fi
+
+for a in /usr/lib/lib*.a ;
+{
+    # On systems without odump, I change "odump -P"
+    # to 'strings'.  Should automate that someday,
+    # I suppose.
+    if { odump -P $a | grep $1 ;}
+    then
+	echo "      (in $a)"
+    fi
+}
+
+exit 0

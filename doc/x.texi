@@ -1,0 +1,88 @@
+\input texinfo   @c -*-texinfo-*-
+@comment %**start of header (This is for running Texinfo on a region.)
+@setfilename ../doc/mufref.info
+@settitle Muf Reference
+@setchapternewpage odd
+@comment %**end of header (This is for running Texinfo on a region.)
+@c
+@ifinfo
+Copyright @copyright{} 1995 Jeff Prothero.
+@end ifinfo
+@c --------------------------------------------------------
+@titlepage
+@sp 10
+@center @titlefont{Muf Reference}
+@sp 2
+@include versionc.t
+@sp 2
+@center Jeff Prothero
+@center (cynbe@@muq.org)
+@c     ---------------------------------------------
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1995 Jeff Prothero.
+@end titlepage
+@c --------------------------------------------------------
+@c Uncomment following to generate a single index:
+@c @synindex cp fn
+@c @syncodeindex vr fn
+@c @syncodeindex ky fn
+@c @syncodeindex pg fn
+@c @syncodeindex tp fn
+@c
+@node Top, Muf Data Types, , (dir)
+
+@include versiont.t
+This version of the manual is a second draft, and still very rough.
+
+The reference material describing the server-implemented
+primitives should be reasonably complete and reliable, if
+not beautiful.
+
+The tutorial is only about one third complete.
+
+Internals and coding at the C level are not covered at all
+yet, although the C code is copiously commented internally.
+
+@menu
+* Muf Data Types::
+* Muq Classes::
+* Muq Conditions::
+* Core Muf::
+* Muq Plans::
+* Function Index::
+* Variable Index::
+* Data Type Index::
+* Concept Index::
+@end menu
+
+@include muqtypes.t
+@include muqclass.t
+@include muqcond.t
+@include xx.t
+@include muqplans.t
+
+@node Function Index, Variable Index, Muq Plans, Top
+@unnumbered Function Index
+@printindex fn
+
+@node Variable Index, Data Type Index, Function Index, Top
+@unnumbered Variable Index
+
+@printindex vr
+
+@node Data Type Index, Concept Index, Variable Index, Top
+@unnumbered Data Type Index
+
+@printindex tp
+
+@node Concept Index,  , Data Type Index, Top
+@unnumbered Concept Index
+
+@printindex cp
+
+@c Tables of contents
+@summarycontents
+@contents
+
+@bye

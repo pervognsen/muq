@@ -1,0 +1,75 @@
+#! /bin/sh
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+# Take db-dir from commandline if given, else default to dbdir:
+if [ "$#" -eq 3 ]
+then
+    our_muq_executable=$3
+    our_db_name=$2
+    our_db_dir=$1
+else
+    our_muq_executable=$bindir/muq
+    if [ "$#" -eq 2 ]
+    then
+	our_db_name=$2
+        our_db_dir=$1
+    else
+	our_db_name=muq
+
+	if [ "$#" -eq 1 ]
+	then
+	    our_db_dir=$1
+	else
+	    if [ "$#" -eq 0 ]
+	    then
+		our_db_dir=$dbdir
+	    else
+		echo "Usage: muq-db [dbdir] [dbnam] [muq-executable]"
+		echo "(where 'dbdir' is directory in which to create db,"
+		echo "'dbname' is name for db -- defaults to 'muq' --"
+		echo "and 'muq-executable' defaults to $bindir/muq.)"
+		exit 1
+	    fi
+	fi
+    fi
+fi
+
+# Test our executable exists:
+if [ ! -x $our_muq_executable ] ; then
+   echo "No $our_muq_executable found -- maybe you need 'make' and 'make install'?"
+   exit 1
+fi
+
+# Test we can create server db directory ok:
+if [ -f $our_db_dir -o -d $our_db_dir ]
+then
+   echo "A $our_db_dir already exists, please rm/mv and retry."
+   exit 1
+fi
+
+echo "Creating a $our_db_dir to hold running server db."
+mkdir $our_db_dir
+
+cd $our_db_dir
+
+
+
+echo "Creating $our_db_dir/%README% ..."
+cat >'%README%' <<plugh
+This directory contains files for a running server.
+This directory and $bindir are the only directories
+needed to simply run a Muq;   All other directories
+may be removed when installation is complete, if so
+desired.
+plugh
+
+
+
+# Create and initialize $our_db_dir/muq*db*:
+$bindir/muq-db-init $our_db_name $our_muq_executable
+
+
+exit $?

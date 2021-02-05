@@ -1,0 +1,14 @@
+#! /bin/sh
+
+if [ "$#" -ne 0 ]
+then
+    echo "Usage: muq-zap-db"
+    exit 1
+fi
+
+if [ -d ./#check.tmp# ] ; then
+    echo "Removing ./#check.tmp#"
+    rm -rf ./#check.tmp#
+fi
+
+exit 0

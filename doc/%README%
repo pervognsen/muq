@@ -1,0 +1,99 @@
+                   muq/doc/#README#      last update: 95Mar17
+
+Overview
+--------
+
+This directory contains source for the Muq manuals:
+
+ admin  Administrator's guide to Muq.
+ muf1   Elementary MUF programming tutorial aimed at nonprogrammers.
+ muf2   Intermediate and Advanced MUF programming.
+ muf3   Muf mastery, programmers, programming books, net resources.
+ mufref Reference manual for MUF.
+ src    Guide to the Muq source code.
+
+Each of these is available pre-formatted in five formats:
+
+ ascii  May be read via 'more' or printed on any hardcopy device.
+ info   The GNU online format, readable via emacs, info, xinfo.
+ .dvi   The TeX "DeVice Independent" format.
+ .ps    Postscript for nice hard copy, derived from the above.
+ .html  Hyper-Text Markup Language, read via WWWeb browsers.
+
+The latter form are available directly on the WWWeb at
+  http://betz.biostr.washington.edu/~jsp/muq/muq.html
+
+In addition, filters exist to convert .dvi files to most other
+high quality hardcopy formats.
+
+You may obtain complete Muq manual sets in all the above
+formats via anonymous-ftp from tf.tcp.com in pub/muq, the
+current canonical Muq distribution point.  To reduce
+distribution size, no preformatted manuals are included
+in the source distribution proper.
+
+
+
+More About Info Format
+----------------------
+
+Texi (texinfo) is the primary GNU documentation format;
+documents written in it can be used to produce both online
+and printed (via TeX) manuals.  'Info' is the online output.
+
+Info documents can be displayed by a variety of tools,
+including Xmosaic, emacs, info and xinfo.  The latter three
+are available from any gnu ftp archive, such as
+prep.ai.mit.edu.
+
+
+
+If you have gnu emacs v19 or later installed on your system,
+and set up your INFOPATH environment variable according to
+the directions in the Muq INSTALLATION file, you should be
+able to read the Muq docs in emacs simply by doing:
+  M-x info
+
+If you have gnu emacs v18 installed on your system, you
+should be able to read the Muq documents via the emacs info
+reader by doing (in emacs)
+
+  M-Esc (setq Info-directory "~/muq/info")
+  M-x info
+
+where M-Esc is the 'Esc' key twice and 'M-x' is the 'Esc'
+key followed by the 'x' key.
+
+If you have a gnu emacs installed on your system but
+are not sure which version it is, do:
+  M-Esc emacs-version
+
+
+
+If you have gnu 'info' and/or 'xinfo' installed on your
+system, and set up your INFOPATH environment variable
+according to the directions in the Muq INSTALLATION file,
+you should be able to read the Muq docs simply by doing
+'info' or 'xinfo'.
+
+
+
+If you are a sysadmin, you can install the Muq docs in
+your system's main info hierarchy by adding lines like
+
+   * muf1:  (/usr/people/cynbe/muq/info/muf1).  Elementary MUF Tutorial.
+
+(where the given path is the directory this #README# file is
+in, plus 'muq') to the root info 'dir' file for your system,
+which will likely be /usr/local/emacs/info/dir on older
+systems and should be /usr/local/info/dir on most newer
+systems.  (Under Linux, info is fully official and lives in
+/usr/info/dir.)  If you do this, you can (and should) remove
+the INFODIR hacks specified in Muq's INSTALLATION file from
+your .login and .profile files.
+
+
+
+If none of the above are usable on your system, you might
+consider installing them yourself or nicely asking your
+sysadmin if they can be installed.

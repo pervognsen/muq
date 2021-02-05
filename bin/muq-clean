@@ -1,0 +1,65 @@
+#! /bin/sh
+echo "Cleaning muq fileset..."
+
+# Source config file specifying directory layout:
+. ${MUQDIR-${HOME}/muq/bin}/Muq-config.sh
+
+
+# Remove various sorts of regeneratable files:
+echo "Files removed:"
+for m in $cdir $dbdir $docdir $hdir $pkgdir $bindir $muqhome ;
+{
+  if  [ -d $m ]; then
+    find $m -type f -name '*.o'        -exec rm -f {} \; -print
+    find $m -type f -name 'core'       -exec rm -f {} \; -print
+    find $m -type f -name 'tmp*'       -exec rm -f {} \; -print
+    find $m -type f -name '*~'         -exec rm -f {} \; -print
+    find $m -type f -name '*.bak'      -exec rm -f {} \; -print
+    find $m -type f -name '*.orig'     -exec rm -f {} \; -print
+    find $m -type f -name '*.lst'      -exec rm -f {} \; -print
+    find $m -type f -name '*.log'      -exec rm -f {} \; -print
+    find $m -type f -name '*.db'       -exec rm -f {} \; -print
+    find $m -type f -name '*.db.gz'    -exec rm -f {} \; -print
+    find $m -type f -name '*.db.bz2'   -exec rm -f {} \; -print
+    find $m -type f -name '*.db.lzo'   -exec rm -f {} \; -print
+    find $m -type f -name '*.muq'      -exec rm -f {} \; -print
+    find $m -type f -name '*.muq.gz'   -exec rm -f {} \; -print
+    find $m -type f -name '*.muq.bz2'  -exec rm -f {} \; -print
+    find $m -type f -name '*.muq.lzo'  -exec rm -f {} \; -print
+    find $m -type f -name 'y.tab.[ch]' -exec rm -f {} \; -print
+    find $m -type f -name 'y.output'   -exec rm -f {} \; -print
+  fi
+}
+find $cdir -type f -name '*.muq'  -exec rm -f {} \; -print
+
+
+if [ -d $cdir/#check.tmp# ]
+then
+    echo  "$cdir/#check.tmp#/*"
+    rm -rf $cdir/#check.tmp#
+fi
+
+if [ -r $cdir/jobprims.c ]
+then
+   echo "$cdir/jobprims.c"
+   rm $cdir/jobprims.c
+fi
+
+if [ -r $hdir/jobprims.h ]
+then
+   echo "$hdir/jobprims.h"
+   rm $hdir/jobprims.h
+fi
+
+if [ -d $cdir ]
+then
+    echo "$cdir/*.c ..."
+    rm -f $cdir/*.c
+fi
+
+if [ -d $docdir ]
+then
+    (cd $docdir; make clean)
+fi
+
+exit 0

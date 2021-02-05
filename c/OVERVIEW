@@ -1,0 +1,485 @@
+(Note that this file is largely obsoleted by DESIGN.NOTES 94Jul30CrT)
+
+
+
+
+
+                  Designer's-eye overview of tinyMuq
+                  ----------------------------------
+
+
+
+Motivation:
+-----------
+
+Motivation for tinymuq comes from my having wound up running a
+medium-large mud (Qwest, 20-80 online) and having strong opinions
+about software I'm heavily dependent upon (tinymuck2.2fb4.43q, at the
+moment, 'q' being my local changes).
+
+TinyMuq is intended to be something like a stab at a
+production-quality tinyMu* server that pushes the envelope fairly hard
+in a few areas I care about.  Since Qwest is running tinyMuckfb, and
+I'd rather not nuke the db, ability to import a fuzzball db and
+emulate fuzzball fairly well is one design goal/decision.
+
+Other design decisions:
+
+
+
+Fine-grain software virtual memory:
+-----------------------------------
+
+I'll avoid the phrase 'disk-basing' since that seems to have have the
+accepted meaning of caching one or two data structures on disk in a
+hit-or-miss sort of fashion.  TinyMuq stores essentially all data
+structures it uses in software-managed virtual memory (the major
+exceptions are a hashtable used to find in-ram objects, and some I/O
+buffers in the network interface).
+
+Blocks of store are transparently demand-paged in at need, at the
+finest reasonable granularity.  (Individual CONS cells, for example.)
+Objects on disk can be located in a single read(), without exception.
+Objects in ram must be located via a hashtable; this involves an added
+overhead of about 15-20 risc instructions per object reference.
+
+In-ram blocks are stored in a large (multimegabyte) ram arena which is
+periodically compacted; new blocks are successivly allocated
+stack-style in the free space at one end of the arena.  The arena
+grows only when logically required (swapping in an object larger than
+the current arena size, say) or when privileged operations
+specifically instruct the server to expand it; in general tinyMuq runs
+in a predictable, controllable amount of ram, in contrast to many
+current servers.
+
+Each store block in ram has about 12 bytes of overhead -- about the
+same as malloc().  This includes 4 bytes of hashtable pointer to it
+and 8 bytes of header.  Large objects need an additional 4 bytes of
+header.  Blocks of store on disk have one byte of locked-
+in-ram-overhead, most of which is devoted to garbage collection
+support.
+
+(The vm.c module implementing all this is designed to be independent
+of the rest of tinyMuq, to facilitate using it in other programs.
+There have been a couple of nibbles and one tentative bite so far.)
+
+
+
+Garbage Collection:
+-------------------
+
+Storage management policy almost always poses interesting design
+tradeoffs.  For tinyMuq, I've elected to go with Dijkstra's 3-color
+incremental garbage collection algorithm, to avoid pauses irritating
+in interactive use, modified into a two-generation scheme, to avoid
+having to touch the entire db on each garbage collect (important in a
+disk-intensive system).  Dijkstra's algorithm doesn't seem to get much
+(any?) use -- possibly because it doesn't work well with compiled
+code?  -- but seems a very nice match to the interpreted mud
+environment, and a nice change of pace from the usual suspects.
+
+
+
+Incremental backup:
+-------------------
+
+I intensely dislike "interactive" muds which pause for minutes at a
+time to do db backup: tinyMuq spends one locked-in-ram bit per store block
+to allow incremental backup of the complete db to proceed in the
+background while the mud continues to run.  The largest pause required
+by the backup algorithm is that needed to write all dirty objects in
+ram out to disk so as to start with a consistent image on disk; I
+expect to be able to keep this down to a second or two.  If not, the
+pause can likely be eliminated by retreating to somewhat more complex
+coding.
+
+
+
+Pointer Tags:
+-------------
+
+Pointer tag design likewise offers interesting design trade-offs
+with longterm implications for the system.  For tinyMuq, I've
+selected an encoding distinquishing:
+ 31-bit ints
+ 28-bit floats
+ strings of 0-3 bytes stored in-pointer
+ 28-bit object identifiers encoding disk location and approx obj size,
+        subclassified into:
+   strings
+   objects
+   executables
+   (etc)
+ (etc)
+All type bits are always in the lower 8 bits, allowing type
+determination by table lookup.
+
+(I much prefer sticking with 32-bit operands on 32-bit machines...
+all pointers, variable, stack slots etc in tinyMuq are 32 bits.  I
+played with making stack slots 64 bits to support doubles, but
+couldn't enjoy imposing the extra overhead on int/float/etc ops, and
+ripped it out again.  Doubles will have to be allocated on the heap
+like bignums, if they are to be supported.)
+
+
+
+Optimized bytecode interpreter:
+-------------------------------
+
+Tinymuq is driven by a fairly tightly optimized bytecode interpreter.
+The default configuration uses six opcode bits per bytecode (the other
+two are left zero).  For the fifty or so most time-critical
+primitives, such as integer addition, execution is done with a single
+break in flow of control per bytecode (except on compilers which
+bungle tail recursion, in which case a return-from-subroutine will
+also be executed for each bytecode): a single table lookup checks the
+types of the top two arguments on the stack (also checking for
+underflow at the same time) the opcode, and the
+bytecodes-executed-so-far-in-this-timeslice count, and branches
+directly to the appropriate routine.  (Stack overflow is checked for
+only every 32 instructions, in these cases.  Keeping 32 spare free
+entries on top of the stack suffices to prevent stack overflow in the
+meantime, since none of the fast instructions push more than one
+result on the stack.)
+
+For these instructions, interpreter overhead per bytecode executed is
+about fifty risc instructions, corresponding to peak interpreted
+speeds of one to four million bytecodes per second on contemporary
+risc machines, at which point performance would hit its minimum of
+~50x less than C.  (Programs that use slower prims will execute fewer
+bytecodes/second, of course, but will run closer to native C speed,
+since they spend more time executing useful C and less dispatching
+bytecodes.)  I'd been hoping for only ~10x slower than C, but this
+appears infeasable without doing type analysis in the compiler to
+avoid the need to check operand types, and I'm currently sick of
+optimizing compiler type technology, so I'm not about to do that.
+
+I'm trying to keep interpretation speed up partly because the speed of
+interpreters almost always becomes an issue sooner or later and I'd
+rather have it close to optimal from the outset than go back and
+re-implement later, and partly because I'd like to keep as much of the
+system in the db as possible, rather than having all sorts of code
+wandering into the server just for speed.  ...  Well, honestly, also
+partly just for the challenge and to be doing something new :).
+
+The virtual machine is not terribly biased in favor of supporting MUF,
+I don't think; if anything, I've been trying to keep it structured to
+support lisp nicely at some point.  For the most part, it is (I think
+and hope) a rather language-neutral generic bytecode engine.
+
+The executable objects holding bytecodes are compiled one per
+function, and like almost everything else (job objects, stack objects
+etc) demand-pages to/from disk as needed.
+
+
+
+Separate 'assembler' and compiler:
+----------------------------------
+
+While I'm focussing on a cleaned-up muf (forth) as the primary syntax
+initially, I'd eventually like to support other popular syntaxes (such
+as lisp), and I'd like to let unprivileged users write the compilers
+(because more will get written sooner that way).  To allow this
+without too much duplication of effort, and without compromising
+system integrity, requires segregating correctness concerns in an
+'assembler' module which has sole rights to construct executables and
+which guarantees not to emit code that will crash the interpreter.
+The compiler can then be an unprivileged program which simply feeds
+commands to the interpreter to create executables.
+
+
+
+Interactive, single-mode muf evaluation:
+----------------------------------------
+
+Forth has nasty semantic differences between code executed at the
+commandline and compiled code, since the former is executed by a
+separate interpreter.  Kernighan (I think) once pointed out that it is
+cleaner to compile interactive code into a tempbuf, and later forth
+variants (STOIC, or perhaps PISTOL?) do this.  Tinymuq compiles all
+interactively entered mufcode into anonymous functions, to achieve
+similar consistency.
+
+
+
+Unix-style pipes, tasks, signals and job control:
+-------------------------------------------------
+
+Fuzzball has already grown to having 'fork' 'ps' 'kill' etc; I think
+unix has a relatively clean model for multitasking, which has also
+been well tested; and sticking to unix makes it easier for programmers
+to transfer skills back and forth between tinymuq and unix: I've
+decided to stick as close as seems reasonable to unix in tinymuq when
+it comes to threads.
+
+Tinymuq jobs are created by 'fork' operations, do I/O via pipes
+(objectstreams, not bytestreams, however), and communicate via a set
+of signals very closely patterned on unix usage.  Live jobs are
+tracked in a global /etc/ps propdir, each job is in exactly one
+jobqueue at any given time, and jobs in the /etc/run jobqueue are run
+round-robin fashion, with short timeslices.
+
+Jobs which write to a full pipe, or read from an empty pipe, block by
+moving from the run queue (/etc/run) to the read or write jobqueue on
+the pipe in question.
+
+Similarly, jobs which are sleeping, stopped or whatever, move to
+queues like /etc/stp.
+
+(Named-pipe functionality comes for free, since pipes are just one
+more class of object, and may be handed around or stored in the db
+just like any other value.)
+
+
+
+Optimistic non-locking job serialization mechanism:
+---------------------------------------------------
+
+Achieving reliable, lag-free opration in the face of lots of code
+written by naive programmers in a multithreaded environment means
+short timeslices (to attempt to serve all 100+ or so users at less
+that the critical 1/10sec perceptual threshhold) without using
+semaphores or locks (since naive programmers can't be expected to use
+them at all, much less correctly... and since one would rather not
+clutter their programming model with them anyhow).
+
+The only way I see to do this is to buffer all writes to the db (and
+other output) from each job until a flush is performed (implicitly, in
+general, when the job exits, reads from input, or goes to sleep), and
+then either doing all buffered writes atomically, or else (if this is
+impossible due to interference from another job) rolling the job back
+and restarting it from the last flush point.
+
+(I don't consider uniformly running tasks to completion a viable
+option -- uncontrollable lag -- nor asking naive programmers to do a
+lot of programming of explicit synchronization primitives.)
+
+
+
+Heavy use of object properties:
+-------------------------------
+
+Properties which the interpreter needs efficient access to are stored
+in the object according to layout specified by a C struct; other
+properties are stored in a 2-3 trees (with fat leaves) on the object.
+The difference between the two is hidden from the application
+programmer, who can access all of them via a uniform set of get-prop
+set-prop first-prop next-prop type operations.
+
+All data types in the system are first-class and may be stored
+anywhere, in particular may be used both as property and value on an
+object.
+
+Storing all system state uniformly as properties on objects
+facilitates writing generic browsers and editors for the system, in
+contrast (say) to creating a get-tweakable set-tweakable function pair
+for each new tweakable parameter introduced into the system.
+
+
+
+No class objects -- method directly on object
+---------------------------------------------
+
+Muds are programmed predominantly by naive folks, and are used mostly
+for low-bandwidth sorts of computations where flexibility and
+simplicity are more important than efficiency, when the choice need be
+made.  The explicit class objects present in many object-oriented
+languages seem to me primarily efficiency hacks that buy improved time
+and space performance at the expense of a more complex programmer's
+model of the system.
+
+In a mud design, it seems to me more appropriate to opt for simplicity,
+attaching methods and properties either directly to an object, or else
+to some parent of the object.
+
+
+
+Single inheritance of both properites and methods:
+--------------------------------------------------
+
+I'm content to let coldmud take the lead in experimenting with
+multiple inheritance, for now; I don't really understand multiple
+inheritance, and I'm not sure anyone else does.  The semantically
+cleaner analyses seem to me to resemble composition of objects more
+than they do multiple inheritance in a naive sense; I think that
+building in a specific model of multiple inheritance today most likely
+means building in something which in retrospect will be clearly
+understood to be broken.
+
+Single inheritance seems well understood by contrast (if still rather
+mysterious), sufficient for most needs, and comparatively well tested.
+
+I'm inclined to see a variable as just a function of no parameters; if
+methods can be inherited, it seems that properties might as well also.
+Property inheritance can also be directly seen to be useful in setting
+up a complex prototypical object which can then be specialized by
+overriding inherited (default) properties.
+
+Messages may be sent to any tinymuq value; conventional objects carry
+methods conventionally, special values such as int, floats and strings
+search for methods on hardwired parent objects such as /etc/int.
+
+
+
+Thunks
+------
+
+TinyMuq supports special functions called 'thunks' which may be freely
+copied around and stored just like any other value, but which
+transparently evaluate and are replaced by their return value as soon
+as one attempts to do any operation on them such as addition, checking
+type, or whatever.
+
+(This can be implemented essentially 'for free' given the interpreter
+design -- no extra per-instruction machine cycles need be invested
+implementing this.)
+
+This form of delayed evaluation is somewhat reminiscient of functional
+programming (and a variant could be added to support functional
+programming) but differs in that thunks may be evaluated any number of
+times rather than just once.  Thunks are also vaguely reminiscient of
+named pipes in Unix, in that the latter allow computation of a
+bytestream to be delayed until the bytestream is actually read, and
+thus to vary appropriately from one access to the next, transparently
+to the reading program.
+
+Thunks form a generic solution to the problem of being asked to
+specify a static value in a property or variable when one would in
+fact like to compute that value dynamically at runtime with more
+information available... say, to compute the description of an object
+at the last possible moment, so as to have it depend on the time of
+day.
+
+Most muds have one or two special-case hacks to solve particular
+instances of this problem; thunks provide a very general solution to
+this class of problems, since any property whatever may be set to a
+thunk rather than a fixed value, and any code accessing that value
+will automatically trigger evaluation of the thunk upon first 'real'
+use, without any special intent on the part of that accessing code.
+
+
+
+Fairly generic network interface
+--------------------------------
+
+To the tinymuq application programmer, live network sockets look much
+like threads: they produce and consume values via pipes, with the
+oddity that the values produced are always strings, and that sending
+them anything but a string results in an error.
+
+Properties on the socket objects allow selection of raw I/O versus I/O
+cooked to various recipes, loosely patterned on unix I/O modes.
+
+
+
+Eight-bit strings:
+------------------
+
+Lisp obtains a great deal of milage from allowing arbitrary byte
+values in strings, which can then serve as generic containers for
+binary data, which may be used for sounds, images, or whatever.  The
+lisp analogy appears to me more compelling than the C analogy in this
+case, and tinyMuq follows Lisp in this respect.
+
+A mud is essentially a simple object-oriented database, and it is
+common in 'real' oodbs to segment binary data so that not all of an
+image (say) need swap into ram at once; tinyMuq will likely follow
+suit in this case, eventually, to promote multimedia applications of
+the basic virtual machine.  The current tinyMuq design merely routes
+all access to string through a set of interface routines designed to
+facilitate this.
+
+
+
+Current status:
+---------------
+
+Perhaps 2/3 done (I'm usually optimistic... maintains sanity): about
+30Kline of fairly debugged C.  Virtual machine approaching completion,
+no emulator code whatever written.  One can sit at the keyboard and
+do various little interactive computations:
+
+    qwest@betz:muq/c> ./muf
+    muf--> [ "a" "d" "a" "e" | |sort |uniq
+     "a" "d" "e" 3
+    muf--> ]pop 12 seq[
+     0 1 2 3 4 5 6 7 8 9 10 11 12
+    muf--> |for v do{ v 2 * 1 + -> v }
+     1 3 5 7 9 11 13 15 17 19 21 23 12
+    muf--> ]pop 0 12 for j do{ j . " " . } "\n" .
+    0 1 2 3 4 5 6 7 8 9 10 11 
+
+    muf--> 
+
+The outer loop of the above muf shell is itself written in muf (so
+that compiles can timeslice with other jobs smoothly)... there are
+some interesting bootstrap problems at startup.
+
+An ls listing gives the approximate current scale of the program:
+
+qwest@betz:muq/c> ls -l *.c
+     50727 Dec  7 00:14 asm.c		-- The assembler
+      1486 Aug 14 01:33 axe.c		-- Eventual site of hooks for site-specific extentions
+     58493 Nov  7 21:47 dir.c		-- Main code for propdirs/sets (2-3 trees).
+      3780 Sep  4 22:57 err.c		-- Some error-report functions.
+     19311 Sep 28 23:47 exe.c		-- Executable objects.
+     10172 Nov  8 17:26 fun.c		-- Functions (pointers to source, executable &tc).
+      6560 Jun  5  1993 info.c		-- To read info-format doc files.
+     43121 Dec  1 02:27 ioq.c		-- Network interface code.
+    207512 Dec  1 18:38 job.c		-- Threads and many primitives.
+     86289 Dec  7 11:40 jobbuild.c	-- Code to automatically generate some of the interpreter.
+      7979 Aug 22 15:15 jobpass.c	-- Code to choose interpretation strategy for current machine.
+    425129 Dec  7 11:41 jobprims.c	-- Code and tables generated by jobbbuild.c
+     13142 Nov 23 03:12 joq.c		-- Job queues.
+     11096 Dec  1 02:35 jst.c		-- Job sets (process groups).
+      3855 Sep 10 22:35 lib.c		-- Random library fns.
+        72 Aug 22 15:31 map.c		-- Propdirs (compiles dir.c with one set of #defines).
+     14886 Nov  8 17:28 msq.c		-- Message queues (pipes).
+     81172 Dec  9 17:31 muf.c		-- MUF compiler, calls asm.c to do low-level stuff.
+     39765 Dec  1 01:55 obj.c		-- Generic object support.
+        72 Mar  6  1993 set.c		-- Sets of objects.  (compiles dir.c with a set of #defines).
+     11029 Dec  1 02:37 ssn.c		-- Sessions, in the unix job-control sense.
+     12906 Nov  9 16:05 txt.c		-- Strings, lisp style.
+     10919 Nov  8 17:46 usr.c		-- Gods, wizards, players, puppets.
+     10148 Nov  9 15:46 vec.c		-- Vectors, CONS cells being treated as two-vectors.
+    160451 Sep 28 23:21 vm.c		-- Virtual memory support.
+      9644 Oct 30 10:50 x_dir.c		-- Selftest code for dir.c
+      9355 Jun  5  1993 x_job.c		-- Selftest code for job.c
+        45 Jan 30  1993 x_map.c		-- Selftest code for map.c (x_dir.c + #defines).
+      5539 Aug 20 22:10 x_obj.c		-- Selftest code for obj.c
+        45 Jan 30  1993 x_set.c		-- Selftest code for set.c (x_dir.c + #defines).
+     13854 Jun  5  1993 x_vm.c		-- Selftest code for vm.c
+      3818 Jun  5  1993 z_info.c	-- Simple app that runs info.c
+     29102 Dec  1 02:38 z_muf.c		-- Simple app that evaluates muf interactively.
+
+(Selftest code written in muf not shown.)
+
+
+
+Future Directions:
+------------------
+
+I've bit off quite enough to chew for awhile yet... :).  I've thought
+somewhat seriously about how to link a few to many tinyMuqs together
+to present a single virtual address space and database.  That looks
+technically challenging but possible... and an administrative
+nightmare.
+
+Some sort of more sophisticated interface to the user would definitely
+be nice.  I'm not sure just what... support for X?  A muqclient based
+on the tinyMuq core and a distributed database would be logical and
+technically elegant, but the security and reliability problems would
+be fairly formidable.  Just using the tinyMuq core to build a client
+communicating by some more limited protocol would be less elegant but
+much easier.
+
+Another of my projects is a 3-D raster graphics system using xlisp as
+the core; I'd rather like to replace that xlisp with one based on
+tinymuq's virtual engine at some point.  Xlisp has been a great
+inspiration, but has some grating limitations...
+
+Every time emacs limits out on me on an 8-meg file, I fantasize about
+implementing elisp on the muq core and having a breakage-free emacs...
+:)
+
+Cynbe / jsp@biostr.washington.edu

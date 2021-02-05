@@ -1,0 +1,228 @@
+- MOTIVATION
+I've found several reasons to wish for a more structured implementation
+of Muq primitive functions:
+ 
+ *  When an instruction disk-faults, it would be nice to stop
+    it until the object loads into memory, and run other code
+    while the disk read proceeds in the background.
+
+ *  It would be nice if prims had a fixed maximum runtime, so
+    that no prim can lock up the interpreter more or less
+    indefinitely.
+
+ *  Network transparency demands that prims should run on any
+    combination of local and remote values.
+
+From all these perspectives, life would be easier if Muq prims
+were written according to something like the RISC philosophy,
+with instructions falling into three categories:
+
+ *  LOAD instructions which read information from somewhere into
+    the call or data stack.  Ideally, each of these would access
+    only a single nonheap object and read a bounded amount of
+    information from it.  This would make these instructions easier
+    to restart if they have to wait for disk or network I/O.
+
+ *  STORE instructions, exactly like LOAD except writing rather
+    than reading information.
+
+ *  OTHER instructions, which access only information in the CALL
+    and DATA stacks, and which hence can never block waiting for
+    I/O.  Ideally, these should all run to completion in (say) a
+    millisecond or less.
+
+The current purpose of this file is to inventory current exceptions
+to the above guidelines, so as to get a feel for how much work it
+would be (or whether it is even realistically possible) to convert
+the Muq server to obeying the above guidelines.
+
+
+
+=
+-  BIG INTEGER OPERATIONS
+
+Any of these can obviously block for a time which is a function
+of argument size:  Modular exponentiation in particular can take
+a long time.
+
+Most of these are binary, which means they could be invoked on a
+mixture of local and remote arguments.
+
+Modular exponentiation, in particular, reads repeatedly through
+its arguments in odd orders, making it desirable to load them
+once from a remote site and do all operations locally, unless one
+is contemplating computing billions of digits of pi or such.
+
+I think it would be practically sufficient to load all arguments
+onto the call stack before beginning the operation, and then
+operate completely from the stack during the modular exponentiation
+operation proper.  The exponentiation outer loop would need to be
+softcoded to avoid excessively long system lockup, with C-coded
+prims doing the inner loop in chunks of bounded execution time.
+
+This would limit us to handling ops small enough to fit on the
+CALL stack, but 8Kbytes is 64Kbits, which is small enough to
+fit and long enough for the overwhelming majority of practical
+computations.
+
+PROBLEM CASE:  We're making private keys an opaque type.  Can we
+purify without holing the opacity veil?  The relevant operations
+appear to be:
+ GENERATE_DIFFIE_HELLMAN_KEY_PAIR
+ GENERATE_DIFFIE_HELLMAN_SHARED_SECRET
+ SIGNED_DIGEST_BLOCK
+ SIGNED_DIGEST_CHECK_BLOCK
+The latter two don't amount to much more than an SHA.
+The former two may require special secret-bigint stackframe
+types and corresponding special operations on them.  None of
+these have to worry about remote arguments.  None of these
+have to worry about values too large to fit on the stack.
+
+
+
+=
+-  BIG STRING OPERATIONS
+
+We don't support big strings yet, but string operations tend to
+be more local and simple than integer operations, while maximum
+practical string sizes tend to be too large to fit on the call
+stack, so buffering parts of the operands on the callstack seems
+the preferred approach.  We've already started doing this with
+the regular expression prims, so this should not be a big break
+or novel problem.
+
+
+
+=
+-  BIG VECTOR AND ARRAY OPERATIONS
+
+The big string comments apply here also.
+
+
+
+
+=
+-  B-TREE OPERATIONS
+
+These access a number of objects (in a path down the btree).
+
+On those grounds we'd like to softcode these ops, for
+restartability.
+
+On the other hand, coding these operations atomically saves us
+doing any locking;  We probably need per-object locking facilities
+if we are going to softcode this stuff:  Most likely one bit per
+object 'I am locked' and a hashtable somewhere recording who is
+locking what.  (Java likes implicit per-object locks also.)  These
+locks then raise deadlock issues.  :-/
+
+A fair amount of work for not much visible return to the user.
+
+The KEYSVAL_BLOCK operations have the problem of returning an
+unlimited number of values, while our data stacks are currently
+limited in size.  This is unfortunate since it means program break
+and have to be entirely rewritten when using larger datasets. :(
+ It would appear that at minimum we should support on big vectors
+all the operations we support on blocks, and perhaps operations
+should work on immediate vectors on the CALL stack rather than
+blocks on the DATA stack:  One can imagine having such operations
+automatically promote the operands from stack to heap allocation
+when size limits are exceeded, transparently to the code, much
+as the integer operands already do.  Maybe this is trying too hard
+and most end-user code should just use the heap in the first place?
+
+
+
+
+
+=
+-  finishAssembly
+
+This currently does a fairly arbitrary amount of work, but limited
+to information which the asm instance has cached locally.  Should
+be pretty routine to purify.
+
+
+
+=
+-  jobQueueContents
+
+This accesses an indefinitely long linklist of jobs and pushes them
+on the data stack, possibly overflowing it.  But this guarantees the
+result is produced atomically.  Do we really want to get into locking
+jobqueues?  Or?
+
+
+
+=
+-  OOP STUFF
+
+One issue is how one decides whether a given object is a member
+of a given class when the object and class are from different
+servers.
+
+I think we clearly want each server to have its own class definition
+for locally used classes, in general, rather than one canonical class
+definition on one hub machine which is then mirrored everywhere.
+
+This suggests to me that a class is identified essentially by a
+signature consisting of its name and ordered (?) set of fields,
+reduced in practice to an immediate-integer hashcode.
+ Inheritance can be handled by including the parent signature hashes,
+in order, in the class signature.
+
+(Problem:  We support evolution of classes over time:  We can redefine
+a class and have the objects adapt.  How does that mix in?  I think
+perhaps we can ignore it.  If a class gets redefined on one system
+and not on the other, than instances are no longer compatible between
+the two systems, logically.  If it gets redefined on both, they wind
+up in synch again.)
+
+This in turn suggests that the proxy for an object should contain the
+class signature, and that class membership tests on a proxy be done
+by matching signatures:  O is an instance of class C if O's class
+signature is anywhere in C's superclass list.
+
+But proxies class signatures need to be cached, updated timed out &tc
+much like any other cached property of an object, perhaps a dedicated
+class signature field in the proxy is not initially needed?
+
+
+
+=
+-  CONCLUSION
+
+There are a few more similar problems floating around -- some of the
+MOS support functions undoubtedly involve several objects.  But in
+general after scanning the jobbuild.t list of slow operations, I don't
+see anything harder to handle than the above.
+
+
+
+=
+-  Purification TASK LIST
+
+*  Add CALL stackframes for immediate bigints, ints, floats, bytes &tc.
+   This should be mostly a matter of teaching the garbage collector not
+   to trip over them.
+
+*  
+
+
+
+=
+-  Triage
+
+Does any of this need to be done pre-beta?  I don't really see anything
+that can't be retrofitted in routine fashion.
+
+
+
+
+
+
+Local variables:
+mode: c
+mode: outline-minor
+outline-regexp: "[ \\t]*-"
+End:

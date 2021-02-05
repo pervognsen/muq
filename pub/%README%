@@ -1,0 +1,23 @@
+		muq/pub/#README#
+
+This directory holds host unix files accessable to the Muq
+server.
+
+Restricting Muqserver file access to this directory is
+intended to limit the security damage of a cracked Muq
+server while providing most of the benefits of host
+filesystem access.
+
+Note that files that live elsewhere can be made available to
+the Muq server by adding a hard or soft link to them here.
+
+Muq will ignore all filenames in this directory except those
+consisting only of lowercase letters, digits, and the dash
+character.  This is intended to be flexible enough for
+readability while being strict enough to close security
+holes like ".cshrc" "/etc/passwd" "../../../etc/passwd" and
+such.
+
+You still need to watch for problems such as files with
+"eval:" lines at the end that might get evaluated by your
+emacs.

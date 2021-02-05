@@ -1,0 +1,975 @@
+98Jul18CrT
+Design notes on the Micronesia.  These are mostly by me for me prior
+to implementation retweaking, but should be expanded into general-use
+documentation at some point.
+
+
+
+HOW DOES MICRONESIA WORK?
+-------------------------
+
+I need to refresh on how objects are referenced, how we find the
+owner/queue for an object to send it messages &tc.
+
+--> Document clearly how Micronesia protocol works, until it is obvious
+    whether significant changes are needed -- leveraging authentication
+    being the most apparent reason for maybe making changes.
+      AFTER A QUICK GLANCE:
+    Looks like a complex mechanism close enough to optimimum to be worth
+    leaving alone, to me.
+
+--> Document clearly how the class lattice works, until it is obvious
+    whether significant changes are needed to enhance end-user tweakability,
+    in particular of 'bots and automated responses to typical events.
+
+--> Document clearly how procedural building works, until it is obvious
+    whether significant changes will be needed to make this work nicely,
+    or whether this can be added on a bit later without ripping up anything.
+
+--> Is it clear that non-Root users are going to be able to do appropriate
+    customizations in Micronesia without needing to go begging to the local
+    root user?  Need to verify, probably via simulation/testing, that all
+    typical customizations needed work fine without special privileges.
+      One problem is likely to be any methods specializing on User object,
+    since user can't subclass or reclass it...?
+
+
+
+MICRONESIA PROTOCOL
+-------------------
+
+The core datastructure is the room cache, maintained one per room the
+user is currently in, tracking in essence all visible objects.  It
+maintains for each object:
+  Object proper;
+  Name -- text for display;
+  Key -- public key. PROLLY NEEDS TO BE JUNKED, MUQNET HANDLES THIS NOW.
+  Secret -- per-session shared secret. PROLLY NEEDS TO BE JUNKED, MUQNET HANDLES THIS NOW.
+  Ghost -- internal communication/state bookkeeping.
+  IO -- I/O queue.  CAN'T WE JUNK THIS, SINCE MUQNET INDIRECTS THROUGH OBJ/IO AUTOMATICALLY ANYHOW?
+  CAN -- bitfield (i.e., fixnum) of capabilities of object.
+DO WE NEED TO ADD AN 'OWNER' FIELD TO AUTHENTICATE REPLIES?  (Muqnet will set
+the 'who' field correctly, but if we ignore it, it does no good.)  OR SHOULD
+WE GET THIS FROM THE PROXY ANYHOW?
+
+Interactions are via the 'task' mechanism, implemented primarily in:
+  oldtask     -- continuation db data structures 
+  oldrequest  -- continuation db API
+  olddaemon   -- main daemon loop driving task and I/O processing.
+
+Packets from the network are typed by fixnum opcodes:
+  The set of supported operations is defined by
+    liveNames    -- vector, ith slot holds i'th operation's fixnum name
+    liveFns      -- vector, ith slot holds i'th operation's handler function
+    liveClasses  -- vector, ith slot holds i'th operation's state record
+
+THINGS TO PROLLY FIX:
+  Drop the TO/IO shit, just let daemon on far end look up the
+    :io property.  Saves us a state slot, some occasional
+    round-trips, and bugs related to them.
+  CHECK 'who' ON ACK PACKETS!  It is authenticated now, but useless
+    unless we actually use it.  We should keep in local state the
+    guest to whom the request is addressed, and verify that the
+    reply is from the same entity.
+  
+SHOULD WE RESERVE A SLOT FOR PACKET-FILTER?  Sooner or later we'll
+  want to allow user to install arbitrary filters on incoming packets.
+  Probably also filters on a per-packet-type basis:  Maybe the standard
+  packet implementations should have a slot for this?  A rejectPacket
+  closure called if non-NIL should do nicely.
+    If we want to allow multiple independent packet filters to be
+  registered, we need an API for adding and removing them, and a
+  standard fn for applying them, similar to what emacs does with
+  hook function lists.
+
+
+
+MICRONESIA CLASS LATTICE
+------------------------
+
+  342 oldmud:nopIt          | | |     |   |
+  360 oldmud:pingIt         | | |       | |
+  380 oldmud:holdIt         o   |         |
+  380 oldmud:heldIt         o   |         |
+  385 oldmud:substringIt    |   |         |
+  385 oldmud:viewIt         |   |         |
+
+
+Should maybe put lowest leftmost instead of rightmost,
+since they tend to be longest, and having them leftmost
+would make them easier to read:
+
+  337 pub:home . . . . . . . . .#. . . . .#
+  340 oldmud:live           #   | # #     |
+  345 task:home             |   | | |     |
+  350 oldmud:daemonHome     o # | | |     |
+  363 oldmud:listServ  . . .  | # | |  . .|
+  363 oldmud:propServ         | # | |     |
+  365 oldmud:isleList         | # | |     |
+  365 oldmud:nativeList       | # | |     |
+  365 oldmud:roomHost  . . .  o # | |  . .#
+  365 oldmud:whoList            # | |     |
+  365 oldmud:whoUser            | | |     #
+  370 oldmud:isle               o | |     |
+  380 oldmud:holder  . . . . . .  o #  . .|
+  380 oldmud:holdable             o #     |
+  385 oldmud:viewable             o #     |
+  390 oldmud:shellHost              |     #
+  395 oldmud:thing . . . . . . . .  o # # #
+  400 oldmud:exit                     o | | #
+  400 oldmud:room                       o | | #
+  401 oldmud:roomCache                    | | |
+  405 oldmud:viewableAvatar. . . . . . . .# | |
+  410 oldmud:avatar                       o | |
+                                            | |
+  421 oldmud:badSet                         | |
+  422 oldmud:badExit                        o |
+  423 oldmud:badRoom                          o
+
+
+
+  470 oldmsh:mshCommand                         #
+  475 oldmsh:cmdDig                             o
+  475 oldmsh:cmdDoing                           o
+  475 oldmsh:cmdGo                              o
+  475 oldmsh:cmdHelp                            o
+  475 oldmsh:cmdHide                            o
+  475 oldmsh:cmdHome                            o
+  475 oldmsh:cmdInside                          o
+  475 oldmsh:cmdLook                            o
+  475 oldmsh:cmdMuf                             o
+  475 oldmsh:cmdOutside                         o
+  475 oldmsh:cmdPage                            o
+  475 oldmsh:cmdPing                            o
+  475 oldmsh:cmdPose                            o
+  475 oldmsh:cmdQuit                            o
+  475 oldmsh:cmdRepeat                          o
+  475 oldmsh:cmdRestart                         o
+  475 oldmsh:cmdSay                             o
+  475 oldmsh:cmdShort                           o
+  475 oldmsh:cmdState                           o
+  475 oldmsh:cmdWhisper                         o
+  475 oldmsh:cmdWho                             o
+
+  480 oldmsh:shellState
+
+  
+
+
+
+MICRONESIA PROCEDURAL BUILDING
+------------------------------
+
+
+
+MICRONESIA CUSTOMIZATIONS
+-------------------------
+
+Policy hooks should DEFINITELY be objects -- instances of
+user-definable classes -- rather than just closures or
+functions or such:  The reason is that closures are opaque
+to inspection, whereas objects can serve as specializers
+for generic functions which display and edit them.  This
+implies that we should fit them within a generic customization
+framework right from the start.
+
+
+
+
+WHAT NEEDS TO BE CHANGED?
+-------------------------
+
+I believe various things in the protocol need to be revised
+to reduce the number of round trips:  Now that we have some
+authentication, we can afford to send short messages via a
+single post/ack round-trip, I think?
+  One possible problem with this is that a lost ACK will result in a
+second, identical post on retry now; With the reciever-asks protocol,
+a lost ACK loses the post operation as well, so retrying does no harm.
+Does this mean we're better off leaving this stuff as it is?
+
+Another thing I remember wanting to change was the general flexibility
+for the end-user:  In particular, it would be very nice to be able to
+write a bot in a line or ten of code as a demo of the system.  Right
+now, I think it aint that simple.  Applying some encapsulation ideas
+ala Design Patterns may be called for.  HOW MUCH STRUCTURAL CHANGE IS THIS?
+  Does the 'bot need a separate TrueName?  If so, space accounting and
+such presumably gets more complex.  If not, does the interaction protocol
+get more complex due to multiple daemons per TrueName?
+  In a similar vein, customizing processing of various common sorts
+should ideally be extremely easy for the end-user:  Hooks that run on
+standard sorts of events like someone looking at one, someone entering
+the room, &tc &tc should be availalbe one way or another.
+
+I'd like to see a reasonably good test suite written for the user shell
+and the Micronesia layer:  This looks to mean user emulators which can
+be run en masse to test the system under load.  This again essentially
+means 'bots.
+
+Were there some things which needed to become classes?  In particular,
+I think user shell commands became classes/objects to good effect, but
+Micronesia protocol messages are still not classes, which may reduce
+maintainability of the system.
+
+What needs rewriting on the bootstrap-a-new-server front?  I vaguely
+remember maybe something was awry there.  Or is it all covered by the
+worklist in ID.DESIGN?
+  In particular, can we change the 'root' and 'muqnet' nicknames to be
+something more system-specific?  Seeing root2 root3 root4 ... in
+/usersBy/nickName is going to get old real fast.  There's some code
+floating around which depends on these names, however, at minimum in
+x[xy]-muqnet.  Perhaps we need name-independent standard pointers to
+these users, like /etc/rootUser and /etc/muqnetUser or something?
+
+Procedural building was incomplete, as I recall.  What should be done
+on that front?  Be nice to have a little demo of it to guarantee the
+design supports procedural building, but don't want to get dragged
+into a big project on that front now.
+
+Are there holes for policy objects in all the right places?  Or will
+it be clearly trivial to add them?  We need to have hooks on which
+users can hang closures or objects governing admission to rooms,
+ability to speak in a room, ability to vote, ability in general to
+use any facility included in a world.  These policies will in general
+need to be hierarchical, so an individual can leverage yet modify
+available world-level policies.
+
+We need to extend the CONFIGURATION framework from the current
+system-admin only lash-up to a regular-user framework integrated
+into the oldmsh shell which allows access to the various policy
+hooks -- room entry control, gag control, look control &tc. These
+hooks in turn need an appropriate class hierarchy organizing them,
+and generic functions for displaying and configuring them.
+
+
+
+
+
+
+IMPLEMENTATION STRATEGY
+-----------------------
+
+Should I just start bringing the existing code back online, restoring
+the xx-oldmud code testing it as I do so?  Or is the rewrite needed
+drastic enough that I should re-engineer first, rather than checking
+out all the code only to massively break it?
+ NEXT DAY:  I think the best thing is to first bring all the code
+  back online, probably writing additional new selftest code as I
+  do so, then worry about applying the fixes, which I think will
+  all be reachable by easy steps from the existing code structure.
+
+Need to scope out what major structural modifications are needed to
+decide this.  At the moment, the three obvious candidates for structural
+changes seem to be:
+  (1) Protocol changes to leverage authentication.
+  (2) Class hierarchy changes to make end-user tweaking easier and more powerful.
+  (3) Changes to make procedural building work better.
+
+What about the muqnet messages in support of micronesia?  Can I
+start checking those out, or is something likely to change them?
+
+
+
+
+
+
+
+
+-----------------
+99Jun29CrT
+-----------------
+
+Time to get back to this.  I'm not sure how to get started,
+so I think I'll start with a laundry list of specific
+customizations which I think should be easy.
+
+*  Spawning a 'bot should be a one-liner.
+
+*  Various common customizations of a bot or avatar should
+   be possible in one line:
+   
+   o  What the 'bot does upon hearing a particular regex.
+   o  What the 'bot does upon a knob regex.
+   o  What the 'bot does for an arrival/departure (any other
+      events?  Invitation to join?  Whisper?  Page?  Get/put?)
+   o  What the 'bot does after arriving in a room?
+
+*  Look-notify on/off on avatars and 'bots at minimum;  On
+   arbitrary objects would make sense.
+
+*  Login/logout notification on/off globally or per user.
+
+*  Various sorts of policy settings:  Who can get an
+   object, who an page us, who can enter our rooms.
+
+*  Is there any commonality to be imposed between events
+   and regular expressions?  If we make the event type a
+   text prefix to the string, we can perhaps use a single
+   regex mechanism for a wide range of customizations?
+   
+I think perhaps the way to get started is by sketching in
+documents on the existing Micronesia classes.  This provides
+a structured way of rereading the existing code and relationships
+carefully.
+
+
+  342 oldmud:nopIt          | | |     |   |
+  360 oldmud:pingIt         | | |       | |
+  380 oldmud:holdIt         o   |         |
+  380 oldmud:heldIt         o   |         |
+  385 oldmud:substringIt    |   |         |
+  385 oldmud:viewIt         |   |         |
+  337 pub:home . . . . . . . . .#. . . . .#
+  340 oldmud:live           #   | # #     |
+  345 task:home             |   | | |     |
+  350 oldmud:daemonHome     o # | | |     |
+  363 oldmud:listServ  . . .  | # | |  . .|
+  363 oldmud:propServ         | # | |     |
+  365 oldmud:isleList         | # | |     |
+  365 oldmud:nativeList       | # | |     |
+  365 oldmud:roomHost  . . .  o # | |  . .#
+  365 oldmud:whoList            # | |     |
+  365 oldmud:whoUser            | | |     #
+  370 oldmud:isle               o | |     |
+  380 oldmud:holder  . . . . . .  o #  . .|
+  380 oldmud:holdable             o #     |
+  385 oldmud:viewable             o #     |
+  390 oldmud:shellHost              |     #
+  395 oldmud:thing . . . . . . . .  o # # #
+  400 oldmud:exit                     o | | #
+  400 oldmud:room                       o | | #
+  401 oldmud:roomCache                    | | |
+  405 oldmud:viewableAvatar. . . . . . . .# | |
+  410 oldmud:avatar                       o | |
+
+
+
+330 oldmud
+==========
+
+Defines various global stuff relating to the oldmud
+islekit, in particular:
+
+
+*  CAN_* bitflags used to summarize properties of objects:
+         Can they hear conversation, can them move, and so forth &tc.
+
+*  REQ_* integer opcodes used in the oldmud user-user protocol:
+         Request description of object &tc.  Also per-opcode docs.
+
+*  A few miscellaneous convenience fns to convert opcodes and CAN
+   values to text &tc.
+
+
+
+335 oldop
+==========
+
+'enterOp', the API call for defining a new oldmud operation.
+
+
+
+
+337 oldpub
+==========
+
+Defines the Micronesia facility for 'publishing' strings -- making
+them temporarily available for download by other users.  This
+facility consists of a 'home' class which contains the necessary
+state, and generic API operations for accessing the facility:
+
+  dropOldestString -- Remove one string.
+  unpublishAllStrings -- Clear all pending strings.
+  publishString -- Post a string for public access.
+  getStringSegment -- Return substring of published string + length
+  unpublishString -- Delete string with given id.
+
+
+
+340 oldlive
+===========
+
+Defines 'live' mixin making an object interactive via Micronesia
+user-user protocols: fields
+
+  io,
+  liveDaemon,
+  liveNames,
+  liveFns,
+  liveClasses
+
+and functions
+
+  enterDefaultLiveHandlers { $ $ $ -> }
+  initLiveHandlers { $ $ $ $ -> }
+
+and generic
+
+  wakeLiveDaemon {[ $    ]} ;
+
+Should we possibly tuck the live* values into a pluggable state class...?
+
+
+
+342 oldnop
+==========
+
+Implements NOP for the Micronesia protocol:
+Class
+
+   nopIt
+
+Generic fn
+
+   doReqNop
+
+Plain fns
+
+   enterNopServerFunctions
+   doNop -- send nop request to given daemon
+
+The 'live' mixin installs NOP, which thus gets inherited
+by virtually everything in Micronesia.
+
+
+
+345 oldtask
+===========
+
+Implements the 'task' delayed-function-invocation facility,
+which is also the heart of the Micronesia communication
+protocol, since it is used to hold the continuations for
+requests sent to other users, and also to handle timeouts
+and retries.
+
+Class task:home holds the required state.
+
+Generic functions
+
+    killAllJobs
+    killTask
+    task
+    runSomePendingTasks
+    runIoTask
+    timeUntilNextTask
+
+
+and plain functions
+
+    do
+    inDo
+    ioDo
+
+provide the API to access the facility.
+
+
+
+347 oldrequest
+==============
+
+Provides a layer on top of the basic 'task' facility which
+specifically supports the Micronesia user-user communication
+protocol.  The basic API interface is the
+
+    ]request
+
+function which accepts a request to make and a continuation
+to execute when/if a reply is recieved.  Also exports the
+more specialized requests
+
+    ]requestMuqnetIsles
+    ]requestMuqnetIsle
+    ]requestMuqnetUser
+
+and has various internal support functions.
+
+
+
+350 olddaemon
+=============
+
+The daemon actually implementing the Micronesia user-user
+protocol.  Each user runs a copy of this daemon at all
+times (logged in or not) in addition to any user-shell
+job(s) which might be running to handle user logins.
+
+Exports the class
+
+    oldmud:daemonHome 
+
+and a function
+
+    oldmud:]daemon
+
+which is used to start the daemon running.  Interaction
+with the running daemon is primarily by writing packets
+into its ioStream, which is published as
+
+    @.actingUser.$s.ioStream
+
+and also as
+
+    liveObject.io
+
+for all objects owned by a given user -- the muqnet daemon
+routes network requests to our daemon via these pointers.
+
+This daemon runs the 'task' mechanism in its inner loop via the
+
+    task:runSomePendingTasks 
+    task:timeUntilNextTask
+    task:runIoTask
+
+calls.
+
+The daemon is normally started by rootStartIsleDaemons and
+runs as long as the Muq server is up.
+
+The daemon handles opcodes by table-lookup in the
+
+    liveNames
+    liveFns
+    liveClasses
+
+vectors, so the daemon code itself is very vanilla.
+
+
+
+360 oldping
+===========
+
+Implements the Micronesia protocol 'ping' request:
+
+Class
+
+    pingIt
+
+Generic function
+
+    doReqPing
+
+
+
+363 oldlist-serv
+================
+
+A generic facility for publishing sets of named values
+via the Micronesia protocol.  One listServ instance can
+publish an unlimited number of lists.
+
+Class
+
+    listServ
+
+Generic functions
+
+    doReqListNames
+    doReqJoinList
+    doReqQuitList
+    doReqListInfo
+    doReqNextListEntry
+    doReqPrevListEntry
+    doReqThisListEntry
+    doReqFindListEntry
+    doReqAddToList
+    doReqDropFromList
+    addList
+    dropList
+
+This mixin is currently used by the
+
+    oldmud:isle
+
+class to publish the following lists:
+
+    "who"    -- list of logged (and not hidden) in users.
+    "native" -- list of all local users.
+    "isle"   -- list of all known isles.
+
+QUESTION:  Why can't we simplify the local end-user interface
+to this such that it is sufficient to add and remove properties
+from an index instance?  Even if remote access is needed in
+addition, this could still be provided as an additional interface.
+
+
+
+363 oldprop-serv
+================
+
+A property analogue of listserv.  Currently unused, I believe.
+Possibly having both is a mistake and we should unify them
+somehow?
+
+
+
+365 oldisle-list
+================
+
+Special-purpose listServ for publishing list of known isles.
+At the moment, I don't understand the relationship between
+this and listServ: 'isle' appears to both include the isleList
+mixin, and also to declare a "isle" listserv list...?
+
+
+
+365 oldnative-list
+==================
+
+Same story as old-isle list, 'isle' appears to both use this
+specialized list and also set up a generic listserv list named
+native.  *blink*?  The doReq functions for this file appear to
+be unused.  Is this class being phased out...?
+
+
+
+365 oldroom-host
+==================
+
+Specialized published-list support, allows rooms to be created
+on demand rather than just be statically pre-existing. A
+
+  doReqRoomByName
+
+generic implements the Micronesia protocol to it.  'isle'
+includes this mixin.
+
+
+
+365 oldwho-list
+===============
+
+Another one which looks like it is being phased out...?
+
+
+
+365 oldwho-user
+===============
+
+Avatar uses this mixin, and the doReq* fns are still referenced
+also.  Is this one permanent, then?
+
+
+
+370 oldisle
+===========
+
+Root record for a complete isle:  Exports the lists of rooms,
+active users, native users &tc &tc.
+
+
+
+375 oldview
+===========
+
+Base mixin for any object which wants to be viewable.  Slots
+for interior and exterior views in text/html/vrml versions.
+(SHOULD WE ADD a muq4d viewtype...?)
+
+This mixin is used by 'thing' which in turn is used by
+'exit' 'room' and 'avatar'.  Avatar specializes it to
+support differing views by user, as an unconvincing(?)
+example of how easy it is.
+
+
+
+375 oldholder
+=============
+
+Defines mixins for 'holder' and 'holdable', which provide
+the basic facilities for objects to contain each other. A
+variety of Micronesia protocol generics provide an API for
+accessing this functionality from softcode.
+
+
+
+385 oldcanonical-room-name
+==========================
+
+Defines a generic function for asking for the canonical
+name of a room, as support for procedural building. The
+nontrivial method for this generic is in oldroom.t.
+
+
+
+385 oldecho-complete-string
+===========================
+
+Simple vanilla convenience fn to send a string to our user
+
+
+
+385 oldhas-been-ejected
+385 oldhas-come
+385 oldhas-left
+385 oldhear-page
+385 oldhear-say
+385 oldhear-whisper
+============================
+
+These all define generics to implement Micronesia protocol
+opcodes.  Nontrivial methods for them are elsewhere, usual
+in 'avatar' and 'roomCache'.
+
+
+
+385 oldsubstring
+============================
+
+Defines and installs the generic for the Micronesia protocol
+opcode fetching part of a published string.
+
+
+
+390 oldshell-host
+=================
+
+Simple mixin for objects representing a logged-in user:
+Exports a messageStream by which the user shell job may
+be contacted, typically by the Micronesia protocol job.
+
+
+
+395 oldshell-host
+=================
+
+Simple mixin for vanilla Micronesia objects: Things which
+are viewable, holdable, holders and of course live.
+
+
+
+400 oldexit
+===========
+
+Thing for linking rooms.  Establishes and implements the
+doReqExitDestination Micronesia protocol opcode for
+requesting the destination of an exit.
+
+
+
+400 oldroom
+===========
+
+Thing for places avatars (&tc) may be.
+Defines the nontrivial method for the doReqCanonicalRoomName generic.
+
+
+
+401 oldroom-cache
+=================
+
+Class for tracking information about the room currently occupied
+by (typically) an avatar.  Class avatar keeps an instance of this
+handy.
+
+
+
+402 oldroom-cache2
+==================
+
+Methods for hasCome, hasLeft &tc which update a roomCache appropriately.
+
+
+
+403 oldname-to-avatar
+=====================
+
+A simple convenience fn to map a text name to an avatar instance.
+May find the avatar locally, or may have to query another Muq server.
+
+
+
+403 oldsay
+==========
+
+Simple convenience fn to message everyone in the room.
+
+
+
+405 oldavatar-view
+==================
+
+Support code allowing avatars to have more sophisticated descriptions
+than vanilla things -- in particular, to have them present different
+views to lovers vs friends vs strangers.
+
+
+
+410 oldavatar
+=============
+
+Class for things representing a user within Micronesia.
+Most of the code is methods defining how an avatar should
+handle receipt of say/hear/pose/whisper -- that is, how
+it passes them on to the logged-in user shell for display.
+
+
+
+420 badweight
+=============
+
+Trivial fieldless class 'badWeight' and generic 'weight'.
+
+
+
+421 badset
+==========
+
+Class:
+
+    badSet
+
+Generics:
+
+    augmentBadset
+    pick          Pick object with highest weight.
+
+
+
+422 badexit
+===========
+
+Class:
+
+    badExit
+
+Generics:
+
+    makeBadExit
+    inventRoomViaExit
+
+
+
+423 badroom
+===========
+
+Class:
+
+    badRoom
+
+Generics:
+
+    makeBadRoom
+    augmentNeighborsClasses
+    augmentContentsClasses
+
+
+
+423 badroom
+===========
+
+Functions:
+
+    badRoot
+    installBadlands
+
+
+
+465 oldsdb
+==========
+
+Function:
+
+    makeSampleIsle
+
+
+
+470 oldmsh
+==========
+
+Class:
+
+    mshCommand
+
+Generics:
+
+    cmdNames
+    cmdHelpCategory
+    cmdHelp1
+    cmdHelpN
+    cmdDo
+
+
+
+475 oldmsh-ban, boot, dig, doing, eject...
+==========
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  342 oldmud:nopIt          | | |     |   |
+  360 oldmud:pingIt         | | |       | |
+  380 oldmud:holdIt         o   |         |
+  380 oldmud:heldIt         o   |         |
+  385 oldmud:substringIt    |   |         |
+  385 oldmud:viewIt         |   |         |
+  337 pub:home . . . . . . . . .#. . . . .#
+  340 oldmud:live           #   | # #     |
+  345 task:home             |   | | |     |
+  350 oldmud:daemonHome     o # | | |     |
+  363 oldmud:listServ  . . .  | # | |  . .|
+  363 oldmud:propServ         | # | |     |
+  365 oldmud:isleList         | # | |     |
+  365 oldmud:nativeList       | # | |     |
+  365 oldmud:roomHost  . . .  o # | |  . .#
+  365 oldmud:whoList            # | |     |
+  365 oldmud:whoUser            | | |     #
+  370 oldmud:isle               o | |     |
+  380 oldmud:holder  . . . . . .  o #  . .|
+  380 oldmud:holdable             o #     |
+  385 oldmud:viewable             o #     |
+  390 oldmud:shellHost              |     #
+  395 oldmud:thing . . . . . . . .  o # # #
+  400 oldmud:exit                     o | | #
+  400 oldmud:room                       o | | #
+  401 oldmud:roomCache                    | | |
+  405 oldmud:viewableAvatar. . . . . . . .# | |
+  410 oldmud:avatar                       o | |
+
+
